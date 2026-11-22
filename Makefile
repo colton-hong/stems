@@ -8,7 +8,7 @@ export PATH := $(CURDIR)/.tools/node/bin:$(PATH)
 setup: ## create .venv and install the project with dev tools
 	test -d .venv || python3 -m venv .venv
 	$(PY) -m pip install -q --upgrade pip
-	$(PY) -m pip install -q -e ".[worker,dev]"
+	$(PY) -m pip install -q -e ".[worker,bench,dev]"
 
 lint:
 	$(PY) -m ruff check .

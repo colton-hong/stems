@@ -295,8 +295,11 @@ they are placeholders.
 - **Metrics**: museval SDR, SIR and SAR per stem on 1-second windows, median over windows
   then median over tracks. Also silence fraction (below −60 dBFS), RMS and peak, duration
   match, and the ratio of estimate to reference energy above 8 kHz.
-- **Single-stem models** are scored as a pair (target, mix minus target) so SIR and SAR are
-  defined.
+- **Every stem is scored as a pair** (target, mix minus target), for single-stem and
+  multi-stem models alike, so SIR and SAR are defined and comparable between them. SDR is
+  the same as museval's joint evaluation; SIR and SAR are not the joint four-source ones.
+  On the synthetic fixture only SDR is meaningful (pure tones make museval's projection
+  ill-conditioned).
 - **Datasets**: MUSDB18-HQ test (50 tracks, 4 stems) and a frozen stratified 50-track
   MoisesDB subset (the same ids the Clef-omni test uses). Reported separately, never
   averaged. MoisesDB is the only ground truth for guitar, piano and lead vs backing.

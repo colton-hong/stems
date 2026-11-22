@@ -43,7 +43,8 @@ worker = [
   # Imported by the vendored UVR spectrogram code (stems_worker.adapters.vr).
   "audioread==3.1.0",
 ]
-bench = []
+# museval only for its metrics module (numpy and scipy); see bench/stems_bench/metrics.py.
+bench = ["museval==0.4.1"]
 api = []
 
 [project.scripts]
