@@ -55,6 +55,9 @@ make env                # write runs/env/worker.json (devices, package versions)
 .venv/bin/python -m stems_worker.timing   # median speed per model and device, from runs/timings.jsonl
 .venv/bin/bench run --dataset synthetic --all   # benchmark; resumable, results in runs/bench/
 .venv/bin/bench status  # progress of the latest benchmark run
+.venv/bin/bench report RUN --out docs/benchmarks/NAME.md   # report from a run's result files
+make bench-synthetic    # every separator and blend on the synthetic set, then its report
+make bench-device-spread   # repeat runs per device, then docs/benchmarks/device-spread-synthetic.md
 make registry           # validate models/registry.yaml and print it
 make registry-sources   # HEAD every model URL and refresh sizes (network)
 make models-status      # which model files are downloaded or in progress

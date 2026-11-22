@@ -316,6 +316,15 @@ they are placeholders.
   are tuned on tracks outside the frozen test lists.
 - **Resumable**: results are cached per (model, weights hash, track, protocol version), runs
   start in the background and write a status file under `runs/bench/`.
+- **Blends in the benchmark**: `bench run --ensembles` scores each slot of the config in
+  its three modes from its members' kept audio, plus the composed six-stem other (the
+  four-stem blend minus the same mode's guitar and piano). A blend's time is the sum of
+  the times of every model it needs.
+- **Repeat runs**: `--trial N` does the same jobs again under separate keys, and
+  `bench compare` sets run-to-run differences beside device-to-device differences.
+- **Reports** are written only from a run's result files (`bench report`), one per
+  dataset, with the command, commit, frozen-list hash, device and seconds beside every
+  score. `docs/benchmarks/README.md` has the protocol and the commands.
 - **Synthetic fixture**: sine and noise mixes with known stems, generated from a seed. The
   whole harness runs on it now, so it is ready when the datasets arrive.
 - **Device sensitivity**: the same checkpoint gives measurably different output on CPU and
