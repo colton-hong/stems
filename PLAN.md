@@ -9,8 +9,9 @@ This plan rests on `docs/research-report.pdf`. Where the report and the project 
 disagree, the brief wins. Where the report was wrong or out of date, the fix is in
 `docs/corrections.md` and this plan uses the corrected fact.
 
-**Status:** Phases 0 and 1 are complete (see `PROGRESS.md`). The `separate` command works
-with real models. No benchmark has been run and no quality number exists yet.
+**Status:** Phases 0 and 1 are complete, and Phase 2 as far as it goes without the datasets
+(see `PROGRESS.md`). The `separate` command works with real models. The benchmark harness
+has run end to end on synthetic audio only: no quality number on music exists yet.
 
 ## 1. Fixed decisions
 
