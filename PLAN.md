@@ -78,7 +78,8 @@ and `dev`, so the worker image installs only what it needs.
 **Sample rate and channels.** Every registry separator runs at 44.1 kHz stereo. Input is
 decoded to float32, resampled to 44.1 kHz with a high-quality resampler, and mono is
 duplicated to two channels. Stems are delivered at 44.1 kHz stereo; the source rate is
-recorded in the job. Stereo is never summed anywhere in the path.
+recorded in the job. Stereo is never summed anywhere in the path. In code, audio is always a
+float32 array shaped `(channels, samples)`.
 
 **Chunked inference.** Models see fixed-length chunks (length from each model's own
 config). Chunks overlap; each output is multiplied by a window and summed, then divided by
