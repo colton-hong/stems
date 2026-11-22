@@ -330,8 +330,11 @@ they are placeholders.
   whole harness runs on it now, so it is ready when the datasets arrive.
 - **Device sensitivity**: the same checkpoint gives measurably different output on CPU and
   MPS (found in P1.8 on the synthetic fixture, where a 1e-6 change to the input moved the
-  Kim vocals model's output at about −42 dB relative). Task P2.14 measures how much scores
-  move between devices on real tracks before any cross-device comparison is made.
+  Kim vocals model's output at about −42 dB relative). Measured in P2.14 on the synthetic
+  set: a repeat run on the same device reproduces every score exactly, while MPS against
+  CPU moves a track's SDR by up to 0.817 dB (`docs/benchmarks/device-spread-synthetic.md`).
+  So a report is built from one run on one device, and devices are never mixed. The same
+  measurement on real tracks is P2.14b.
 - **Rules**: every number in a report comes from a run in this repo with its command.
   Published figures are never copied in or compared against.
 

@@ -2,7 +2,7 @@
 
 Single source of truth for where the build is. Read this first, every iteration.
 
-**Current phase: 2 (benchmark harness).** The owner started it on 2026-11-22.
+**Current phase: 2 (benchmark harness), complete as far as it goes without the datasets. Waiting for the owner: for MUSDB18-HQ and MoisesDB (B2, B3) to finish Phase 2, or for the word to start Phase 3.**
 
 ## How to use this file
 
@@ -33,7 +33,7 @@ Format: `- [ ] Pn.m Task. **Accept:** how to tell it is done.`
 - [x] P0.4 Model registry with every checkpoint from report sections 1 and 5. **Accept:** `python -m stems_models` validates and prints all entries; `tests/test_registry.py` passes. — 53 entries (38 from §1, 6 from §5, 9 added), 48 loadable.
 - [x] P0.5 Verify every download URL and record sizes. **Accept:** `python -m stems_models.check_sources --write` exits 0. — 85 of 85 URLs answered; 16.66 GB in total; BEATs is the one file without a verified size (OneDrive link).
 - [x] P0.6 `config/defaults.yaml` with gate thresholds, retention, limits and per-slot models. **Accept:** `tests/test_defaults.py` passes, including the cross-check against the registry. — Models are marked `provisional: true` until Phase 2.
-- [x] P0.7 CI workflow. **Accept:** `.github/workflows/ci.yml` runs lint, registry validation and tests. — Committed but never executed: the repo has no remote yet.
+- [x] P0.7 CI workflow. **Accept:** `.github/workflows/ci.yml` runs lint, registry validation and tests. — Committed but never executed: the repo has no remote yet. (Since 2026-11-22 it has: see the Phase 2 summary. First green run: commit `0b357e6`.)
 - [x] P0.8 `PROGRESS.md`, `BLOCKED.md`, `CLAUDE.md`, `.env.example`, `.gitignore`. **Accept:** files exist; weights, audio, datasets and `.env` are git-ignored. — Done.
 - [x] P0.9 Web scaffold installs and passes its checks. **Accept:** `make web-setup && make web-check` passes and `web/package-lock.json` is committed. — Node v24.22.3 LTS installed project-locally (`make node-setup`); lint, typecheck and build pass. TypeScript pinned to 6.0 and ESLint to 9 because `eslint-config-next`'s plugins reject TypeScript 7 and ESLint 10 (see `web/README.md`).
 
@@ -74,7 +74,8 @@ Format: `- [ ] Pn.m Task. **Accept:** how to tell it is done.`
 - [x] P2.12a Blend tuner, proven on synthetic data. **Accept:** `bench tune` refuses any list that is not a tuning list or that shares a track with its test list; on a tuning list it tries every method and a grid of weights per slot and mode, and what it picks equals a brute-force search in a test. — `bench tune --dataset LIST [--slots] [--out FILE]` (`stems_bench.tune`). Tuning lists and the test lists each must be disjoint from are declared in one table (`synthetic_tuning` / `synthetic`, `musdb18hq_train` / `musdb18hq_test`, `moisesdb_tuning` / `moisesdb_subset`), and the check runs before any model does. It runs the members with their audio kept, then tries, per slot and mode, the four methods and weights in steps of 0.1 (two models) or 0.2 (three), 22 and 44 candidates, scoring each by median SDR over tracks; scores are cached per track, so it resumes. A slot gets one method for both modes and each mode its weights; a candidate must beat an earlier, simpler one by more than 0.001 dB. Output: `tuning.json`, a Markdown table (equal-weight baseline, choice, gain) listing the tuning tracks and the lists they were checked against, and the choice as a config snippet that is **not applied**. Candidates are compared with `metrics.sdr_frames`, the plain SDR definition, tested equal to museval's SDR. Also new: `bench/frozen/synthetic_tuning.json` (4 tracks, seeds 201 to 204), `python -m stems_bench.datasets.moisesdb --freeze-tuning` (30 seeded tracks outside the subset), and `ensemble.Blender`, which computes spectrograms once for many candidate blends. 12 tests. Run once with real models (`synthetic-tuning-v1`, commit `0b357e6`, MPS): 120 of 120 jobs, 16 blends tuned, written to `docs/benchmarks/tuning-synthetic.md`. That run proves the tool end to end and nothing else: on sine tones it mostly learns to drop the models that return silence, and nothing from it is in the config.
 - [ ] P2.12 Tune blend methods and weights on tracks outside the frozen test lists, then score them on the test lists. **Accept:** the tuning tracks are listed and disjoint from the frozen lists. **BLOCKED (B2, B3).**
 - [ ] P2.13 Recommend a default model or ensemble per slot from measured gain against time. **Accept:** `docs/benchmarks/recommendation.md` cites the runs; `config/defaults.yaml` is updated and `provisional` set to false. **BLOCKED (B2, B3).**
-- [ ] P2.14 Measure how much scores move between devices (CPU, MPS, and CUDA when available) for the same model and tracks. **Accept:** the benchmark report states the per-stem SDR spread across devices on the synthetic set and, once available, on real tracks; if it exceeds run-to-run noise, every comparison in a report uses a single device.
+- [x] P2.14 Measure how much scores move between devices (CPU, MPS, and CUDA when available) for the same model and tracks. **Accept:** the benchmark report states the per-stem SDR spread across devices on the synthetic set and, once available, on real tracks; if it exceeds run-to-run noise, every comparison in a report uses a single device. — `bench run --trial N` repeats jobs under their own keys and `bench compare` sets the differences side by side (`make bench-device-spread`). On the synthetic set, the provisional default model of each slot (6 models, 8 tracks, 150 scores per comparison), runs of 2026-11-22: **running again on the same device changed nothing** (largest difference 0.000 dB on MPS and on CPU: inference is deterministic on both), **moving from MPS to CPU changed one track's score by up to 0.817 dB** (`bs_roformer_sw_6stem` piano, `synth-03`) and moved a model's median by up to 0.221 dB (`mel_roformer_kim_vocals` vocals, 6.108 to 6.329). The per-output table is `docs/benchmarks/device-spread-synthetic.md`. The device effect exceeds run-to-run noise, so scores from different devices are not compared: a run asks for one device and refuses to be resumed on another, a report is built from one run, and every report now says so. The MDX-Net models run on CPU whatever is asked (no MPS in onnxruntime); the device column shows it. No CUDA here. Real tracks are task P2.14b.
+- [ ] P2.14b Device spread on real tracks: the same repeat and cross-device runs on MUSDB18-HQ (and on CUDA through Modal if there is a token). **Accept:** `docs/benchmarks/device-spread-musdb18hq.md` generated by `bench compare`. **BLOCKED (B2; B4 for CUDA).**
 - [x] P2.15 Blend modes in the product pipeline: `separate --mode two_model_blend` and `--mode full_ensemble`. **Accept:** on the fixture with weightless models, each mode runs every listed model once, blends per stem with the configured method and weights, and the manifest names the members and weights; `single_best` is unchanged. — `separate --mode two_model_blend | full_ensemble`. `default_assignment` turns each slot's model list, weights and method from config into a `Blend`; `plan_composition` accepts a model id or a `Blend` per stem and still plans one run per model, however many stems and blends it serves; `compose` blends per stem with `stems_worker.ensemble`. Six-stem `other` in a blend mode is the blended four-stem other minus the blended guitar and piano, and a blend that mixes four-stem and six-stem `other` models is refused. Vocal split and de-reverb are blended the same way. `--model SLOT=ID` replaces that slot's blend with one model. The manifest gives `models`, `weights` and `blend_method` for every blended stem and file; a `single_best` manifest is byte-for-byte the shape it was. Cached single-model outputs are reused by blends. 11 tests with weightless models. Not run with real models yet: which blend is worth its time is what P2.10 to P2.13 measure.
 
 ## Phase 3: listening layer and the Clef-omni test
@@ -220,3 +221,87 @@ CI has still never run because the repo has no remote.
 
 **Next:** wait for the owner. Phase 2 starts at P2.1. Its harness tasks (P2.1 to P2.9,
 P2.14 on synthetic data) need nothing from the owner; the real benchmarks need B2 and B3.
+
+### Phase 2 (2026-11-22)
+
+Done: every task that does not need a dataset (P2.1 to P2.9, P2.12a, P2.14, P2.15). The
+benchmark harness runs end to end from one command, on synthetic audio. **No quality
+number on music exists**, and no default model has been chosen: `config/defaults.yaml` is
+still `provisional: true` with equal blend weights.
+
+- **Metrics**: museval 0.4.1's BSS Eval v4 (SDR, SIR, SAR on 1-second windows, median of
+  medians), plus silence fraction, RMS, peak, length match and energy above 8 kHz.
+- **Datasets**: a frozen synthetic test list (8 tracks) and tuning list (4 tracks);
+  loaders for MUSDB18-HQ and MoisesDB with hash-checked frozen lists, and the seeded
+  stratified 50-track MoisesDB selection. A run refuses a list that is not committed.
+- **Runner**: `bench run` keeps one result file per model and track, keyed on protocol,
+  list, weights, device and overlap, so runs resume and never repeat work; `bench status`,
+  `bench report`, `bench compare`, `bench tune`.
+- **Blends**: four methods with per-model weights from config; in the benchmark
+  (`--ensembles`: each slot's single best, two-model blend, full ensemble, and the composed
+  six-stem other) and in the product (`separate --mode two_model_blend | full_ensemble`).
+- **Reports** are generated only from result files, with the command, commit, frozen-list
+  hash, device and seconds beside every score: `docs/benchmarks/synthetic.md` (560 of 560
+  jobs, none failed), `device-spread-synthetic.md`, `tuning-synthetic.md` (a tool demo).
+- **Tests**: 479 fast (`make check`, about 80 s) and 55 with real weights (`make
+  test-slow`; 1 more needs CUDA).
+- **GitHub**: at the owner's request the project is in the private repo
+  `github.com/colton-hong/stems`. CI ran for the first time there: it failed on one test
+  (the CPU-only torch wheel reports `2.15.0+cpu` against the pin), which was fixed; it now
+  passes on Python 3.12 and 3.14 with 454 tests, skipping 23 that need downloaded model
+  configs and 2 that need MPS.
+
+Blocked, all on the datasets: P2.5b (freeze the MoisesDB subset), P2.10 and P2.11 (the real
+benchmarks), P2.12 (tuning on real tracks), P2.13 (the recommendation and the config
+update), P2.14b (device spread on real tracks). `docs/benchmarks/README.md` lists the
+commands to run when they arrive; each is one line.
+
+Findings worth carrying forward:
+
+1. **Scores depend on the device, not on the run.** The same model on the same tracks
+   scores identically when run again on the same device, and up to 0.817 dB differently
+   on one track when moved from MPS to CPU (synthetic set, six models). Benchmarks must be
+   compared within one device. Measured on synthetic audio only.
+2. **Only SDR means anything on the synthetic set.** museval's SIR and SAR are numerical
+   noise on pure tones with identical channels, so the synthetic reports leave them out.
+   On broadband signals all three behave (tested).
+3. **The synthetic scores are not a ranking.** Several strong vocal models return silence
+   on sine-tone voices and score 0 dB. The run shows that all 43 separators and all 27
+   blend systems go through the harness, and nothing about which is better on music.
+4. **museval cannot be imported without ffmpeg** (its `musdb` dependency checks at
+   import). Its metrics module is loaded by file path instead; the numbers are museval's.
+5. **Blends that mix model kinds are refused.** A blend of a four-stem `other` with a
+   six-stem `other` would average two different things, so the config check, the pipeline
+   and the benchmark all reject it.
+
+Mistakes made and corrected in this phase:
+
+- The edit that ticked P2.1 also ticked P2.10 to P2.14 (a prefix match). They stayed
+  wrongly ticked for six commits; commit `ec03b15` unticked them. Ticks are now edited by
+  exact task id.
+- The synthetic benchmark's timings are not clean: the test suite ran alongside it several
+  times. The reports say what the seconds are and are not.
+
+Choices made here that the owner can overrule:
+
+- Every stem is scored as the pair (target, input minus target), for all models, so SIR
+  and SAR are comparable between single-stem and multi-stem models. SDR is unaffected;
+  SIR and SAR are not the joint four-source figures leaderboards print.
+- Vocal-split and de-reverb models are benchmarked on the reference vocals, not on another
+  model's output.
+- MoisesDB: a stem is "present" above −60 dBFS whole-track RMS, and drums and bass are
+  "prominent" within 12 dB of the mix (the report defines neither); the subset also
+  requires 8 tracks with both lead and backing vocals; sources of unequal length are
+  padded, not trimmed; percussion, other keys, strings and wind count as `other`, as in
+  the dataset's own six-stem mapping.
+- A blend's time is the sum of the times of every model it needs.
+- A slot has one blend method for both of its blend modes; the tuner prefers the simpler
+  candidate unless another beats it by more than 0.001 dB.
+- The repo is private, and pushes use a deploy key that can write to that repo only.
+
+Not done, for lack of access: any benchmark on music, blend tuning on music, the
+recommended defaults, GPU timings (MPS and CPU only; Modal needs B4).
+
+**Next:** wait for the owner. With the datasets, Phase 2 finishes at P2.5b, P2.10 to P2.13
+and P2.14b. Phase 3 starts at P3.1, which needs the BEATs file (B10); P3.2 to P3.8 can be
+built without it or the datasets.

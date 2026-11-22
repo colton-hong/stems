@@ -25,6 +25,9 @@ each file with its hash.
   track where the stem is absent is not scored.
 - Time is for the whole model on one track, all of its outputs together, on the
   device shown. It does not include loading the model.
+- Every job here asked for the device `mps`. The same model scores
+  differently on another device (see the `device-spread` report beside this one),
+  so do not compare these figures with a report made on a different device.
 - "high band" is the estimate's energy at and above 8 kHz relative to the
   reference's, in dB: 0 is a match, negative means lost top end.
 - **Only SDR is reported for this dataset.** Its tracks are sine tones and
