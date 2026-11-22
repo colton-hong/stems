@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stems"
+version = "0.0.1"
+description = "Web-based audio stem separator (non-commercial personal project)"
+requires-python = ">=3.11"
+dependencies = [
+  "certifi>=2024.8.30",
+  "pydantic>=2.9,<3",
+  "pyyaml>=6.0.2,<7",
+]
+
+# Extras are filled in by the phase that first needs them, with versions pinned
+# from a real install (see PLAN.md, "Dependencies"). Nothing is listed speculatively.
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3",
+  "ruff>=0.9",
+]
+worker = []
+bench = []
+api = []
+
+[tool.setuptools.packages.find]
+where = ["common", "models", "worker", "bench", "api"]
+include = ["stems_*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+markers = [
+  "network: needs internet access (deselected by default; run with -m network)",
+  "slow: takes more than a few seconds",
+  "gpu: needs a CUDA or MPS device",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["web", "runs", "third_party"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "C4", "PT", "RUF"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["stems_common", "stems_models", "stems_worker", "stems_bench", "stems_api"]

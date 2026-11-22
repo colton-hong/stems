@@ -1,0 +1,77 @@
+# Runtime defaults. Everything tunable lives here, not in code.
+# Validated by stems_common.settings and cross-checked against models/registry.yaml
+# by stems_models.selection (tests/test_defaults.py).
+
+audio:
+  # Every separation model in the registry runs at 44.1 kHz stereo.
+  sample_rate_hz: 44100
+  channels: 2
+  output_format: wav # wav | flac | mp3_320 | mp3_192
+
+uploads:
+  # Proposed limits, not requirements from the brief (BLOCKED.md, decision D2).
+  max_bytes: 262144000 # 250 MiB
+  max_duration_seconds: 1200
+  allowed_extensions: [wav, flac, mp3, m4a, aac, ogg, opus, aiff, aif]
+
+retention:
+  days: 7
+  signed_url_ttl_seconds: 900
+
+decision:
+  # Always the pinned version, never jev-latest / jev-preview.
+  jev_model: jev-1.14.0
+  # Below this confidence a Jev answer is ignored and the rule-based fallback is used.
+  min_confidence: 0.8
+  request_timeout_seconds: 10
+  max_attempts: 3
+
+# Quality gate (project decision 8). Uncalibrated: tuned on benchmark data in Phase 7.
+gate:
+  pass_probability_min: 0.8
+  score_min: 2
+  confidence_min: 0.7
+  max_retries_per_stem: 2
+
+# Which models run for each slot, per ensemble mode.
+# PROVISIONAL: these are the first-listed candidates from the project brief. No benchmark
+# has been run yet. Phase 2 replaces them with measured choices and sets provisional: false.
+ensembles:
+  provisional: true
+  basis: First-listed candidates from the project brief; not benchmarked.
+  default_mode: single_best # single_best | two_model_blend | full_ensemble
+  slots:
+    vocals:
+      single_best: mel_roformer_kim_vocals
+      two_model_blend: [mel_roformer_kim_vocals, bs_roformer_viperx_vocals]
+      full_ensemble: [mel_roformer_kim_vocals, bs_roformer_viperx_vocals, bs_polarformer_vocals]
+    drums:
+      single_best: scnet_xl_ihf
+      two_model_blend: [scnet_xl_ihf, htdemucs_ft]
+      full_ensemble: [scnet_xl_ihf, scnet_large, htdemucs_ft]
+    bass:
+      single_best: htdemucs_ft
+      two_model_blend: [htdemucs_ft, bs_roformer_sw_6stem]
+      full_ensemble: [htdemucs_ft, bs_roformer_sw_6stem, scnet_xl_ihf]
+    guitar:
+      single_best: bs_roformer_sw_6stem
+      two_model_blend: [bs_roformer_sw_6stem, mel_roformer_guitar_becruily]
+      full_ensemble: [bs_roformer_sw_6stem, mel_roformer_guitar_becruily, htdemucs_6s]
+    piano:
+      single_best: bs_roformer_sw_6stem
+      two_model_blend: [bs_roformer_sw_6stem, htdemucs_6s]
+      full_ensemble: [bs_roformer_sw_6stem, htdemucs_6s]
+    other:
+      # A 4-stem model's "other" still contains guitar and piano. In a 6-stem job the
+      # pipeline subtracts the chosen guitar and piano stems from it (PLAN.md, "Other").
+      single_best: scnet_xl_ihf
+      two_model_blend: [scnet_xl_ihf, scnet_large]
+      full_ensemble: [scnet_xl_ihf, scnet_large, htdemucs_ft]
+    vocal_split:
+      single_best: mel_roformer_karaoke_aufr33_viperx
+      two_model_blend: [mel_roformer_karaoke_aufr33_viperx, uvr_vr_5hp_karaoke]
+      full_ensemble: [mel_roformer_karaoke_aufr33_viperx, uvr_vr_5hp_karaoke, uvr_mdxnet_kara_2]
+    dereverb:
+      single_best: mel_roformer_dereverb_anvuew
+      two_model_blend: [mel_roformer_dereverb_anvuew, uvr_vr_deecho_dereverb]
+      full_ensemble: [mel_roformer_dereverb_anvuew, uvr_vr_deecho_dereverb]

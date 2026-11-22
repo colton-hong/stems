@@ -1,0 +1,50 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+
+# Node
+node_modules/
+.next/
+web/out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Never committed: model weights, datasets, audio, run outputs
+models/weights/
+third_party/
+data/
+runs/*
+!runs/.gitkeep
+*.ckpt
+*.pth
+*.th
+*.pt
+*.onnx
+*.pb
+*.safetensors
+*.bin
+*.wav
+*.flac
+*.mp3
+*.m4a
+*.aac
+*.ogg
+*.opus
+*.aiff
+*.aif
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/

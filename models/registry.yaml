@@ -1,0 +1,1407 @@
+# Model registry: the single source of truth for every checkpoint the pipeline can load.
+#
+# - The pipeline loads models by `id`. Default model(s) per stem live in config/defaults.yaml
+#   and are set from benchmark results, never from this file.
+# - `licence_note` is informational only. It gates nothing (project decision 1 and 3).
+# - `size_bytes` values are written by `python -m stems_models.check_sources --write`
+#   (an HTTP HEAD per URL). null means the size has not been verified yet.
+# - Keep `size_bytes:` on the line directly after `url:`; the checker relies on that.
+# - No published SDR figures are recorded here on purpose: they use incompatible
+#   protocols. Our own benchmark (bench/) is the only source of quality numbers.
+#
+# Field reference: models/README.md. Validated by stems_models.registry (tests/test_registry.py).
+
+schema_version: 1
+
+models:
+  # ---------------------------------------------------------------------------
+  # Vocals (2-stem vocal / instrumental models)
+  # ---------------------------------------------------------------------------
+  - id: mel_roformer_kim_vocals
+    name: Mel-Band RoFormer vocals (Kim / KimberleyJensen)
+    kind: separator
+    architecture: mel_band_roformer
+    loader: msst
+    stems: [vocals, instrumental]
+    candidate_for: [vocals]
+    tier: candidate
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://huggingface.co/KimberleyJSN/melbandroformer
+    files:
+      - role: weights
+        filename: MelBandRoformer.ckpt
+        url: https://huggingface.co/KimberleyJSN/melbandroformer/resolve/main/MelBandRoformer.ckpt
+        size_bytes: 913106900
+      - role: config
+        filename: config_vocals_mel_band_roformer_kj.yaml
+        url: https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/KimberleyJensen/config_vocals_mel_band_roformer_kj.yaml
+        size_bytes: 1721
+    config:
+      model_type: mel_band_roformer
+      config_file: config_vocals_mel_band_roformer_kj.yaml
+    licence_note: MIT per Hugging Face card metadata (checked 2026-11-22).
+
+  - id: bs_roformer_viperx_vocals
+    name: BS-RoFormer vocals (viperx ep_317)
+    kind: separator
+    architecture: bs_roformer
+    loader: msst
+    stems: [vocals, instrumental]
+    candidate_for: [vocals]
+    tier: candidate
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/docs/pretrained_models.md
+    files:
+      - role: weights
+        filename: model_bs_roformer_ep_317_sdr_12.9755.ckpt
+        url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/model_bs_roformer_ep_317_sdr_12.9755.ckpt
+        size_bytes: 639331213
+      - role: config
+        filename: model_bs_roformer_ep_317_sdr_12.9755.yaml
+        url: https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/viperx/model_bs_roformer_ep_317_sdr_12.9755.yaml
+        size_bytes: 1881
+    config:
+      model_type: bs_roformer
+      config_file: model_bs_roformer_ep_317_sdr_12.9755.yaml
+    licence_note: No explicit licence found for the weights (report §1 calls it licence-ambiguous).
+    notes: The number in the filename is the trainer's own metric, not a MUSDB score.
+
+  - id: bs_polarformer_vocals
+    name: BS PolarFormer vocals (ZFTurbo, float16)
+    kind: separator
+    architecture: bs_polarformer
+    loader: msst
+    stems: [vocals, instrumental]
+    candidate_for: [vocals]
+    tier: candidate
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/docs/pretrained_models.md
+    files:
+      - role: weights
+        filename: model_bs_polarformer_float16.ckpt
+        url: https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.20/model_bs_polarformer_float16.ckpt
+        size_bytes: 102410301
+      - role: config
+        filename: model_bs_polarformer_float16.yaml
+        url: https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.20/model_bs_polarformer_float16.yaml
+        size_bytes: 3599
+    config:
+      model_type: null
+      config_file: model_bs_polarformer_float16.yaml
+    licence_note: Licence of the weights not stated in the index (report §1 - confirm in writing if it ever matters).
+    unverified:
+      - The MSST --model_type string for PolarFormer; read it from the MSST source in Phase 1.
+      - Whether float16 weights need casting to float32 on MPS/CPU.
+
+  - id: mel_roformer_viperx_vocals
+    name: Mel-Band RoFormer vocals (viperx ep_3005)
+    kind: separator
+    architecture: mel_band_roformer
+    loader: msst
+    stems: [vocals, instrumental]
+    candidate_for: [vocals]
+    tier: extra
+    origin: added
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/docs/pretrained_models.md
+    files:
+      - role: weights
+        filename: model_mel_band_roformer_ep_3005_sdr_11.4360.ckpt
+        url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/model_mel_band_roformer_ep_3005_sdr_11.4360.ckpt
+        size_bytes: 1007816988
+      - role: config
+        filename: model_mel_band_roformer_ep_3005_sdr_11.4360.yaml
+        url: https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/viperx/model_mel_band_roformer_ep_3005_sdr_11.4360.yaml
+        size_bytes: 1404
+    config:
+      model_type: mel_band_roformer
+      config_file: model_mel_band_roformer_ep_3005_sdr_11.4360.yaml
+    licence_note: No explicit licence found for the weights.
+    notes: Not in the report. Added from the ZFTurbo index as a cheap extra vocal candidate.
+
+  - id: mdx23c_vocals_zfturbo
+    name: MDX23C vocals (ZFTurbo)
+    kind: separator
+    architecture: mdx23c
+    loader: msst
+    stems: [vocals, instrumental]
+    candidate_for: [vocals]
+    tier: baseline
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/docs/pretrained_models.md
+    files:
+      - role: weights
+        filename: model_vocals_mdx23c_sdr_10.17.ckpt
+        url: https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.0/model_vocals_mdx23c_sdr_10.17.ckpt
+        size_bytes: 448101203
+      - role: config
+        filename: config_vocals_mdx23c.yaml
+        url: https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.0/config_vocals_mdx23c.yaml
+        size_bytes: 1197
+    config:
+      model_type: mdx23c
+      config_file: config_vocals_mdx23c.yaml
+    licence_note: Licence of the weights not stated in the index.
+
+  - id: uvr_mdx23c_instvoc_hq
+    name: MDX23C-8KFFT InstVoc HQ (UVR)
+    kind: separator
+    architecture: mdx23c
+    loader: msst
+    stems: [vocals, instrumental]
+    candidate_for: [vocals]
+    tier: extra
+    origin: added
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models
+    files:
+      - role: weights
+        filename: MDX23C-8KFFT-InstVoc_HQ.ckpt
+        url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/MDX23C-8KFFT-InstVoc_HQ.ckpt
+        size_bytes: 448101203
+      - role: config
+        filename: model_2_stem_full_band_8k.yaml
+        url: https://raw.githubusercontent.com/TRvlvr/application_data/main/mdx_model_data/mdx_c_configs/model_2_stem_full_band_8k.yaml
+        size_bytes: 709
+    config:
+      model_type: mdx23c
+      config_file: model_2_stem_full_band_8k.yaml
+    licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
+    notes: Not in the report's table. Listed in UVR's download list next to the MDX-Net models.
+
+  - id: uvr_mdxnet_voc_ft
+    name: UVR-MDX-NET Voc FT
+    kind: separator
+    architecture: mdx_net
+    loader: uvr_mdx_onnx
+    stems: [vocals, instrumental]
+    candidate_for: [vocals]
+    tier: baseline
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models
+    files:
+      - role: weights
+        filename: UVR-MDX-NET-Voc_FT.onnx
+        url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-MDX-NET-Voc_FT.onnx
+        size_bytes: 66762490
+      - &uvr_mdx_model_data
+        role: config_index
+        filename: mdx_model_data.json
+        url: https://raw.githubusercontent.com/TRvlvr/application_data/main/mdx_model_data/model_data_new.json
+        size_bytes: 15358
+    config: &uvr_mdx_config
+      params_from: mdx_model_data.json
+      params_key: md5_of_weights
+    licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
+    unverified: &uvr_mdx_unverified
+      - Which output is the primary stem and the n_fft / dim_f / compensation values. Read them from UVR's model data (keyed by the weight file's MD5) in Phase 1.
+
+  - id: uvr_mdxnet_main
+    name: UVR-MDX-NET Main
+    kind: separator
+    architecture: mdx_net
+    loader: uvr_mdx_onnx
+    stems: [vocals, instrumental]
+    candidate_for: [vocals]
+    tier: baseline
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models
+    files:
+      - role: weights
+        filename: UVR_MDXNET_Main.onnx
+        url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR_MDXNET_Main.onnx
+        size_bytes: 66759214
+      - *uvr_mdx_model_data
+    config: *uvr_mdx_config
+    licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
+    unverified: *uvr_mdx_unverified
+
+  - id: uvr_mdxnet_inst_hq_1
+    name: UVR-MDX-NET Inst HQ 1
+    kind: separator
+    architecture: mdx_net
+    loader: uvr_mdx_onnx
+    stems: [vocals, instrumental]
+    candidate_for: [vocals]
+    tier: baseline
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models
+    files:
+      - role: weights
+        filename: UVR-MDX-NET-Inst_HQ_1.onnx
+        url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-MDX-NET-Inst_HQ_1.onnx
+        size_bytes: 66759214
+      - *uvr_mdx_model_data
+    config: *uvr_mdx_config
+    licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
+    unverified: *uvr_mdx_unverified
+
+  - id: uvr_mdxnet_inst_hq_2
+    name: UVR-MDX-NET Inst HQ 2
+    kind: separator
+    architecture: mdx_net
+    loader: uvr_mdx_onnx
+    stems: [vocals, instrumental]
+    candidate_for: [vocals]
+    tier: baseline
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models
+    files:
+      - role: weights
+        filename: UVR-MDX-NET-Inst_HQ_2.onnx
+        url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-MDX-NET-Inst_HQ_2.onnx
+        size_bytes: 66759214
+      - *uvr_mdx_model_data
+    config: *uvr_mdx_config
+    licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
+    unverified: *uvr_mdx_unverified
+
+  - id: uvr_mdxnet_inst_hq_3
+    name: UVR-MDX-NET Inst HQ 3
+    kind: separator
+    architecture: mdx_net
+    loader: uvr_mdx_onnx
+    stems: [vocals, instrumental]
+    candidate_for: [vocals]
+    tier: baseline
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models
+    files:
+      - role: weights
+        filename: UVR-MDX-NET-Inst_HQ_3.onnx
+        url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-MDX-NET-Inst_HQ_3.onnx
+        size_bytes: 66759214
+      - *uvr_mdx_model_data
+    config: *uvr_mdx_config
+    licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
+    unverified: *uvr_mdx_unverified
+
+  - id: uvr_mdxnet_inst_hq_4
+    name: UVR-MDX-NET Inst HQ 4
+    kind: separator
+    architecture: mdx_net
+    loader: uvr_mdx_onnx
+    stems: [vocals, instrumental]
+    candidate_for: [vocals]
+    tier: baseline
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models
+    files:
+      - role: weights
+        filename: UVR-MDX-NET-Inst_HQ_4.onnx
+        url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-MDX-NET-Inst_HQ_4.onnx
+        size_bytes: 59074342
+      - *uvr_mdx_model_data
+    config: *uvr_mdx_config
+    licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
+    unverified: *uvr_mdx_unverified
+
+  - id: uvr_mdxnet_inst_hq_5
+    name: UVR-MDX-NET Inst HQ 5
+    kind: separator
+    architecture: mdx_net
+    loader: uvr_mdx_onnx
+    stems: [vocals, instrumental]
+    candidate_for: [vocals]
+    tier: baseline
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models
+    files:
+      - role: weights
+        filename: UVR-MDX-NET-Inst_HQ_5.onnx
+        url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-MDX-NET-Inst_HQ_5.onnx
+        size_bytes: 59074342
+      - *uvr_mdx_model_data
+    config: *uvr_mdx_config
+    licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
+    unverified: *uvr_mdx_unverified
+
+  # ---------------------------------------------------------------------------
+  # 4-stem models (vocals / drums / bass / other)
+  # ---------------------------------------------------------------------------
+  - id: scnet_xl_ihf
+    name: SCNet XL IHF (ZFTurbo)
+    kind: separator
+    architecture: scnet
+    loader: msst
+    stems: [vocals, drums, bass, other]
+    candidate_for: [drums, other, bass, vocals]
+    tier: candidate
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/docs/pretrained_models.md
+    files:
+      - role: weights
+        filename: model_scnet_ep_36_sdr_10.0891.ckpt
+        url: https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.15/model_scnet_ep_36_sdr_10.0891.ckpt
+        size_bytes: 214063778
+      - role: config
+        filename: config_musdb18_scnet_xl_more_wide_v5.yaml
+        url: https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.15/config_musdb18_scnet_xl_more_wide_v5.yaml
+        size_bytes: 5906
+    config:
+      model_type: scnet
+      config_file: config_musdb18_scnet_xl_more_wide_v5.yaml
+    licence_note: Licence of the weights not stated in the index (report §1 - licence-ambiguous).
+
+  - id: scnet_xl
+    name: SCNet XL (ZFTurbo)
+    kind: separator
+    architecture: scnet
+    loader: msst
+    stems: [vocals, drums, bass, other]
+    candidate_for: [drums, other, bass, vocals]
+    tier: candidate
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/docs/pretrained_models.md
+    files:
+      - role: weights
+        filename: model_scnet_ep_54_sdr_9.8051.ckpt
+        url: https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.13/model_scnet_ep_54_sdr_9.8051.ckpt
+        size_bytes: 216189106
+      - role: config
+        filename: config_musdb18_scnet_xl.yaml
+        url: https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.13/config_musdb18_scnet_xl.yaml
+        size_bytes: 6015
+    config:
+      model_type: scnet
+      config_file: config_musdb18_scnet_xl.yaml
+    licence_note: Licence of the weights not stated in the index.
+
+  - id: scnet_masked_xl_ihf
+    name: SCNet Masked XL IHF (ZFTurbo)
+    kind: separator
+    architecture: scnet_masked
+    loader: msst
+    stems: [vocals, drums, bass, other]
+    candidate_for: [drums, other, bass, vocals]
+    tier: extra
+    origin: added
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/docs/pretrained_models.md
+    files:
+      - role: weights
+        filename: model_scnet_masked_ep_111_sdr_9.8286.ckpt
+        url: https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.17/model_scnet_masked_ep_111_sdr_9.8286.ckpt
+        size_bytes: 214143287
+      - role: config
+        filename: config_musdb18_scnet_xl_ihf.yaml
+        url: https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.17/config_musdb18_scnet_xl_ihf.yaml
+        size_bytes: 5901
+    config:
+      model_type: null
+      config_file: config_musdb18_scnet_xl_ihf.yaml
+    licence_note: Licence of the weights not stated in the index.
+    notes: Not in the report. A different architecture family from SCNet XL IHF, so a useful ensemble partner to test.
+    unverified:
+      - The MSST --model_type string for the masked SCNet variant.
+
+  - id: scnet_large
+    name: SCNet-large (starrytong)
+    kind: separator
+    architecture: scnet
+    loader: msst
+    stems: [vocals, drums, bass, other]
+    candidate_for: [drums, other, bass, vocals]
+    tier: candidate
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/starrytong/SCNet
+    files:
+      - role: weights
+        filename: SCNet-large_starrytong_fixed.ckpt
+        url: https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.9/SCNet-large_starrytong_fixed.ckpt
+        size_bytes: 168852258
+      - role: config
+        filename: config_musdb18_scnet_large_starrytong.yaml
+        url: https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.9/config_musdb18_scnet_large_starrytong.yaml
+        size_bytes: 1955
+    config:
+      model_type: scnet
+      config_file: config_musdb18_scnet_large_starrytong.yaml
+    licence_note: MIT (starrytong/SCNet, confirmed in issue 35 per report §1).
+    notes: Downloaded from ZFTurbo's mirror of the author's checkpoint ("fixed" for MSST loading).
+
+  - id: scnet_large_zfturbo
+    name: SCNet Large (ZFTurbo retrain)
+    kind: separator
+    architecture: scnet
+    loader: msst
+    stems: [vocals, drums, bass, other]
+    candidate_for: [drums, other, bass, vocals]
+    tier: extra
+    origin: added
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/docs/pretrained_models.md
+    files:
+      - role: weights
+        filename: model_scnet_sdr_9.3244.ckpt
+        url: https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.8/model_scnet_sdr_9.3244.ckpt
+        size_bytes: 168868194
+      - role: config
+        filename: config_musdb18_scnet_large.yaml
+        url: https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.8/config_musdb18_scnet_large.yaml
+        size_bytes: 1956
+    config:
+      model_type: scnet
+      config_file: config_musdb18_scnet_large.yaml
+    licence_note: Licence of the weights not stated in the index.
+    notes: Not in the report. A second SCNet-large training run; low priority.
+
+  - id: scnet_small
+    name: SCNet (starrytong, small)
+    kind: separator
+    architecture: scnet
+    loader: msst
+    stems: [vocals, drums, bass, other]
+    candidate_for: [drums, other, bass, vocals]
+    tier: baseline
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/starrytong/SCNet
+    files:
+      - role: weights
+        filename: scnet_checkpoint_musdb18.ckpt
+        url: https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v.1.0.6/scnet_checkpoint_musdb18.ckpt
+        size_bytes: 42434986
+      - role: config
+        filename: config_musdb18_scnet.yaml
+        url: https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v.1.0.6/config_musdb18_scnet.yaml
+        size_bytes: 1739
+    config:
+      model_type: scnet
+      config_file: config_musdb18_scnet.yaml
+    licence_note: MIT (starrytong/SCNet).
+
+  - id: htdemucs
+    name: HT-Demucs v4 (htdemucs)
+    kind: separator
+    architecture: htdemucs
+    loader: demucs
+    stems: [vocals, drums, bass, other]
+    candidate_for: [bass, drums, other, vocals]
+    tier: candidate
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/adefossez/demucs
+    files:
+      - role: weights
+        filename: 955717e8-8726e21a.th
+        url: https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th
+        size_bytes: 84141911
+    config:
+      bag: htdemucs
+      signatures: ["955717e8"]
+    licence_note: Code MIT. Author states the pretrained weights are for scientific purposes only (report §1, §7).
+
+  - id: htdemucs_ft
+    name: HT-Demucs v4 fine-tuned (htdemucs_ft, bag of 4)
+    kind: separator
+    architecture: htdemucs
+    loader: demucs
+    stems: [vocals, drums, bass, other]
+    candidate_for: [bass, drums, other, vocals]
+    tier: candidate
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/adefossez/demucs
+    files:
+      - role: weights
+        stem: drums
+        filename: f7e0c4bc-ba3fe64a.th
+        url: https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/f7e0c4bc-ba3fe64a.th
+        size_bytes: 84141271
+      - role: weights
+        stem: bass
+        filename: d12395a8-e57c48e6.th
+        url: https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/d12395a8-e57c48e6.th
+        size_bytes: 84141271
+      - role: weights
+        stem: other
+        filename: 92cfc3b6-ef3bcb9c.th
+        url: https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/92cfc3b6-ef3bcb9c.th
+        size_bytes: 84141271
+      - role: weights
+        stem: vocals
+        filename: 04573f0d-f3cf25b2.th
+        url: https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/04573f0d-f3cf25b2.th
+        size_bytes: 84141271
+    config:
+      bag: htdemucs_ft
+      signatures: ["f7e0c4bc", "d12395a8", "92cfc3b6", "04573f0d"]
+    licence_note: Code MIT. Author states the pretrained weights are for scientific purposes only (report §1, §7).
+    notes: One fine-tuned model per stem, so a single-stem request only needs one of the four files.
+
+  - id: bs_roformer_zfturbo_4stem
+    name: BS-RoFormer 4-stem, MUSDB18-HQ (ZFTurbo)
+    kind: separator
+    architecture: bs_roformer
+    loader: msst
+    stems: [vocals, drums, bass, other]
+    candidate_for: [drums, other, bass, vocals]
+    tier: extra
+    origin: added
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/docs/pretrained_models.md
+    files:
+      - role: weights
+        filename: model_bs_roformer_ep_17_sdr_9.6568.ckpt
+        url: https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.12/model_bs_roformer_ep_17_sdr_9.6568.ckpt
+        size_bytes: 527385512
+      - role: config
+        filename: config_bs_roformer_384_8_2_485100.yaml
+        url: https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.12/config_bs_roformer_384_8_2_485100.yaml
+        size_bytes: 4566
+    config:
+      model_type: bs_roformer
+      config_file: config_bs_roformer_384_8_2_485100.yaml
+    licence_note: Licence of the weights not stated in the index.
+    notes: Not in the report. The only downloadable 4-stem BS-RoFormer found; stands in for the unreleased paper model.
+
+  - id: mdx23c_zfturbo_4stem
+    name: MDX23C 4-stem, MUSDB18-HQ (ZFTurbo)
+    kind: separator
+    architecture: mdx23c
+    loader: msst
+    stems: [vocals, drums, bass, other]
+    candidate_for: [drums, other, bass, vocals]
+    tier: baseline
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/docs/pretrained_models.md
+    files:
+      - role: weights
+        filename: model_mdx23c_ep_168_sdr_7.0207.ckpt
+        url: https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.1/model_mdx23c_ep_168_sdr_7.0207.ckpt
+        size_bytes: 448119834
+      - role: config
+        filename: config_musdb18_mdx23c.yaml
+        url: https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.1/config_musdb18_mdx23c.yaml
+        size_bytes: 1217
+    config:
+      model_type: mdx23c
+      config_file: config_musdb18_mdx23c.yaml
+    licence_note: Licence of the weights not stated in the index.
+
+  - id: mdxnet_kuielab_a
+    name: MDX-Net kuielab (model set A, one ONNX per stem)
+    kind: separator
+    architecture: mdx_net
+    loader: uvr_mdx_onnx
+    stems: [vocals, drums, bass, other]
+    candidate_for: [drums, other, bass, vocals]
+    tier: baseline
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/kuielab/mdx-net
+    files:
+      - role: weights
+        stem: vocals
+        filename: kuielab_a_vocals.onnx
+        url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/kuielab_a_vocals.onnx
+        size_bytes: 29703204
+      - role: weights
+        stem: drums
+        filename: kuielab_a_drums.onnx
+        url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/kuielab_a_drums.onnx
+        size_bytes: 29703204
+      - role: weights
+        stem: bass
+        filename: kuielab_a_bass.onnx
+        url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/kuielab_a_bass.onnx
+        size_bytes: 29703204
+      - role: weights
+        stem: other
+        filename: kuielab_a_other.onnx
+        url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/kuielab_a_other.onnx
+        size_bytes: 29703204
+      - *uvr_mdx_model_data
+    config: *uvr_mdx_config
+    licence_note: MIT (kuielab/mdx-net, report §10).
+    unverified: *uvr_mdx_unverified
+
+  - id: mdxnet_kuielab_b
+    name: MDX-Net kuielab (model set B, one ONNX per stem)
+    kind: separator
+    architecture: mdx_net
+    loader: uvr_mdx_onnx
+    stems: [vocals, drums, bass, other]
+    candidate_for: [drums, other, bass, vocals]
+    tier: baseline
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/kuielab/mdx-net
+    files:
+      - role: weights
+        stem: vocals
+        filename: kuielab_b_vocals.onnx
+        url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/kuielab_b_vocals.onnx
+        size_bytes: 29703204
+      - role: weights
+        stem: drums
+        filename: kuielab_b_drums.onnx
+        url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/kuielab_b_drums.onnx
+        size_bytes: 21930313
+      - role: weights
+        stem: bass
+        filename: kuielab_b_bass.onnx
+        url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/kuielab_b_bass.onnx
+        size_bytes: 29703204
+      - role: weights
+        stem: other
+        filename: kuielab_b_other.onnx
+        url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/kuielab_b_other.onnx
+        size_bytes: 29703204
+      - *uvr_mdx_model_data
+    config: *uvr_mdx_config
+    licence_note: MIT (kuielab/mdx-net, report §10).
+    unverified: *uvr_mdx_unverified
+
+  - id: bs_roformer_viperx_other
+    name: BS-RoFormer "other" single-stem (viperx ep_937)
+    kind: separator
+    architecture: bs_roformer
+    loader: msst
+    stems: [other]
+    candidate_for: [other]
+    tier: extra
+    origin: added
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/docs/pretrained_models.md
+    files:
+      - role: weights
+        filename: model_bs_roformer_ep_937_sdr_10.5309.ckpt
+        url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/model_bs_roformer_ep_937_sdr_10.5309.ckpt
+        size_bytes: 393068365
+      - role: config
+        filename: model_bs_roformer_ep_937_sdr_10.5309.yaml
+        url: https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/viperx/model_bs_roformer_ep_937_sdr_10.5309.yaml
+        size_bytes: 2351
+    config:
+      model_type: bs_roformer
+      config_file: model_bs_roformer_ep_937_sdr_10.5309.yaml
+    licence_note: No explicit licence found for the weights.
+    notes: Not in the report. "other" here is the 4-stem MUSDB "other", which still contains guitar and piano; in a 6-stem job it needs guitar and piano subtracted.
+    unverified:
+      - That this model's "other" target is MUSDB-style other and not an instrumental. Check its config in Phase 1.
+
+  # ---------------------------------------------------------------------------
+  # 6-stem and guitar / piano
+  # ---------------------------------------------------------------------------
+  - id: bs_roformer_sw_6stem
+    name: BS-RoFormer-SW 6-stem (jarredou)
+    kind: separator
+    architecture: bs_roformer
+    loader: msst
+    stems: [vocals, drums, bass, guitar, piano, other]
+    candidate_for: [guitar, piano, bass, drums, other, vocals]
+    tier: candidate
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/nomadkaraoke/python-audio-separator/releases/tag/model-configs
+    files:
+      - role: weights
+        filename: BS-Roformer-SW.ckpt
+        url: https://github.com/nomadkaraoke/python-audio-separator/releases/download/model-configs/BS-Roformer-SW.ckpt
+        size_bytes: 699412152
+      - role: config
+        filename: BS-Roformer-SW.yaml
+        url: https://github.com/nomadkaraoke/python-audio-separator/releases/download/model-configs/BS-Roformer-SW.yaml
+        size_bytes: 4653
+    config:
+      model_type: bs_roformer
+      config_file: BS-Roformer-SW.yaml
+    licence_note: No licence stated (report §1).
+    notes: The report names the file BS-Rofo-SW-Fixed.ckpt on jarredou's Hugging Face; that repo returned HTTP 401 on 2026-11-22, so this entry uses the audio-separator mirror (see docs/corrections.md C3).
+    unverified:
+      - That the mirrored BS-Roformer-SW.ckpt is byte-identical to the report's BS-Rofo-SW-Fixed.ckpt (sizes agree at 699 MB; hashes not compared).
+      - The stem order in the config; read it in Phase 1 before mapping outputs.
+
+  - id: htdemucs_6s
+    name: HT-Demucs v4 6-source (htdemucs_6s)
+    kind: separator
+    architecture: htdemucs
+    loader: demucs
+    stems: [vocals, drums, bass, guitar, piano, other]
+    candidate_for: [guitar, piano]
+    tier: baseline
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/adefossez/demucs
+    files:
+      - role: weights
+        filename: 5c90dfd2-34c22ccb.th
+        url: https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/5c90dfd2-34c22ccb.th
+        size_bytes: 54996327
+    config:
+      bag: htdemucs_6s
+      signatures: ["5c90dfd2"]
+    licence_note: Code MIT. Author states the pretrained weights are for scientific purposes only (report §1, §7).
+    notes: Baseline only. Its author describes the piano source as not working well.
+
+  - id: mel_roformer_guitar_becruily
+    name: Mel-Band RoFormer guitar (becruily)
+    kind: separator
+    architecture: mel_band_roformer
+    loader: msst
+    stems: [guitar]
+    candidate_for: [guitar]
+    tier: candidate
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://huggingface.co/becruily/mel-band-roformer-guitar
+    files:
+      - role: weights
+        filename: becruily_guitar.ckpt
+        url: https://huggingface.co/becruily/mel-band-roformer-guitar/resolve/main/becruily_guitar.ckpt
+        size_bytes: 45142183
+      - role: config
+        filename: config_guitar_becruily.yaml
+        url: https://huggingface.co/becruily/mel-band-roformer-guitar/resolve/main/config_guitar_becruily.yaml
+        size_bytes: 1411
+    config:
+      model_type: mel_band_roformer
+      config_file: config_guitar_becruily.yaml
+    licence_note: Non-commercial per the model card (report §1). No licence field in the Hugging Face metadata.
+    unverified:
+      - Whether the config also emits a second "everything else" output.
+
+  # ---------------------------------------------------------------------------
+  # Lead vs backing vocals (run on the vocals stem or on the mix)
+  # ---------------------------------------------------------------------------
+  - id: mel_roformer_karaoke_aufr33_viperx
+    name: Mel-Band RoFormer Karaoke (aufr33 + viperx)
+    kind: separator
+    architecture: mel_band_roformer
+    loader: msst
+    stems: [lead_vocals, backing_vocals]
+    candidate_for: [vocal_split]
+    tier: candidate
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models
+    files:
+      - role: weights
+        filename: mel_band_roformer_karaoke_aufr33_viperx_sdr_10.1956.ckpt
+        url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/mel_band_roformer_karaoke_aufr33_viperx_sdr_10.1956.ckpt
+        size_bytes: 913096801
+      - role: config
+        filename: config_mel_band_roformer_karaoke.yaml
+        url: https://raw.githubusercontent.com/TRvlvr/application_data/main/mdx_model_data/mdx_c_configs/config_mel_band_roformer_karaoke.yaml
+        size_bytes: 1794
+    config:
+      model_type: mel_band_roformer
+      config_file: config_mel_band_roformer_karaoke.yaml
+    licence_note: No explicit licence found for the weights.
+    unverified: &karaoke_unverified
+      - Output semantics. Karaoke models usually emit lead vocals and "karaoke" (instrumental plus backing). Backing vocals alone then come from running on the isolated vocals stem. Confirm against the config and by ear on the synthetic fixture in Phase 1.
+
+  - id: bs_roformer_karaoke_frazer_becruily
+    name: BS-RoFormer Karaoke (frazer + becruily)
+    kind: separator
+    architecture: bs_roformer
+    loader: msst
+    stems: [lead_vocals, backing_vocals]
+    candidate_for: [vocal_split]
+    tier: extra
+    origin: added
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/nomadkaraoke/python-audio-separator/releases/tag/model-configs
+    files:
+      - role: weights
+        filename: bs_roformer_karaoke_frazer_becruily.ckpt
+        url: https://github.com/nomadkaraoke/python-audio-separator/releases/download/model-configs/bs_roformer_karaoke_frazer_becruily.ckpt
+        size_bytes: 204436907
+      - role: config
+        filename: config_bs_roformer_karaoke_frazer_becruily.yaml
+        url: https://github.com/nomadkaraoke/python-audio-separator/releases/download/model-configs/config_bs_roformer_karaoke_frazer_becruily.yaml
+        size_bytes: 1903
+    config:
+      model_type: bs_roformer
+      config_file: config_bs_roformer_karaoke_frazer_becruily.yaml
+    licence_note: Licence not checked.
+    notes: Not in the report's table, but its "best per stem" summary cites a BS-RoFormer karaoke model as best on published evidence. Found in audio-separator's model list.
+    unverified: *karaoke_unverified
+
+  - id: bs_roformer_karaoke_anvuew
+    name: BS-RoFormer Karaoke (anvuew)
+    kind: separator
+    architecture: bs_roformer
+    loader: msst
+    stems: [lead_vocals, backing_vocals]
+    candidate_for: [vocal_split]
+    tier: extra
+    origin: added
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/nomadkaraoke/python-audio-separator/releases/tag/model-configs
+    files:
+      - role: weights
+        filename: bs_roformer_karaoke_anvuew.ckpt
+        url: https://github.com/nomadkaraoke/python-audio-separator/releases/download/model-configs/bs_roformer_karaoke_anvuew.ckpt
+        size_bytes: 204486925
+      - role: config
+        filename: config_bs_roformer_karaoke_anvuew.yaml
+        url: https://github.com/nomadkaraoke/python-audio-separator/releases/download/model-configs/config_bs_roformer_karaoke_anvuew.yaml
+        size_bytes: 1973
+    config:
+      model_type: bs_roformer
+      config_file: config_bs_roformer_karaoke_anvuew.yaml
+    licence_note: Licence not checked.
+    notes: Not in the report. Found in audio-separator's model list.
+    unverified: *karaoke_unverified
+
+  - id: mel_roformer_karaoke_becruily
+    name: Mel-Band RoFormer Karaoke (becruily)
+    kind: separator
+    architecture: mel_band_roformer
+    loader: msst
+    stems: [lead_vocals, backing_vocals]
+    candidate_for: [vocal_split]
+    tier: extra
+    origin: added
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/nomadkaraoke/python-audio-separator/releases/tag/model-configs
+    files:
+      - role: weights
+        filename: mel_band_roformer_karaoke_becruily.ckpt
+        url: https://github.com/nomadkaraoke/python-audio-separator/releases/download/model-configs/mel_band_roformer_karaoke_becruily.ckpt
+        size_bytes: 1719139254
+      - role: config
+        filename: config_mel_band_roformer_karaoke_becruily.yaml
+        url: https://github.com/nomadkaraoke/python-audio-separator/releases/download/model-configs/config_mel_band_roformer_karaoke_becruily.yaml
+        size_bytes: 1724
+    config:
+      model_type: mel_band_roformer
+      config_file: config_mel_band_roformer_karaoke_becruily.yaml
+    licence_note: Licence not checked.
+    notes: Not in the report. Found in audio-separator's model list. Large (about 1.7 GB).
+    unverified: *karaoke_unverified
+
+  - id: uvr_vr_5hp_karaoke
+    name: UVR 5_HP-Karaoke (VR arch)
+    kind: separator
+    architecture: vr_arch
+    loader: uvr_vr
+    stems: [lead_vocals, backing_vocals]
+    candidate_for: [vocal_split]
+    tier: baseline
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models
+    files:
+      - role: weights
+        filename: 5_HP-Karaoke-UVR.pth
+        url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/5_HP-Karaoke-UVR.pth
+        size_bytes: 126782699
+      - &uvr_vr_model_data
+        role: config_index
+        filename: vr_model_data.json
+        url: https://raw.githubusercontent.com/TRvlvr/application_data/main/vr_model_data/model_data_new.json
+        size_bytes: 4380
+    config: &uvr_vr_config
+      params_from: vr_model_data.json
+      params_key: md5_of_weights
+    licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
+    unverified: &uvr_vr_unverified
+      - VR-arch band parameters and which output is primary. Read them from UVR's VR model data (keyed by the weight file's MD5) in Phase 1.
+
+  - id: uvr_vr_6hp_karaoke
+    name: UVR 6_HP-Karaoke (VR arch)
+    kind: separator
+    architecture: vr_arch
+    loader: uvr_vr
+    stems: [lead_vocals, backing_vocals]
+    candidate_for: [vocal_split]
+    tier: baseline
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models
+    files:
+      - role: weights
+        filename: 6_HP-Karaoke-UVR.pth
+        url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/6_HP-Karaoke-UVR.pth
+        size_bytes: 126782699
+      - *uvr_vr_model_data
+    config: *uvr_vr_config
+    licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
+    unverified: *uvr_vr_unverified
+
+  - id: uvr_mdxnet_kara
+    name: UVR-MDX-NET Karaoke
+    kind: separator
+    architecture: mdx_net
+    loader: uvr_mdx_onnx
+    stems: [lead_vocals, backing_vocals]
+    candidate_for: [vocal_split]
+    tier: baseline
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models
+    files:
+      - role: weights
+        filename: UVR_MDXNET_KARA.onnx
+        url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR_MDXNET_KARA.onnx
+        size_bytes: 29704436
+      - *uvr_mdx_model_data
+    config: *uvr_mdx_config
+    licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
+    unverified: *uvr_mdx_unverified
+
+  - id: uvr_mdxnet_kara_2
+    name: UVR-MDX-NET Karaoke 2
+    kind: separator
+    architecture: mdx_net
+    loader: uvr_mdx_onnx
+    stems: [lead_vocals, backing_vocals]
+    candidate_for: [vocal_split]
+    tier: baseline
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models
+    files:
+      - role: weights
+        filename: UVR_MDXNET_KARA_2.onnx
+        url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR_MDXNET_KARA_2.onnx
+        size_bytes: 52786726
+      - *uvr_mdx_model_data
+    config: *uvr_mdx_config
+    licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
+    unverified: *uvr_mdx_unverified
+
+  # ---------------------------------------------------------------------------
+  # De-reverb / de-echo / de-noise (run on a stem, usually vocals)
+  # ---------------------------------------------------------------------------
+  - id: mel_roformer_dereverb_anvuew
+    name: Mel-Band RoFormer De-Reverb (anvuew)
+    kind: separator
+    architecture: mel_band_roformer
+    loader: msst
+    stems: [dry]
+    candidate_for: [dereverb]
+    tier: candidate
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://huggingface.co/anvuew/dereverb_mel_band_roformer
+    files:
+      - role: weights
+        filename: dereverb_mel_band_roformer_anvuew_sdr_19.1729.ckpt
+        url: https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/dereverb_mel_band_roformer_anvuew_sdr_19.1729.ckpt
+        size_bytes: 913107578
+      - role: config
+        filename: dereverb_mel_band_roformer_anvuew.yaml
+        url: https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/dereverb_mel_band_roformer_anvuew.yaml
+        size_bytes: 1846
+    config:
+      model_type: mel_band_roformer
+      config_file: dereverb_mel_band_roformer_anvuew.yaml
+    licence_note: GPL-3.0 per Hugging Face card metadata (checked 2026-11-22).
+    notes: The same repo also holds a less-aggressive and a mono variant; add them here if the benchmark shows the default over-processes.
+
+  - id: mel_roformer_dereverb_echo_sucial
+    name: Mel-Band RoFormer De-Reverb / De-Echo (Sucial)
+    kind: separator
+    architecture: mel_band_roformer
+    loader: msst
+    stems: [dry]
+    candidate_for: [dereverb]
+    tier: candidate
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://huggingface.co/Sucial/Dereverb-Echo_Mel_Band_Roformer
+    files:
+      - role: weights
+        filename: dereverb-echo_mel_band_roformer_sdr_10.0169.ckpt
+        url: https://huggingface.co/Sucial/Dereverb-Echo_Mel_Band_Roformer/resolve/main/dereverb-echo_mel_band_roformer_sdr_10.0169.ckpt
+        size_bytes: 835997896
+      - role: config
+        filename: config_dereverb-echo_mel_band_roformer.yaml
+        url: https://huggingface.co/Sucial/Dereverb-Echo_Mel_Band_Roformer/resolve/main/config_dereverb-echo_mel_band_roformer.yaml
+        size_bytes: 1925
+    config:
+      model_type: mel_band_roformer
+      config_file: config_dereverb-echo_mel_band_roformer.yaml
+    licence_note: CC BY-NC-SA 4.0 per Hugging Face card metadata (checked 2026-11-22).
+    notes: The repo also holds newer v2 / "big reverb" checkpoints (about 456 MB each) worth a look if this one benchmarks well.
+
+  - id: uvr_vr_deecho_dereverb
+    name: UVR-DeEcho-DeReverb (VR arch, FoxJoy)
+    kind: separator
+    architecture: vr_arch
+    loader: uvr_vr
+    stems: [dry]
+    candidate_for: [dereverb]
+    tier: baseline
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models
+    files:
+      - role: weights
+        filename: UVR-DeEcho-DeReverb.pth
+        url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-DeEcho-DeReverb.pth
+        size_bytes: 223650277
+      - *uvr_vr_model_data
+    config: *uvr_vr_config
+    licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
+    unverified: *uvr_vr_unverified
+
+  - id: uvr_vr_deecho_normal
+    name: UVR-De-Echo-Normal (VR arch, FoxJoy)
+    kind: separator
+    architecture: vr_arch
+    loader: uvr_vr
+    stems: [dry]
+    candidate_for: [dereverb]
+    tier: baseline
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models
+    files:
+      - role: weights
+        filename: UVR-De-Echo-Normal.pth
+        url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-De-Echo-Normal.pth
+        size_bytes: 127139365
+      - *uvr_vr_model_data
+    config: *uvr_vr_config
+    licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
+    unverified: *uvr_vr_unverified
+
+  - id: uvr_vr_deecho_aggressive
+    name: UVR-De-Echo-Aggressive (VR arch, FoxJoy)
+    kind: separator
+    architecture: vr_arch
+    loader: uvr_vr
+    stems: [dry]
+    candidate_for: [dereverb]
+    tier: baseline
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models
+    files:
+      - role: weights
+        filename: UVR-De-Echo-Aggressive.pth
+        url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-De-Echo-Aggressive.pth
+        size_bytes: 127139365
+      - *uvr_vr_model_data
+    config: *uvr_vr_config
+    licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
+    unverified: *uvr_vr_unverified
+
+  - id: uvr_vr_denoise
+    name: UVR-DeNoise (VR arch, FoxJoy)
+    kind: separator
+    architecture: vr_arch
+    loader: uvr_vr
+    stems: [dry]
+    candidate_for: []
+    tier: extra
+    origin: report_s1
+    status: available
+    sample_rate_hz: 44100
+    source_page: https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models
+    files:
+      - role: weights
+        filename: UVR-DeNoise.pth
+        url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-DeNoise.pth
+        size_bytes: 127139365
+      - *uvr_vr_model_data
+    config: *uvr_vr_config
+    licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
+    notes: De-noise is not a v1 feature. Registered because the report lists it; not a candidate for any slot.
+    unverified: *uvr_vr_unverified
+
+  # ---------------------------------------------------------------------------
+  # In the report's table but with no downloadable weights (tracked, not loadable)
+  # ---------------------------------------------------------------------------
+  - id: bs_roformer_paper
+    name: BS-RoFormer paper model (ByteDance)
+    kind: separator
+    architecture: bs_roformer
+    loader: none
+    stems: [vocals, drums, bass, other]
+    candidate_for: []
+    tier: watch
+    origin: report_s1
+    status: unavailable
+    sample_rate_hz: 44100
+    source_page: https://arxiv.org/abs/2309.02612
+    files: []
+    config: {}
+    licence_note: No weights released.
+    notes: Paper only. bs_roformer_zfturbo_4stem is the closest downloadable stand-in.
+
+  - id: mel_roformer_paper
+    name: Mel-Band RoFormer paper model
+    kind: separator
+    architecture: mel_band_roformer
+    loader: none
+    stems: [vocals, drums, bass, other]
+    candidate_for: []
+    tier: watch
+    origin: report_s1
+    status: unavailable
+    sample_rate_hz: 44100
+    source_page: https://arxiv.org/abs/2310.01809
+    files: []
+    config: {}
+    licence_note: No weights released.
+
+  - id: subroformer
+    name: SubRoFormer (arXiv 2611.08130)
+    kind: separator
+    architecture: subroformer
+    loader: none
+    stems: [vocals, drums, bass, other]
+    candidate_for: []
+    tier: watch
+    origin: report_s1
+    status: unavailable
+    sample_rate_hz: 44100
+    source_page: https://arxiv.org/abs/2611.08130
+    files: []
+    config: {}
+    licence_note: Licence unverified (report §11).
+    notes: November 2026 paper, results unreplicated. Re-check for released weights at the start of Phase 2.
+    unverified:
+      - Whether any checkpoint has been published.
+
+  - id: sony_mimo_bs_roformer
+    name: Sony MIMO BS-RoFormer (2-stem)
+    kind: separator
+    architecture: bs_roformer
+    loader: none
+    stems: [vocals, instrumental]
+    candidate_for: []
+    tier: watch
+    origin: report_s1
+    status: unavailable
+    sample_rate_hz: 44100
+    source_page: https://arxiv.org/abs/2609.07226
+    files: []
+    config: {}
+    licence_note: Licence unverified (report §11).
+    notes: Re-check for released weights at the start of Phase 2.
+    unverified:
+      - Whether any checkpoint has been published.
+      - That arXiv 2609.07226 is this model's paper; the report lists the link without naming it.
+
+  # ---------------------------------------------------------------------------
+  # Listening layer (report §5): taggers and the Clef-omni test subject
+  # ---------------------------------------------------------------------------
+  - id: beats_iter3plus_as2m_cpt2
+    name: BEATs iter3+ AS2M, fine-tuned on AS2M (cpt2)
+    kind: tagger
+    architecture: beats
+    loader: beats
+    stems: []
+    candidate_for: [tagging]
+    tier: candidate
+    origin: report_s5
+    status: available
+    sample_rate_hz: 16000
+    source_page: https://github.com/microsoft/unilm/tree/master/beats
+    files:
+      - role: weights
+        filename: BEATs_iter3_plus_AS2M_finetuned_on_AS2M_cpt2.pt
+        url: https://1drv.ms/u/s!AqeByhGUtINrgcpj8ujXH1YUtxooEg?e=E9Ncea
+        size_bytes: null
+    config:
+      num_classes: 527
+      label_map: audioset_ontology
+      window_seconds: 10
+    licence_note: MIT (microsoft/unilm LICENSE, checked 2026-11-22).
+    notes: Primary tagger. 16 kHz mono input, so it cannot hear above 8 kHz; CLAP covers that range.
+    unverified:
+      - The OneDrive share link is the only official source and cannot be size-checked with a HEAD request. If it is dead in Phase 1, a mirror is needed (see BLOCKED.md).
+      - The exact filename the share link serves.
+
+  - id: laion_clap_music
+    name: LAION-CLAP music (music_audioset_epoch_15_esc_90.14, HTSAT-base)
+    kind: tagger
+    architecture: clap_htsat_base
+    loader: laion_clap
+    stems: []
+    candidate_for: [tagging]
+    tier: candidate
+    origin: report_s5
+    status: available
+    sample_rate_hz: 48000
+    source_page: https://huggingface.co/lukewys/laion_clap
+    files:
+      - role: weights
+        filename: music_audioset_epoch_15_esc_90.14.pt
+        url: https://huggingface.co/lukewys/laion_clap/resolve/main/music_audioset_epoch_15_esc_90.14.pt
+        size_bytes: 2352471003
+    config:
+      amodel: HTSAT-base
+      enable_fusion: false
+    licence_note: CC0-1.0 per Hugging Face repo metadata (checked 2026-11-22); the report had this as unverified.
+    notes: Second opinion for content above 8 kHz and for zero-shot text prompts.
+
+  - id: panns_cnn14
+    name: PANNs CNN14 (AudioSet)
+    kind: tagger
+    architecture: panns_cnn14
+    loader: panns
+    stems: []
+    candidate_for: [tagging]
+    tier: baseline
+    origin: report_s5
+    status: available
+    sample_rate_hz: 32000
+    source_page: https://zenodo.org/records/3987831
+    files:
+      - role: weights
+        filename: Cnn14_mAP=0.431.pth
+        url: https://zenodo.org/records/3987831/files/Cnn14_mAP%3D0.431.pth
+        size_bytes: 327428481
+    config:
+      num_classes: 527
+      label_map: audioset_ontology
+    licence_note: Code MIT, checkpoint CC BY 4.0 (report §5).
+    notes: Backup tagger only.
+
+  - id: mert_v1_95m
+    name: MERT-v1-95M (needs a trained probe)
+    kind: tagger
+    architecture: mert
+    loader: hf_transformers
+    stems: []
+    candidate_for: [tagging]
+    tier: extra
+    origin: report_s5
+    status: available
+    sample_rate_hz: 24000
+    source_page: https://huggingface.co/m-a-p/MERT-v1-95M
+    files:
+      - role: weights
+        filename: pytorch_model.bin
+        url: https://huggingface.co/m-a-p/MERT-v1-95M/resolve/main/pytorch_model.bin
+        size_bytes: 377552987
+      - role: config
+        filename: config.json
+        url: https://huggingface.co/m-a-p/MERT-v1-95M/resolve/main/config.json
+        size_bytes: 1817
+    config:
+      hf_repo: m-a-p/MERT-v1-95M
+      hf_revision: 12af15fef9d0
+      requires_trust_remote_code: true
+    licence_note: Code Apache-2.0, weights CC BY-NC 4.0 per Hugging Face card metadata (checked 2026-11-22).
+    notes: Not a tagger out of the box. Only promoted if a small probe trained on MoisesDB stems beats BEATs. Loading runs code from the model repo, so pin hf_revision to a full commit hash before first use.
+    unverified:
+      - hf_revision above is the 12-character prefix seen on 2026-11-22; resolve it to the full hash in Phase 3.
+
+  - id: essentia_mtg_jamendo_instrument
+    name: Essentia MTG-Jamendo instrument (discogs-effnet head)
+    kind: tagger
+    architecture: effnet_discogs
+    loader: essentia_tf
+    stems: []
+    candidate_for: [tagging]
+    tier: extra
+    origin: report_s5
+    status: available
+    sample_rate_hz: 16000
+    source_page: https://essentia.upf.edu/models.html
+    files:
+      - role: weights
+        filename: mtg_jamendo_instrument-discogs-effnet-1.pb
+        url: https://essentia.upf.edu/models/classification-heads/mtg_jamendo_instrument/mtg_jamendo_instrument-discogs-effnet-1.pb
+        size_bytes: 2706836
+      - role: weights
+        filename: discogs-effnet-bs64-1.pb
+        url: https://essentia.upf.edu/models/feature-extractors/discogs-effnet/discogs-effnet-bs64-1.pb
+        size_bytes: 18366619
+      - role: config
+        filename: mtg_jamendo_instrument-discogs-effnet-1.json
+        url: https://essentia.upf.edu/models/classification-heads/mtg_jamendo_instrument/mtg_jamendo_instrument-discogs-effnet-1.json
+        size_bytes: 3382
+    config:
+      num_classes: 40
+      embedding_model: discogs-effnet-bs64-1.pb
+    licence_note: Library AGPL-3.0; model licence stated inconsistently as CC BY-NC-SA 4.0 and CC BY-NC-ND 4.0 (report §5).
+    notes: Allowed if it tests better than BEATs (project decision 6).
+    unverified:
+      - Whether essentia-tensorflow installs on this machine's Python and platform.
+
+  - id: clef_omni
+    name: Clef-omni (Cloudflare Workers AI, hosted)
+    kind: decision_model
+    architecture: qwen3_omni_decision_head
+    loader: workers_ai
+    stems: []
+    candidate_for: [listening_test]
+    tier: candidate
+    origin: report_s5
+    status: hosted
+    sample_rate_hz: 16000
+    source_page: https://developers.cloudflare.com/workers-ai/models/clef-omni/
+    files: []
+    config:
+      model_id: "@cf/cloudflare/clef-omni"
+      request_model_field: clef-omni
+      max_questions_per_request: 64
+      max_audio_clips_per_request: 4
+      max_clip_bytes: 8388608
+      max_clip_seconds: 300
+      context_tokens: 64000
+      audio_tokens_per_minute: 780
+    licence_note: Apache-2.0 per Hugging Face card metadata (checked 2026-11-22).
+    notes: Not in the main path. Test subject for the pre-registered Phase 3 test only. Limits above were read from the Workers AI model page on 2026-11-22. Open weights exist at huggingface.co/Cloudflare/clef-omni (15 shards, about 70.7 GB in total) and are never downloaded by our scripts.
+    unverified:
+      - Whether the hosted endpoint resamples to 16 kHz mono itself. We always send 16 kHz mono so the question does not affect the test.
+      - The rate limit (report's best reading is 300 requests per minute).
+      - What "16 MiB decoded" means for combined audio.

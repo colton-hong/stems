@@ -1,0 +1,60 @@
+# Working in this repo
+
+A web-based audio stem separator. Personal, non-commercial. The goal is the best separation
+quality open models can give, shown with reproducible benchmarks.
+
+## Every iteration
+
+1. Read `PROGRESS.md`. It is the single source of truth. Then `BLOCKED.md`.
+2. Take the first unticked, unblocked task in the current phase. One task per iteration.
+3. Implement it, run `make check`, commit with a clear message, tick the task with a
+   one-line note. Tick only when the acceptance check passes.
+4. If the phase has no unticked unblocked tasks left, write the phase summary in
+   `PROGRESS.md` and stop. Never start the next phase on your own.
+5. If the same task fails three iterations in a row, write what you tried in `BLOCKED.md`
+   and move on.
+
+`PLAN.md` holds the design and the decisions already made. Do not reopen those decisions.
+`docs/research-report.pdf` is the research behind them; `docs/corrections.md` lists where it
+was wrong. Where the report and `PLAN.md` disagree, `PLAN.md` wins.
+
+## Rules
+
+- Never invent a benchmark number, timing or price. Every figure in a report comes from a
+  run in this repo, with the command that produced it. If a run has not happened, say so.
+- Never copy the report's published SDR figures into our results or compare our numbers
+  with them. The protocols differ.
+- Model choice is by measured quality only. `licence_note` in the registry is informational
+  and must never gate anything.
+- Do not sign up for, buy or submit anything. Accounts, keys, dataset access and quota
+  requests are the owner's. Read keys from environment variables. Never commit secrets or
+  print them in logs.
+- Do not try to obtain MUSDB18-HQ or MoisesDB. Read them from the paths in `.env`.
+- Never commit model weights, dataset audio or any real music. Tests and examples use the
+  synthetic fixture only.
+- The Jev model is always the pinned `jev-1.14.0`, never an alias. Every Jev-driven
+  decision needs a deterministic fallback that works with no key.
+- If the report is wrong about something, add it to `docs/corrections.md` with its source
+  and proceed on the corrected fact.
+- Tasks must be idempotent. Check for existing downloads, cached results and finished runs
+  before redoing work.
+- Long jobs run in the background, log under `runs/`, write a `status.json`, and are
+  checked by a later iteration instead of being waited on.
+
+## Commands
+
+```
+make setup              # create .venv, install the project and dev tools
+make check              # ruff + pytest; run before every commit
+make registry           # validate models/registry.yaml and print it
+make registry-sources   # HEAD every model URL and refresh sizes (network)
+make web-check          # needs Node.js (BLOCKED.md B1)
+```
+
+## Environment notes
+
+- The interpreter is `.venv/bin/python` (python.org 3.14, no system CA bundle: use
+  `certifi` for HTTPS).
+- No Node.js, ffmpeg or Homebrew is installed. Do not install system software; ask in
+  `BLOCKED.md`.
+- Apple Silicon, no NVIDIA GPU. Local timings are MPS or CPU and must be labelled as such.

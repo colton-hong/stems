@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - run: python -m pip install -e ".[dev]"
+      - run: python -m ruff check .
+      - run: python -m ruff format --check .
+      - run: python -m stems_models
+      - run: python -m pytest
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      # The web job only does work once dependencies have been installed locally and
+      # the lockfile committed (PROGRESS.md P0.9). Until then every step is skipped.
+      - uses: actions/setup-node@v4
+        if: hashFiles('web/package-lock.json') != ''
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+        if: hashFiles('web/package-lock.json') != ''
+      - run: npm run lint
+        if: hashFiles('web/package-lock.json') != ''
+      - run: npm run typecheck
+        if: hashFiles('web/package-lock.json') != ''
+      - run: npm run build
+        if: hashFiles('web/package-lock.json') != ''
