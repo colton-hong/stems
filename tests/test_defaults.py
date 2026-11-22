@@ -85,3 +85,11 @@ def test_check_defaults_reports_unknown_and_wrong_slot_models(raw: dict) -> None
     assert any(
         "mel_roformer_kim_vocals" in p and "not a registered candidate" in p for p in problems
     )
+
+
+def test_check_defaults_refuses_a_blend_of_two_kinds_of_other(raw: dict) -> None:
+    # scnet_xl_ihf's "other" still holds guitar and piano; bs_roformer_sw_6stem's does not.
+    raw["ensembles"]["slots"]["other"]["two_model_blend"] = ["scnet_xl_ihf", "bs_roformer_sw_6stem"]
+    problems = check_defaults(Defaults.model_validate(raw), load_registry())
+    assert "other: two_model_blend mixes four-stem and six-stem 'other' models" in problems
+    assert not any("full_ensemble mixes" in p for p in problems)

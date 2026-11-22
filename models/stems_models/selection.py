@@ -24,4 +24,15 @@ def check_defaults(defaults: Defaults, registry: Registry) -> list[str]:
             problems.append(f"{slot}: two_model_blend should include the single_best model")
         if not set(models.two_model_blend) <= set(models.full_ensemble):
             problems.append(f"{slot}: full_ensemble should include both blend models")
+        if slot == "other":
+            # Averaging a four-stem "other" (guitar and piano still in it) with a six-stem
+            # one would average two different things.
+            for mode in ("two_model_blend", "full_ensemble"):
+                kinds = {
+                    registry.get(m).other_contains_guitar_piano
+                    for m in getattr(models, mode)
+                    if m in registry
+                }
+                if len(kinds) > 1:
+                    problems.append(f"other: {mode} mixes four-stem and six-stem 'other' models")
     return problems
