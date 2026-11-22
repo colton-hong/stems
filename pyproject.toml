@@ -49,6 +49,7 @@ api = []
 
 [project.scripts]
 separate = "stems_worker.cli:main"
+bench = "stems_bench.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["common", "models", "worker", "bench", "api"]

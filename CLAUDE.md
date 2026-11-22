@@ -53,6 +53,8 @@ make smoke              # run every separator on the fixture; report in runs/smo
 make env                # write runs/env/worker.json (devices, package versions)
 .venv/bin/separate FILE --stems all   # run the pipeline on one file
 .venv/bin/python -m stems_worker.timing   # median speed per model and device, from runs/timings.jsonl
+.venv/bin/bench run --dataset synthetic --all   # benchmark; resumable, results in runs/bench/
+.venv/bin/bench status  # progress of the latest benchmark run
 make registry           # validate models/registry.yaml and print it
 make registry-sources   # HEAD every model URL and refresh sizes (network)
 make models-status      # which model files are downloaded or in progress
