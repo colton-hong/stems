@@ -49,6 +49,7 @@ was wrong. Where the report and `PLAN.md` disagree, `PLAN.md` wins.
 make setup              # create .venv, install the project and dev tools
 make check              # ruff + pytest; run before every commit
 make test-slow          # tests that load real checkpoints (need downloaded weights)
+make smoke              # run every separator on the fixture; report in runs/smoke/
 make env                # write runs/env/worker.json (devices, package versions)
 .venv/bin/separate FILE --stems all   # run the pipeline on one file
 .venv/bin/python -m stems_worker.timing   # median speed per model and device, from runs/timings.jsonl

@@ -3,7 +3,7 @@ PY := .venv/bin/python
 # Use the project-local Node.js if tools/install_node.sh has installed one.
 export PATH := $(CURDIR)/.tools/node/bin:$(PATH)
 
-.PHONY: setup lint format test test-slow check env registry registry-sources models-status node-setup web-setup web-check
+.PHONY: setup lint format test test-slow smoke check env registry registry-sources models-status node-setup web-setup web-check
 
 setup: ## create .venv and install the project with dev tools
 	test -d .venv || python3 -m venv .venv
@@ -23,6 +23,9 @@ test:
 
 test-slow: ## tests that load real checkpoints (need downloaded weights)
 	$(PY) -m pytest -m slow -rs
+
+smoke: ## load and run every separator on the fixture; writes runs/smoke/report.md
+	$(PY) -m stems_worker.smoke
 
 check: lint test ## what every loop iteration runs before committing
 
