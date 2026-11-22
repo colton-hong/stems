@@ -106,6 +106,38 @@ def test_two_stem_other_is_called_instrumental() -> None:
     assert outputs == ("vocals", "instrumental")
 
 
+def test_registry_name_map_translates_config_names() -> None:
+    karaoke = {"Vocals": "lead_vocals", "Instrumental": "backing_vocals"}
+    stems = ["lead_vocals", "backing_vocals"]
+    # Single target: the lead comes from the model, the rest is the complement.
+    assert resolve_outputs(stems, ["Vocals", "Instrumental"], "Vocals", karaoke) == (
+        ("lead_vocals", "backing_vocals"),
+        True,
+    )
+    # Two heads: both come from the model, in config order.
+    assert resolve_outputs(stems, ["Vocals", "Instrumental"], None, karaoke) == (
+        ("lead_vocals", "backing_vocals"),
+        False,
+    )
+    assert resolve_outputs(["dry"], ["noreverb", "reverb"], "noreverb", {"noreverb": "dry"}) == (
+        ("dry",),
+        False,
+    )
+
+
+def test_heads_the_pipeline_does_not_use_can_be_ignored() -> None:
+    # A two-head de-reverb model emits the dry signal and the reverb it removed.
+    assert resolve_outputs(["dry"], ["dry", "other"], None, None, ("other",)) == (("dry",), False)
+    with pytest.raises(ModelConfigError, match="do not match"):
+        resolve_outputs(["dry"], ["dry", "other"], None)
+
+
+def test_config_names_are_lower_cased_when_no_map_is_given() -> None:
+    assert resolve_outputs(["guitar"], ["Guitar", "Other"], "Guitar") == (("guitar",), False)
+    outputs, _ = resolve_outputs(["vocals", "instrumental"], ["Vocals", "Instrumental"], None)
+    assert outputs == ("vocals", "instrumental")
+
+
 def test_mismatched_config_and_registry_are_reported() -> None:
     with pytest.raises(ModelConfigError, match="do not match"):
         resolve_outputs(["vocals", "drums"], ["vocals", "bass"], None)
@@ -208,13 +240,106 @@ def test_adapter_rejects_entries_it_cannot_load(tmp_path) -> None:
     registry = load_registry()
     with pytest.raises(ModelConfigError, match="not 'msst'"):
         MsstSeparator(registry.get("htdemucs"), {})
+    untyped = registry.get("scnet_large").model_copy(update={"config": {"config_file": "c.yaml"}})
     with pytest.raises(ModelConfigError, match="no model_type"):
-        MsstSeparator(registry.get("bs_polarformer_vocals"), {})
+        MsstSeparator(untyped, {})
     with pytest.raises(ModelConfigError, match="need its config"):
         MsstSeparator(registry.get("mel_roformer_kim_vocals"), {})
 
 
-# --- acceptance: a real checkpoint (needs downloaded weights) ------------------------------
+def test_every_msst_entry_names_a_supported_model_type() -> None:
+    from stems_worker.adapters.msst import _BUILDERS
+
+    for entry in load_registry().models:
+        if entry.loader == "msst":
+            assert entry.config.get("model_type") in _BUILDERS, entry.id
+
+
+def test_unsupported_model_type_is_reported() -> None:
+    from stems_worker.adapters.msst import build_model
+
+    with pytest.raises(ModelConfigError, match="'kazoo_net' is not supported"):
+        build_model("kazoo_net", {"model": {}})
+
+
+def test_config_namespace_reads_keys_as_attributes() -> None:
+    from stems_worker.adapters.msst import _as_namespace
+
+    config = _as_namespace({"audio": {"dim_f": 1024}, "training": {"instruments": ["a", "b"]}})
+    assert config.audio.dim_f == 1024
+    assert config.training.get("target_instrument") is None
+    assert config.training.instruments == ["a", "b"]
+    with pytest.raises(AttributeError):
+        _ = config.audio.missing
+
+
+MSST_IDS = [m.id for m in load_registry().models if m.loader == "msst"]
+
+
+@pytest.mark.parametrize("model_id", MSST_IDS)
+def test_downloaded_configs_agree_with_the_registry(model_id) -> None:
+    """Cheap consistency check that needs only the small config file, not the weights."""
+    from stems_models.download import model_dir
+
+    entry = load_registry().get(model_id)
+    path = model_dir(model_id) / entry.config["config_file"]
+    if not path.exists():
+        pytest.skip(f"{path.name} is not downloaded")
+    config = load_model_config(path)
+    outputs, _ = resolve_outputs(
+        list(entry.stems),
+        [str(i) for i in config["training"].get("instruments", [])],
+        config["training"].get("target_instrument"),
+        entry.config.get("instrument_names"),
+        tuple(entry.config.get("ignore_instruments", ())),
+    )
+    assert set(outputs) == set(entry.stems)
+    assert config["audio"].get("sample_rate", 44100) == entry.sample_rate_hz
+
+
+# --- acceptance: real checkpoints (need downloaded weights) --------------------------------
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("model_id", MSST_IDS)
+def test_every_msst_model_loads_and_emits_its_registry_outputs(model_id) -> None:
+    from stems_worker.device import pick_device
+
+    entry = load_registry().get(model_id)
+    if not is_downloaded(entry):
+        pytest.skip(f"{model_id} is not downloaded")
+
+    track = generate_track(seed=1, duration_seconds=6.0)
+    if "vocal_split" in entry.candidate_for:
+        audio = track.stems["vocals"]
+    elif "dereverb" in entry.candidate_for:
+        audio = track.vocals_wet
+    else:
+        audio = track.mix
+
+    separator = MsstSeparator.from_registry(model_id)
+    separator.load(pick_device())
+    result = run_separator(separator, audio, 44100)
+    separator.unload()
+
+    assert set(result.stems) == set(entry.stems)
+    for stem in result.stems.values():
+        assert stem.shape == audio.shape
+        assert np.isfinite(stem).all()
+    if len(result.stems) > 1:
+        # Models that split the input into parts must account for all of it, to within
+        # what a network leaves over (complement models are exact by construction).
+        residual = audio - sum(result.stems.values())
+        assert float(np.sqrt(np.mean(residual**2))) < 0.5 * float(np.sqrt(np.mean(audio**2)))
+    # Behavioural check where the fixture can give one: drums and bass are recognisable
+    # even as synthetic tones, so a model that separates them must route them correctly.
+    # Measured here: drums 0.82 to 0.95, bass 0.99 to 1.02.
+    for name in ("drums", "bass"):
+        if name in result.stems and audio is track.mix:
+            assert _fraction(result.stems[name], track.stems[name]) > 0.5, name
+            other = "bass" if name == "drums" else "drums"
+            assert _fraction(result.stems[name], track.stems[other]) < 0.4, name
+
 
 KIM = "mel_roformer_kim_vocals"
 

@@ -39,6 +39,26 @@
     "sha256": "7d36ad637abdfeb09fd63bf924bc25833bd21a51f3dfa651dbb858565655dcdc",
     "size_bytes": 559371
   },
+  "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v.1.0.6/config_musdb18_scnet.yaml": {
+    "filename": "config_musdb18_scnet.yaml",
+    "sha256": "19103def86d549701f824804fc5f3d244e8e8ccd4032da6ee9d5b4f2a5f2da16",
+    "size_bytes": 1739
+  },
+  "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.0/config_vocals_mdx23c.yaml": {
+    "filename": "config_vocals_mdx23c.yaml",
+    "sha256": "9b2bf974ee274439ff29b4be4c26e4bc2b9e339cf01a5f6c0c6d5fecd00d4c20",
+    "size_bytes": 1197
+  },
+  "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.1/config_musdb18_mdx23c.yaml": {
+    "filename": "config_musdb18_mdx23c.yaml",
+    "sha256": "85b78dbaaa32ba1a72d98f3097c1ecc89d2888d066d3356e7a8e4bda1c3ac30f",
+    "size_bytes": 1217
+  },
+  "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.12/config_bs_roformer_384_8_2_485100.yaml": {
+    "filename": "config_bs_roformer_384_8_2_485100.yaml",
+    "sha256": "d8afb980318d0c08b9c2e24a7adc00d4f3150320c127a7e4de861800d1321939",
+    "size_bytes": 4566
+  },
   "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.13/config_musdb18_scnet_xl.yaml": {
     "filename": "config_musdb18_scnet_xl.yaml",
     "sha256": "6739967f846cd557308b86afc901228f534792f75aec9f6a78486559195d89cf",
@@ -59,6 +79,11 @@
     "sha256": "ac25975f0f5704f3d1a3c3c251505b7a0f417a22eafe82773440ee4f7e14b74f",
     "size_bytes": 214063778
   },
+  "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.17/config_musdb18_scnet_xl_ihf.yaml": {
+    "filename": "config_musdb18_scnet_xl_ihf.yaml",
+    "sha256": "2a33e45be8ff69e15f0ad700a8af3497b2f164fea20bef547149b65ad2a87ecc",
+    "size_bytes": 5901
+  },
   "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.20/model_bs_polarformer_float16.ckpt": {
     "filename": "model_bs_polarformer_float16.ckpt",
     "sha256": "fc8b72c3beb92caad4e14f180979c02ddf18a330182176cf6c7bb0eb6c685e87",
@@ -68,6 +93,11 @@
     "filename": "model_bs_polarformer_float16.yaml",
     "sha256": "0348205cb562a58e9724870a4cf43e5d2c49ae87258159b2827c4e42ed51b00d",
     "size_bytes": 3599
+  },
+  "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.8/config_musdb18_scnet_large.yaml": {
+    "filename": "config_musdb18_scnet_large.yaml",
+    "sha256": "9e350719e1dd1c375a024753774f3b73864d95d76f41d36cb996b40e0257b72a",
+    "size_bytes": 1956
   },
   "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.9/SCNet-large_starrytong_fixed.ckpt": {
     "filename": "SCNet-large_starrytong_fixed.ckpt",
@@ -89,10 +119,45 @@
     "sha256": "b558996f1e25eb48798bd6502505a5de94c4f966d6edfb1a0420f06cc40b501a",
     "size_bytes": 4653
   },
+  "https://github.com/nomadkaraoke/python-audio-separator/releases/download/model-configs/config_bs_roformer_karaoke_anvuew.yaml": {
+    "filename": "config_bs_roformer_karaoke_anvuew.yaml",
+    "sha256": "5cb3f127ecbc6a8e37f31ea7e05f60f360a44da43e857bde805b7b68558f6338",
+    "size_bytes": 1973
+  },
+  "https://github.com/nomadkaraoke/python-audio-separator/releases/download/model-configs/config_bs_roformer_karaoke_frazer_becruily.yaml": {
+    "filename": "config_bs_roformer_karaoke_frazer_becruily.yaml",
+    "sha256": "1d3b58b473025183d0d3c91e7a444cb5f1418d9f34e8f46b8d2fb10d2cc8ab34",
+    "size_bytes": 1903
+  },
+  "https://github.com/nomadkaraoke/python-audio-separator/releases/download/model-configs/config_mel_band_roformer_karaoke_becruily.yaml": {
+    "filename": "config_mel_band_roformer_karaoke_becruily.yaml",
+    "sha256": "cd37b0dcc285fc22d88090415722ac7127ee1d9ea2f3346c3b8d8fcc61e0c74b",
+    "size_bytes": 1724
+  },
   "https://huggingface.co/KimberleyJSN/melbandroformer/resolve/main/MelBandRoformer.ckpt": {
     "filename": "MelBandRoformer.ckpt",
     "sha256": "87201f4d31afb5bc79993230fc49446918425574db48c01c405e44f365c7559e",
     "size_bytes": 913106900
+  },
+  "https://huggingface.co/Sucial/Dereverb-Echo_Mel_Band_Roformer/resolve/main/config_dereverb-echo_mel_band_roformer.yaml": {
+    "filename": "config_dereverb-echo_mel_band_roformer.yaml",
+    "sha256": "f11b8b55ffb58aeae359cd3f885e3e59e3a09886467966c9dca9ceccb2c6a13b",
+    "size_bytes": 1925
+  },
+  "https://huggingface.co/Sucial/Dereverb-Echo_Mel_Band_Roformer/resolve/main/dereverb-echo_mel_band_roformer_sdr_10.0169.ckpt": {
+    "filename": "dereverb-echo_mel_band_roformer_sdr_10.0169.ckpt",
+    "sha256": "cd2b737a394cfb80cd48cc9fcbaf89f5f4062f6b93066c2911617a06d8b7860a",
+    "size_bytes": 835997896
+  },
+  "https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/dereverb_mel_band_roformer_anvuew.yaml": {
+    "filename": "dereverb_mel_band_roformer_anvuew.yaml",
+    "sha256": "66963a9d60756076506a230b4e503c553a3beb7b4e9a10e6bcc73dee9dbd4866",
+    "size_bytes": 1846
+  },
+  "https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/dereverb_mel_band_roformer_anvuew_sdr_19.1729.ckpt": {
+    "filename": "dereverb_mel_band_roformer_anvuew_sdr_19.1729.ckpt",
+    "sha256": "9262877b87e9ebb0fb808a456b0a411fa677f5df31c8383c1254af531c078970",
+    "size_bytes": 913107578
   },
   "https://huggingface.co/becruily/mel-band-roformer-guitar/resolve/main/becruily_guitar.ckpt": {
     "filename": "becruily_guitar.ckpt",
@@ -104,10 +169,20 @@
     "sha256": "b681c3f886251b04b666b3f06e87ce65d7ec610e40b5d75915c01782e5444b0e",
     "size_bytes": 1411
   },
+  "https://huggingface.co/lukewys/laion_clap/resolve/main/music_audioset_epoch_15_esc_90.14.pt": {
+    "filename": "music_audioset_epoch_15_esc_90.14.pt",
+    "sha256": "fae3e9c087f2909c28a09dc31c8dfcdacbc42ba44c70e972b58c1bd1caf6dedd",
+    "size_bytes": 2352471003
+  },
   "https://raw.githubusercontent.com/TRvlvr/application_data/main/mdx_model_data/mdx_c_configs/config_mel_band_roformer_karaoke.yaml": {
     "filename": "config_mel_band_roformer_karaoke.yaml",
     "sha256": "30364842112e18500aca7ff7b1acf235251eb4ee93b377278176b432410eae33",
     "size_bytes": 1794
+  },
+  "https://raw.githubusercontent.com/TRvlvr/application_data/main/mdx_model_data/mdx_c_configs/model_2_stem_full_band_8k.yaml": {
+    "filename": "model_2_stem_full_band_8k.yaml",
+    "sha256": "451765e869b78dcb9ca9188a74da31f581b7254ff0e8b532aa76b974148de947",
+    "size_bytes": 709
   },
   "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/KimberleyJensen/config_vocals_mel_band_roformer_kj.yaml": {
     "filename": "config_vocals_mel_band_roformer_kj.yaml",
@@ -118,5 +193,15 @@
     "filename": "model_bs_roformer_ep_317_sdr_12.9755.yaml",
     "sha256": "42e5635ceab7287b83d9591c9880966f0b61cff26a0a40a29d236bacb32e5f2c",
     "size_bytes": 1881
+  },
+  "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/viperx/model_bs_roformer_ep_937_sdr_10.5309.yaml": {
+    "filename": "model_bs_roformer_ep_937_sdr_10.5309.yaml",
+    "sha256": "c9ff80f71867e9b7df08722c3a08a564c68cffcfe1c2c32a004b8153456f8951",
+    "size_bytes": 2351
+  },
+  "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/viperx/model_mel_band_roformer_ep_3005_sdr_11.4360.yaml": {
+    "filename": "model_mel_band_roformer_ep_3005_sdr_11.4360.yaml",
+    "sha256": "4e0a24c9078b007caeea94efaad78ed4f29d4f44a80a6aefc4295bff09490314",
+    "size_bytes": 1404
   }
 }

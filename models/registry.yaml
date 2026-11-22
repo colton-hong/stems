@@ -92,12 +92,10 @@ models:
         url: https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.20/model_bs_polarformer_float16.yaml
         size_bytes: 3599
     config:
-      model_type: null
+      model_type: bs_roformer
       config_file: model_bs_polarformer_float16.yaml
     licence_note: Licence of the weights not stated in the index (report §1 - confirm in writing if it ever matters).
-    unverified:
-      - The MSST --model_type string for PolarFormer; read it from the MSST source in Phase 1.
-      - Whether float16 weights need casting to float32 on MPS/CPU.
+    notes: A BSRoformer whose config sets use_pope (polar position embedding, from the PoPE-pytorch package). The float16 weights load into a float32 model.
 
   - id: mel_roformer_viperx_vocals
     name: Mel-Band RoFormer vocals (viperx ep_3005)
@@ -417,12 +415,10 @@ models:
         url: https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.17/config_musdb18_scnet_xl_ihf.yaml
         size_bytes: 5901
     config:
-      model_type: null
+      model_type: scnet_masked
       config_file: config_musdb18_scnet_xl_ihf.yaml
     licence_note: Licence of the weights not stated in the index.
     notes: Not in the report. A different architecture family from SCNet XL IHF, so a useful ensemble partner to test.
-    unverified:
-      - The MSST --model_type string for the masked SCNet variant.
 
   - id: scnet_large
     name: SCNet-large (starrytong)
@@ -754,7 +750,6 @@ models:
     notes: The report names the file BS-Rofo-SW-Fixed.ckpt on jarredou's Hugging Face; that repo returned HTTP 401 on 2026-11-22, so this entry uses the audio-separator mirror (see docs/corrections.md C3).
     unverified:
       - That the mirrored BS-Roformer-SW.ckpt is byte-identical to the report's BS-Rofo-SW-Fixed.ckpt (sizes agree at 699 MB; hashes not compared).
-      - The stem order in the config; read it in Phase 1 before mapping outputs.
 
   - id: htdemucs_6s
     name: HT-Demucs v4 6-source (htdemucs_6s)
@@ -804,8 +799,7 @@ models:
       model_type: mel_band_roformer
       config_file: config_guitar_becruily.yaml
     licence_note: Non-commercial per the model card (report §1). No licence field in the Hugging Face metadata.
-    unverified:
-      - Whether the config also emits a second "everything else" output.
+    notes: Trained with a single target ("Guitar"), so it emits the guitar only.
 
   # ---------------------------------------------------------------------------
   # Lead vs backing vocals (run on the vocals stem or on the mix)
@@ -834,9 +828,11 @@ models:
     config:
       model_type: mel_band_roformer
       config_file: config_mel_band_roformer_karaoke.yaml
+      instrument_names: {Vocals: lead_vocals, Instrumental: backing_vocals}
     licence_note: No explicit licence found for the weights.
+    notes: Run it on the isolated vocals stem. The model emits the lead vocal ("Vocals" in its config) and backing_vocals is the input minus that. On a full mix the second output would also hold the instruments.
     unverified: &karaoke_unverified
-      - Output semantics. Karaoke models usually emit lead vocals and "karaoke" (instrumental plus backing). Backing vocals alone then come from running on the isolated vocals stem. Confirm against the config and by ear on the synthetic fixture in Phase 1.
+      - That the model's "Vocals" output is the lead vocal is read from its config and purpose. The synthetic fixture cannot confirm it (the model returns nothing for synthetic voices); the MoisesDB lead and backing stems in Phase 2 will.
 
   - id: bs_roformer_karaoke_frazer_becruily
     name: BS-RoFormer Karaoke (frazer + becruily)
@@ -862,6 +858,7 @@ models:
     config:
       model_type: bs_roformer
       config_file: config_bs_roformer_karaoke_frazer_becruily.yaml
+      instrument_names: {Vocals: lead_vocals, Instrumental: backing_vocals}
     licence_note: Licence not checked.
     notes: Not in the report's table, but its "best per stem" summary cites a BS-RoFormer karaoke model as best on published evidence. Found in audio-separator's model list.
     unverified: *karaoke_unverified
@@ -890,6 +887,7 @@ models:
     config:
       model_type: bs_roformer
       config_file: config_bs_roformer_karaoke_anvuew.yaml
+      instrument_names: {Vocals: lead_vocals, Instrumental: backing_vocals}
     licence_note: Licence not checked.
     notes: Not in the report. Found in audio-separator's model list.
     unverified: *karaoke_unverified
@@ -918,6 +916,7 @@ models:
     config:
       model_type: mel_band_roformer
       config_file: config_mel_band_roformer_karaoke_becruily.yaml
+      instrument_names: {Vocals: lead_vocals, Instrumental: backing_vocals}
     licence_note: Licence not checked.
     notes: Not in the report. Found in audio-separator's model list. Large (about 1.7 GB).
     unverified: *karaoke_unverified
@@ -1044,6 +1043,7 @@ models:
     config:
       model_type: mel_band_roformer
       config_file: dereverb_mel_band_roformer_anvuew.yaml
+      instrument_names: {noreverb: dry}
     licence_note: GPL-3.0 per Hugging Face card metadata (checked 2026-11-22).
     notes: The same repo also holds a less-aggressive and a mono variant; add them here if the benchmark shows the default over-processes.
 
@@ -1071,6 +1071,7 @@ models:
     config:
       model_type: mel_band_roformer
       config_file: config_dereverb-echo_mel_band_roformer.yaml
+      ignore_instruments: [other]
     licence_note: CC BY-NC-SA 4.0 per Hugging Face card metadata (checked 2026-11-22).
     notes: The repo also holds newer v2 / "big reverb" checkpoints (about 456 MB each) worth a look if this one benchmarks well.
 

@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import importlib
 import sys
+import types
 from pathlib import Path
 from typing import Any
 
@@ -28,11 +29,15 @@ from stems_models.registry import ModelEntry, Registry, load_registry
 from stems_models.vendor import ensure_msst
 from stems_worker.separator import Separator
 
-# model_type -> (upstream module, class name). Classes are built as cls(**config["model"]).
-# P1.9 extends this to the remaining families.
-_KWARGS_MODELS: dict[str, tuple[str, str]] = {
-    "mel_band_roformer": ("models.bs_roformer.mel_band_roformer", "MelBandRoformer"),
-    "bs_roformer": ("models.bs_roformer.bs_roformer", "BSRoformer"),
+# model_type -> (upstream module, class name, how it is built).
+# "kwargs": cls(**config["model"]).  "config": cls(config) with attribute access.
+_BUILDERS: dict[str, tuple[str, str, str]] = {
+    "mel_band_roformer": ("models.bs_roformer.mel_band_roformer", "MelBandRoformer", "kwargs"),
+    # Also covers BS PolarFormer, which is a BSRoformer config with use_pope: true.
+    "bs_roformer": ("models.bs_roformer.bs_roformer", "BSRoformer", "kwargs"),
+    "scnet": ("models.scnet.scnet", "SCNet", "kwargs"),
+    "scnet_masked": ("models.scnet.scnet_masked", "SCNet", "kwargs"),
+    "mdx23c": ("models.mdx23c_tfc_tdf_v3", "TFC_TDF_net", "config"),
 }
 
 
@@ -64,8 +69,28 @@ def load_model_config(path: Path | str) -> dict[str, Any]:
     return config
 
 
+class _Namespace(dict):
+    """A dict whose keys also read as attributes, as upstream's config-style models expect."""
+
+    def __getattr__(self, name: str) -> Any:
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(name) from None
+
+
+def _as_namespace(value: Any) -> Any:
+    if isinstance(value, dict):
+        return _Namespace({k: _as_namespace(v) for k, v in value.items()})
+    return value
+
+
 def resolve_outputs(
-    registry_stems: list[str], instruments: list[str], target: str | None
+    registry_stems: list[str],
+    instruments: list[str],
+    target: str | None,
+    names: dict[str, str] | None = None,
+    ignore: tuple[str, ...] = (),
 ) -> tuple[tuple[str, ...], bool]:
     """Work out what the adapter emits, in registry vocabulary.
 
@@ -73,14 +98,25 @@ def resolve_outputs(
     emits only that stem; when the registry lists two outputs the second is the rest of
     the mix (input minus target), which the adapter computes.
 
-    The name "other" in a two-stem config means "everything else", which the registry
-    calls ``instrumental``.
+    Config names are translated to registry names by ``names`` (the registry entry's
+    ``config.instrument_names``) where given, and lower-cased otherwise. The name "other"
+    in a two-stem config means "everything else", which the registry calls
+    ``instrumental``. Heads named in ``ignore`` (``config.ignore_instruments``) are
+    outputs the pipeline has no use for, such as the reverb a de-reverb model removes.
     """
+    names = names or {}
 
     def canonical(name: str) -> str:
-        if name == "other" and "other" not in registry_stems and "instrumental" in registry_stems:
+        if name in names:
+            return names[name]
+        lowered = name.lower()
+        if (
+            lowered == "other"
+            and "other" not in registry_stems
+            and "instrumental" in registry_stems
+        ):
             return "instrumental"
-        return name.lower()
+        return lowered
 
     if target is not None:
         primary = canonical(target)
@@ -97,7 +133,7 @@ def resolve_outputs(
             f"a single-target model can emit at most two outputs, registry lists {registry_stems}"
         )
 
-    names = tuple(canonical(i) for i in instruments)
+    names = tuple(canonical(i) for i in instruments if i not in ignore)
     if set(names) != set(registry_stems) or len(names) != len(registry_stems):
         raise ModelConfigError(
             f"config instruments {instruments} do not match registry stems {registry_stems}"
@@ -121,17 +157,39 @@ def read_state_dict(path: Path | str) -> dict[str, torch.Tensor]:
     return loaded
 
 
-def _upstream_class(model_type: str) -> type[torch.nn.Module]:
-    try:
-        module_name, class_name = _KWARGS_MODELS[model_type]
-    except KeyError:
-        raise ModelConfigError(f"model_type {model_type!r} is not supported yet") from None
+def _ensure_upstream_importable() -> None:
     root = str(ensure_msst())
     if root not in sys.path:
         # Upstream modules import each other as ``models.<family>...``, so its root has to
         # be importable. It is added once, at the end, so it never shadows our packages.
         sys.path.append(root)
-    return getattr(importlib.import_module(module_name), class_name)
+    if "utils.model_utils" not in sys.modules:
+        # Upstream's MDX23C imports one small helper from its ``utils`` package, which is
+        # not vendored because it drags in the whole training stack. Provide just that.
+        def prefer_target_instrument(config: Any) -> list[str]:
+            target = config.training.get("target_instrument")
+            return [target] if target else list(config.training.instruments)
+
+        package = types.ModuleType("utils")
+        package.__path__ = []  # mark as a package
+        helper = types.ModuleType("utils.model_utils")
+        helper.prefer_target_instrument = prefer_target_instrument
+        package.model_utils = helper
+        sys.modules.setdefault("utils", package)
+        sys.modules["utils.model_utils"] = helper
+
+
+def build_model(model_type: str, config: dict[str, Any]) -> torch.nn.Module:
+    """Instantiate the upstream network for ``model_type`` from a parsed config."""
+    try:
+        module_name, class_name, style = _BUILDERS[model_type]
+    except KeyError:
+        raise ModelConfigError(f"model_type {model_type!r} is not supported") from None
+    _ensure_upstream_importable()
+    cls = getattr(importlib.import_module(module_name), class_name)
+    if style == "kwargs":
+        return cls(**config["model"])
+    return cls(_as_namespace(config))
 
 
 # --- the adapter --------------------------------------------------------------------------
@@ -156,11 +214,16 @@ class MsstSeparator(Separator):
         audio, training = self._config["audio"], self._config["training"]
         self.chunk_size = int(audio["chunk_size"])
         self.sample_rate = int(audio.get("sample_rate", 44100))
+        instruments = [str(i) for i in training.get("instruments", [])]
+        target = training.get("target_instrument")
+        ignore = tuple(entry.config.get("ignore_instruments", ()))
         self.outputs, self._add_complement = resolve_outputs(
-            list(entry.stems),
-            [str(i) for i in training.get("instruments", [])],
-            training.get("target_instrument"),
+            list(entry.stems), instruments, target, entry.config.get("instrument_names"), ignore
         )
+        # Which of the model's heads to keep. None means all of them.
+        self._keep: list[int] | None = None
+        if target is None and ignore:
+            self._keep = [i for i, name in enumerate(instruments) if name not in ignore]
         self._model: torch.nn.Module | None = None
 
     @classmethod
@@ -173,7 +236,7 @@ class MsstSeparator(Separator):
         return cls(registry.get(model_id), files)
 
     def load(self, device: str) -> None:
-        model = _upstream_class(self._model_type)(**self._config["model"])
+        model = build_model(self._model_type, self._config)
         model.load_state_dict(read_state_dict(self._weights_path), strict=True)
         self._model = model.eval().to(device)
         self.device = device
@@ -186,6 +249,8 @@ class MsstSeparator(Separator):
             y = self._model(x)
             if y.ndim == 3:  # single-stem models drop the stem axis
                 y = y[:, None]
+            if self._keep is not None:
+                y = y[:, self._keep]
             if self._add_complement:
                 y = torch.cat([y, x[:, None] - y], dim=1)
             return y.to(torch.float32).cpu().numpy()
