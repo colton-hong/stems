@@ -7,6 +7,7 @@
     bench run --dataset synthetic --all --run-id <id>    # resume: finished jobs are skipped
     bench status [<run-id>]                              # the latest run if no id is given
     bench report [<run-id>] [--out docs/benchmarks/synthetic.md]
+    bench compare --pair <run> <run> [--pair ...] --out FILE   # run-to-run and device spread
 
 ``python -m stems_bench`` is the same command.
 """
@@ -20,6 +21,7 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
+from stems_bench.compare import write_comparison
 from stems_bench.datasets import Dataset, DatasetError, get_dataset
 from stems_bench.report import ReportError, write_report
 from stems_bench.run import (
@@ -67,10 +69,26 @@ def build_parser() -> argparse.ArgumentParser:
         help="also score every slot's single best, two-model blend and full ensemble "
         "(config/defaults.yaml); their member models are added to the run",
     )
+    run.add_argument(
+        "--trial",
+        type=int,
+        default=0,
+        help="above 0: do the jobs again under separate keys, to measure run-to-run noise",
+    )
     run.add_argument("--background", action="store_true", help="detach and log to the run folder")
     run.add_argument("--quiet", action="store_true")
     status = commands.add_parser("status", help="show a run's progress")
     status.add_argument("run_id", nargs="?", help="default: the most recently updated run")
+    compare = commands.add_parser("compare", help="score differences between runs")
+    compare.add_argument(
+        "--pair",
+        nargs=2,
+        action="append",
+        required=True,
+        metavar=("FIRST", "SECOND"),
+        help="two run ids that did the same jobs (repeatable)",
+    )
+    compare.add_argument("--out", type=Path, required=True)
     report = commands.add_parser("report", help="write a run's Markdown report")
     report.add_argument("run_id", nargs="?", help="default: the most recently updated run")
     report.add_argument("--out", type=Path, default=None, help="default: <run folder>/report.md")
@@ -106,6 +124,16 @@ def main(
     """Run the command. The keyword arguments let tests swap in weightless models."""
     argv = sys.argv[1:] if argv is None else argv
     args = build_parser().parse_args(argv)
+
+    if args.command == "compare":
+        try:
+            pairs = [(bench_dir / first, bench_dir / second) for first, second in args.pair]
+            path = write_comparison(pairs, args.out)
+        except ReportError as e:
+            print(f"bench: {e}", file=sys.stderr)
+            return 2
+        print(f"wrote {path} and {path.with_suffix('.json')}")
+        return 0
 
     if args.command in ("status", "report"):
         run_dir = bench_dir / args.run_id if args.run_id else latest_run(bench_dir)
@@ -185,6 +213,7 @@ def main(
             track_ids=args.tracks,
             keep_estimates=args.keep_estimates,
             ensembles=tuple(ensemble_systems(defaults, registry)) if args.ensembles else (),
+            trial=args.trial,
         )
         summary = run_benchmark(
             spec,

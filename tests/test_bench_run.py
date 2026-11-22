@@ -454,6 +454,40 @@ def test_new_weights_or_settings_mean_new_results(world, dataset, tmp_path) -> N
     assert result_key(**base) == result_key(**base)
 
 
+def test_a_trial_does_the_same_jobs_again_under_its_own_keys(world, dataset, tmp_path) -> None:
+    first = run(world, dataset, tmp_path, ["two_stem"], track_ids=("synth-01",))
+    world.events.clear()
+    again = run(
+        world, dataset, tmp_path, ["two_stem"], run_id="r2", track_ids=("synth-01",), trial=1
+    )
+    assert again.count("computed") == 1
+    assert world.runs() == [("two_stem", "synth-01")]
+    a, b = _result(first, "two_stem", "synth-01"), _result(again, "two_stem", "synth-01")
+    assert a["key"] != b["key"]
+    assert (a.get("trial"), b["trial"]) == (None, 1)
+    assert a["outputs"]["vocals"]["bss"]["sdr"] == b["outputs"]["vocals"]["bss"]["sdr"]
+    assert json.loads((tmp_path / "r2" / "run.json").read_text())["trial"] == 1
+    # The first run's keys are what they were before trials existed.
+    assert result_key(**KEY_FIELDS) == result_key(**KEY_FIELDS, trial=0)
+    assert result_key(**KEY_FIELDS) != result_key(**KEY_FIELDS, trial=1)
+    # A run id belongs to one trial.
+    with pytest.raises(BenchError, match="already exists with a different trial"):
+        run(world, dataset, tmp_path, ["two_stem"], run_id="r2", track_ids=("synth-01",))
+    with pytest.raises(BenchError, match="already exists with a different trial"):
+        run(world, dataset, tmp_path, ["two_stem"], track_ids=("synth-01",), trial=2)
+
+
+KEY_FIELDS = {
+    "dataset": "d",
+    "frozen_sha256": "f",
+    "track_id": "t",
+    "model_id": "m",
+    "fingerprint": "w",
+    "device": "cpu",
+    "overlap": 0.25,
+}
+
+
 def test_a_run_id_cannot_be_reused_for_something_else(world, dataset, tmp_path) -> None:
     run(world, dataset, tmp_path, ["two_stem"], track_ids=("synth-01",))
     with pytest.raises(BenchError, match="already exists with a different overlap"):

@@ -167,6 +167,9 @@ class RunSpec:
     keep_estimates: tuple[str, ...] = ()
     # Blends to score after the models. What they read from their members is kept too.
     ensembles: tuple[EnsembleSystem, ...] = ()
+    # Above zero, the same jobs are done afresh under their own keys: a repeat, to see
+    # how much scores move from one run to the next.
+    trial: int = 0
 
 
 @dataclass
@@ -240,8 +243,9 @@ def result_key(
     fingerprint: str,
     device: str,
     overlap: float,
+    trial: int = 0,
 ) -> str:
-    payload = {
+    payload: dict[str, Any] = {
         "result_version": RESULT_VERSION,
         "protocol_version": PROTOCOL_VERSION,
         "inference_version": CACHE_VERSION,
@@ -253,6 +257,8 @@ def result_key(
         "device": device,
         "overlap": overlap,
     }
+    if trial:
+        payload["trial"] = trial  # absent for trial 0, so first-run keys never change
     return hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
 
 
@@ -482,6 +488,7 @@ class _Runner:
             fingerprint=fingerprint,
             device=self.spec.device,
             overlap=self.spec.overlap,
+            trial=self.spec.trial,
         )
 
     def result_path(self, entry: ModelEntry, track_id: str) -> tuple[str, Path]:
@@ -827,10 +834,13 @@ def run_benchmark(
         "device": spec.device,
         "overlap": spec.overlap,
     }
+    if spec.trial:
+        identity["trial"] = spec.trial
     run_file = run_dir / "run.json"
     if run_file.exists():
         earlier = json.loads(run_file.read_text(encoding="utf-8"))
-        changed = [k for k, v in identity.items() if earlier.get(k) != v]
+        keys = [*identity, *(["trial"] if "trial" in earlier and not spec.trial else [])]
+        changed = [k for k in keys if earlier.get(k) != identity.get(k)]
         if changed:
             raise BenchError(
                 f"run {run_id!r} already exists with a different {', '.join(changed)}; "

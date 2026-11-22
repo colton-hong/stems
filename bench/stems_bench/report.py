@@ -362,8 +362,8 @@ def _ensemble_section(
     return lines
 
 
-def _signed(value: float | None) -> str:
-    return "n/a" if value is None else f"{round(value, 2) + 0.0:+.2f}"
+def _signed(value: float | None, digits: int = 2) -> str:
+    return "n/a" if value is None else f"{round(value, digits) + 0.0:+.{digits}f}"
 
 
 def write_report(run_dir: Path, out: Path | None = None, *, repo_root: Path = REPO_ROOT) -> Path:
