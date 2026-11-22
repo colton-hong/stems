@@ -91,15 +91,24 @@ prove there are no seams and no length drift.
 **Model adapters.** One small `Separator` interface (`load`, `separate(chunk batch)`,
 `output names`), with an adapter per `loader` value in the registry:
 
-| Loader | Covers | Backend to confirm in task P1.8 |
+| Loader | Covers | Backend |
 |---|---|---|
-| `msst` | RoFormers, SCNet, MDX23C, PolarFormer | ZFTurbo's Music-Source-Separation-Training model classes. Its README now advertises `pip install msst`; if that package is usable it is pinned, otherwise the repo is vendored at a pinned commit under `third_party/`. |
+| `msst` | RoFormers, SCNet, MDX23C, PolarFormer | ZFTurbo's Music-Source-Separation-Training model classes, vendored at a pinned commit (decided in P1.8, see below). |
 | `demucs` | htdemucs, htdemucs_ft, htdemucs_6s | The `demucs` package. |
 | `uvr_mdx_onnx` | UVR and kuielab MDX-Net | `onnxruntime`, parameters from UVR's model data keyed by file MD5. |
 | `uvr_vr` | UVR VR-arch karaoke and de-echo | VR network code from UVR / `audio-separator`. |
 
 Chunking, overlap and ensembling are ours for every adapter, so all models are compared
 under the same inference procedure.
+
+**The `msst` backend (decided 2026-11-22, task P1.8).** The `msst` 0.1.0 package on PyPI is
+ZFTurbo's own, but it requires Python below 3.14 and torch below 2.12, and this project
+runs Python 3.14 with torch 2.15. So `stems_models.vendor` fetches the upstream repository
+at commit `1523206d12a5` (MIT licence), pins the archive's SHA-256 in
+`models/checksums.lock.json`, and unpacks only its `models/` tree into `third_party/`
+(git-ignored). Only the network definitions are used. Config parsing, weight loading,
+chunking and overlap are ours. Proven on `mel_roformer_kim_vocals`, which loads and runs on
+both MPS and CPU here.
 
 **Loading safety.** Checkpoints are pickle files from community sources. They are loaded
 with `torch.load(..., weights_only=True)`, the SHA-256 of every downloaded file is pinned
@@ -287,6 +296,10 @@ they are placeholders.
   start in the background and write a status file under `runs/bench/`.
 - **Synthetic fixture**: sine and noise mixes with known stems, generated from a seed. The
   whole harness runs on it now, so it is ready when the datasets arrive.
+- **Device sensitivity**: the same checkpoint gives measurably different output on CPU and
+  MPS (found in P1.8 on the synthetic fixture, where a 1e-6 change to the input moved the
+  Kim vocals model's output at about −42 dB relative). Task P2.14 measures how much scores
+  move between devices on real tracks before any cross-device comparison is made.
 - **Rules**: every number in a report comes from a run in this repo with its command.
   Published figures are never copied in or compared against.
 

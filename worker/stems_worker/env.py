@@ -30,6 +30,11 @@ TRACKED_PACKAGES: tuple[str, ...] = (
     "soxr",
     "av",
     "onnxruntime",
+    "einops",
+    "beartype",
+    "rotary-embedding-torch",
+    "librosa",
+    "packaging",
 )
 
 DEVICE_PREFERENCE: tuple[str, ...] = ("cuda", "mps", "cpu")

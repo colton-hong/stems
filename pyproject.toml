@@ -31,6 +31,12 @@ worker = [
   "soxr==1.1.0",
   "av==19.0.2",
   "onnxruntime==1.32.0",
+  # Imported by the vendored MSST model code (stems_models.vendor).
+  "einops==0.8.2",
+  "beartype==0.23.1",
+  "rotary-embedding-torch==0.9.2",
+  "librosa==1.0.1",
+  "packaging==26.3",
 ]
 bench = []
 api = []
@@ -41,10 +47,15 @@ include = ["stems_*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q --strict-markers"
+# Slow tests load real checkpoints. Run them with `make test-slow` (pytest -m slow).
+addopts = "-q --strict-markers -m 'not slow'"
+filterwarnings = [
+  # Raised inside the vendored MSST attention code on every model build.
+  "ignore:.*torch.backends.cuda.sdp_kernel.*:FutureWarning",
+]
 markers = [
   "network: needs internet access (deselected by default; run with -m network)",
-  "slow: takes more than a few seconds",
+  "slow: loads real model weights; skipped unless they are downloaded",
   "gpu: needs a CUDA or MPS device",
 ]
 

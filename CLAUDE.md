@@ -46,6 +46,7 @@ was wrong. Where the report and `PLAN.md` disagree, `PLAN.md` wins.
 ```
 make setup              # create .venv, install the project and dev tools
 make check              # ruff + pytest; run before every commit
+make test-slow          # tests that load real checkpoints (need downloaded weights)
 make env                # write runs/env/worker.json (devices, package versions)
 make registry           # validate models/registry.yaml and print it
 make registry-sources   # HEAD every model URL and refresh sizes (network)

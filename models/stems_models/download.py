@@ -113,19 +113,24 @@ class ChecksumLock:
 
     def check_or_record(self, url: str, filename: str, sha256: str, size_bytes: int) -> str:
         """Return "verified" or "recorded". Raise if the pinned checksum differs."""
-        entries = self._read()
-        known = entries.get(url)
-        if known is not None:
-            if known["sha256"] != sha256:
-                raise ChecksumMismatchError(
-                    f"{filename}: SHA-256 {sha256[:16]}... does not match the pinned "
-                    f"{known['sha256'][:16]}... for {url}. The file changed upstream or is "
-                    f"corrupt. It was not accepted."
-                )
-            return "verified"
-        entries[url] = {"filename": filename, "sha256": sha256, "size_bytes": size_bytes}
-        _write_json_atomic(self.path, entries)
-        return "recorded"
+        # Several processes may record at once (a background download and a model load),
+        # so the read-modify-write is serialised with a file lock.
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        with self.path.with_name(self.path.name + ".guard").open("w") as guard:
+            fcntl.flock(guard, fcntl.LOCK_EX)
+            entries = self._read()
+            known = entries.get(url)
+            if known is not None:
+                if known["sha256"] != sha256:
+                    raise ChecksumMismatchError(
+                        f"{filename}: SHA-256 {sha256[:16]}... does not match the pinned "
+                        f"{known['sha256'][:16]}... for {url}. The file changed upstream or "
+                        f"is corrupt. It was not accepted."
+                    )
+                return "verified"
+            entries[url] = {"filename": filename, "sha256": sha256, "size_bytes": size_bytes}
+            _write_json_atomic(self.path, entries)
+            return "recorded"
 
 
 class _VerifiedCache:
