@@ -709,9 +709,7 @@ models:
       model_type: bs_roformer
       config_file: model_bs_roformer_ep_937_sdr_10.5309.yaml
     licence_note: No explicit licence found for the weights.
-    notes: Not in the report. "other" here is the 4-stem MUSDB "other", which still contains guitar and piano; in a 6-stem job it needs guitar and piano subtracted.
-    unverified:
-      - That this model's "other" target is MUSDB-style other and not an instrumental. Check its config in Phase 1.
+    notes: Not in the report. Its output is the 4-stem MUSDB "other" (confirmed on the fixture, where it passes guitar, piano and pad and rejects drums and bass). That still contains guitar and piano; in a 6-stem job they are subtracted.
 
   # ---------------------------------------------------------------------------
   # 6-stem and guitar / piano

@@ -36,6 +36,8 @@ was wrong. Where the report and `PLAN.md` disagree, `PLAN.md` wins.
   decision needs a deterministic fallback that works with no key.
 - If the report is wrong about something, add it to `docs/corrections.md` with its source
   and proceed on the corrected fact.
+- Commit only after `make check` has exited 0. Check the exit code itself: piping the output
+  (`make check | tail`) hides a failure, and so does chaining the commit with `;`.
 - Tasks must be idempotent. Check for existing downloads, cached results and finished runs
   before redoing work.
 - Long jobs run in the background, log under `runs/`, write a `status.json`, and are
