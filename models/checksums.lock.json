@@ -1,4 +1,9 @@
 {
+  "https://huggingface.co/KimberleyJSN/melbandroformer/resolve/main/MelBandRoformer.ckpt": {
+    "filename": "MelBandRoformer.ckpt",
+    "sha256": "87201f4d31afb5bc79993230fc49446918425574db48c01c405e44f365c7559e",
+    "size_bytes": 913106900
+  },
   "https://huggingface.co/becruily/mel-band-roformer-guitar/resolve/main/becruily_guitar.ckpt": {
     "filename": "becruily_guitar.ckpt",
     "sha256": "83472bbf125774af5282d2e0b86df89eaf2dd45e8a4ec8d68e820ebf3e42a83c",
@@ -8,5 +13,10 @@
     "filename": "config_guitar_becruily.yaml",
     "sha256": "b681c3f886251b04b666b3f06e87ce65d7ec610e40b5d75915c01782e5444b0e",
     "size_bytes": 1411
+  },
+  "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/KimberleyJensen/config_vocals_mel_band_roformer_kj.yaml": {
+    "filename": "config_vocals_mel_band_roformer_kj.yaml",
+    "sha256": "f63f38eb1e6e40a7db0dade714a5ae257555dd8748f4e774eae8679275a81926",
+    "size_bytes": 1721
   }
 }

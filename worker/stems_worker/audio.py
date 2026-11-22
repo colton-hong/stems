@@ -12,6 +12,7 @@ two channels is downmixed to stereo by FFmpeg's resampler.
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -28,6 +29,7 @@ OutputFormat = Literal["wav", "flac", "mp3_320", "mp3_192"]
 _EXTENSIONS: dict[str, str] = {"wav": ".wav", "flac": ".flac", "mp3_320": ".mp3", "mp3_192": ".mp3"}
 _MP3_BITRATES: dict[str, int] = {"mp3_320": 320_000, "mp3_192": 192_000}
 _MP3_FRAME = 1152
+_STEM_NAME = re.compile(r"[a-z0-9_]+")
 
 
 class AudioError(Exception):
@@ -296,6 +298,43 @@ def save_audio(
     finally:
         partial.unlink(missing_ok=True)
     return SaveResult(path=path, format=fmt, peak=peak, clipped_samples=clipped)
+
+
+@dataclass(frozen=True)
+class StemsWritten:
+    paths: dict[str, Path]
+    # Linear gain applied to every stem. 1.0 unless some stem exceeded full scale.
+    gain: float
+    # Highest absolute sample across all stems before the gain.
+    peak: float
+
+
+def save_stems(
+    directory: Path | str,
+    stems: dict[str, np.ndarray],
+    sample_rate: int = PIPELINE_SAMPLE_RATE,
+    fmt: OutputFormat = "wav",
+) -> StemsWritten:
+    """Write one file per stem, named ``<stem><extension>``.
+
+    Model outputs can overshoot full scale. Clipping one stem would break the property
+    that the stems add up to the mix, so if any stem is too hot the same gain is applied
+    to all of them, just enough to fit, and that gain is reported.
+    """
+    if not stems:
+        raise ValueError("no stems to write")
+    for name in stems:
+        if not _STEM_NAME.fullmatch(name):
+            raise ValueError(f"stem name {name!r} is not usable as a file name")
+    directory = Path(directory)
+    peak = max(float(np.abs(samples).max()) for samples in stems.values())
+    gain = 1.0 if peak <= 1.0 else (1.0 - 2.0**-23) / peak
+    extension = extension_for(fmt)
+    paths = {}
+    for name, samples in stems.items():
+        scaled = samples if gain == 1.0 else samples * np.float32(gain)
+        paths[name] = save_audio(directory / f"{name}{extension}", scaled, sample_rate, fmt).path
+    return StemsWritten(paths=paths, gain=gain, peak=peak)
 
 
 def _to_pcm24(samples: np.ndarray) -> np.ndarray:
