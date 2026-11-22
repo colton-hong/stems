@@ -183,6 +183,20 @@ def test_fake_rejects_inconsistent_configuration() -> None:
         BandSplitSeparator(outputs=("a", "b", "c"), cutoffs_hz=(500.0, 100.0))
 
 
+def test_unloading_returns_accelerator_memory() -> None:
+    if "mps" not in usable_devices():
+        pytest.skip("needs MPS to observe the allocator")
+    separator = BandSplitSeparator(chunk_size=1 << 22)
+    separator.load("mps")
+    separator.separate_chunks(np.zeros((1, 2, 1 << 22), dtype=np.float32))
+    loaded = torch.mps.driver_allocated_memory()
+
+    separator.unload()
+    # Without the cache flush in unload() nothing is returned at all. The driver keeps
+    # some working buffers, so the bar is "most of it", not "all of it".
+    assert torch.mps.driver_allocated_memory() < 0.5 * loaded
+
+
 # --- device selection ----------------------------------------------------------------------
 
 

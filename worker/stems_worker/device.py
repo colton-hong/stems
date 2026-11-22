@@ -35,3 +35,21 @@ def pick_device(preferred: str | None = None) -> str:
     if wanted not in usable:
         raise DeviceError(f"device {wanted!r} is not usable here (usable: {', '.join(usable)})")
     return wanted
+
+
+def release_device_memory(device: str | None) -> None:
+    """Give memory held for unloaded models back to the system.
+
+    Dropping the last reference to a model is not enough on MPS or CUDA: torch keeps the
+    freed blocks in its own cache. A job that loads several models in turn (or a benchmark
+    that loads dozens) would otherwise run out of memory.
+    """
+    import gc
+
+    import torch
+
+    gc.collect()
+    if device == "mps":
+        torch.mps.empty_cache()
+    elif device is not None and device.startswith("cuda"):
+        torch.cuda.empty_cache()

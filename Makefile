@@ -22,7 +22,7 @@ test:
 	$(PY) -m pytest
 
 test-slow: ## tests that load real checkpoints (need downloaded weights)
-	$(PY) -m pytest -m slow
+	$(PY) -m pytest -m slow -rs
 
 check: lint test ## what every loop iteration runs before committing
 

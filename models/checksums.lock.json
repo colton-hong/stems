@@ -39,6 +39,11 @@
     "sha256": "4ce7eaaa9e56f09366b788aebf6d3a72aec8145692c56f1e090e4e7e2d7ce65f",
     "size_bytes": 126782699
   },
+  "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/MDX23C-8KFFT-InstVoc_HQ.ckpt": {
+    "filename": "MDX23C-8KFFT-InstVoc_HQ.ckpt",
+    "sha256": "49d51472769e34a2501cd1da782346a3212555c3a5619fc2c53507445528d816",
+    "size_bytes": 448101203
+  },
   "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-De-Echo-Aggressive.pth": {
     "filename": "UVR-De-Echo-Aggressive.pth",
     "sha256": "1bd1d79d9c5d1b17d20f96f8a9f8aff1b55a83014f70712446bf420c0188e0a0",
@@ -149,6 +154,11 @@
     "sha256": "5b84f37e8d444c8cb30c79d77f613a41c05868ff9c9ac6c7049c00aefae115aa",
     "size_bytes": 639331213
   },
+  "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/model_mel_band_roformer_ep_3005_sdr_11.4360.ckpt": {
+    "filename": "model_mel_band_roformer_ep_3005_sdr_11.4360.ckpt",
+    "sha256": "21b9d0958e35b8ebfbe2afe69bbd5444e5ffe2f5d80ae0d583b833d2f3c0d139",
+    "size_bytes": 1007816988
+  },
   "https://github.com/ZFTurbo/Music-Source-Separation-Training/archive/1523206d12a521bdb20673726562524cf0f9635b.tar.gz": {
     "filename": "msst-1523206d12a5.tar.gz",
     "sha256": "7d36ad637abdfeb09fd63bf924bc25833bd21a51f3dfa651dbb858565655dcdc",
@@ -189,6 +199,11 @@
     "sha256": "d8afb980318d0c08b9c2e24a7adc00d4f3150320c127a7e4de861800d1321939",
     "size_bytes": 4566
   },
+  "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.12/model_bs_roformer_ep_17_sdr_9.6568.ckpt": {
+    "filename": "model_bs_roformer_ep_17_sdr_9.6568.ckpt",
+    "sha256": "3e9daecd70aaed5b5a0d1f861cc4d77eaa45afb3fc6301b1cf32c1be0f5868fb",
+    "size_bytes": 527385512
+  },
   "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.13/config_musdb18_scnet_xl.yaml": {
     "filename": "config_musdb18_scnet_xl.yaml",
     "sha256": "6739967f846cd557308b86afc901228f534792f75aec9f6a78486559195d89cf",
@@ -214,6 +229,11 @@
     "sha256": "2a33e45be8ff69e15f0ad700a8af3497b2f164fea20bef547149b65ad2a87ecc",
     "size_bytes": 5901
   },
+  "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.17/model_scnet_masked_ep_111_sdr_9.8286.ckpt": {
+    "filename": "model_scnet_masked_ep_111_sdr_9.8286.ckpt",
+    "sha256": "b4675b0269809de27172a050e8767a857077635eda1738db0874d63a79f2b6dd",
+    "size_bytes": 214143287
+  },
   "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.20/model_bs_polarformer_float16.ckpt": {
     "filename": "model_bs_polarformer_float16.ckpt",
     "sha256": "fc8b72c3beb92caad4e14f180979c02ddf18a330182176cf6c7bb0eb6c685e87",
@@ -228,6 +248,11 @@
     "filename": "config_musdb18_scnet_large.yaml",
     "sha256": "9e350719e1dd1c375a024753774f3b73864d95d76f41d36cb996b40e0257b72a",
     "size_bytes": 1956
+  },
+  "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.8/model_scnet_sdr_9.3244.ckpt": {
+    "filename": "model_scnet_sdr_9.3244.ckpt",
+    "sha256": "fe550315a76e8f4aed8475d7d5952137504a3b6c63b3adcef2443bfe73aac540",
+    "size_bytes": 168868194
   },
   "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.9/SCNet-large_starrytong_fixed.ckpt": {
     "filename": "SCNet-large_starrytong_fixed.ckpt",
@@ -343,5 +368,10 @@
     "filename": "model_mel_band_roformer_ep_3005_sdr_11.4360.yaml",
     "sha256": "4e0a24c9078b007caeea94efaad78ed4f29d4f44a80a6aefc4295bff09490314",
     "size_bytes": 1404
+  },
+  "https://zenodo.org/records/3987831/files/Cnn14_mAP%3D0.431.pth": {
+    "filename": "Cnn14_mAP=0.431.pth",
+    "sha256": "0dc499e40e9761ef5ea061ffc77697697f277f6a960894903df3ada000e34b31",
+    "size_bytes": 327428481
   }
 }

@@ -16,6 +16,7 @@ import numpy as np
 
 from stems_worker.audio import PIPELINE_SAMPLE_RATE
 from stems_worker.chunking import ProgressFn, apply_chunked, hop_for_overlap, plan_chunks
+from stems_worker.device import release_device_memory
 
 DEFAULT_OVERLAP = 0.25
 
@@ -55,8 +56,13 @@ class Separator(ABC):
         return stems
 
     def unload(self) -> None:
-        """Release the model. Safe to call when nothing is loaded."""
-        self.device = None
+        """Release the model. Safe to call when nothing is loaded.
+
+        Subclasses drop their own references first, then call this, which returns the
+        freed device memory to the system.
+        """
+        device, self.device = self.device, None
+        release_device_memory(device)
 
 
 @dataclass(frozen=True)
