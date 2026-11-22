@@ -20,7 +20,18 @@ dev = [
   "pytest>=8.3",
   "ruff>=0.9",
 ]
-worker = []
+# Exact pins: benchmark numbers and timings are only reproducible on known versions.
+# Installed and verified on macOS arm64, Python 3.14 (PROGRESS.md P1.1). Adapter-specific
+# packages (demucs, the MSST backend) are added by the tasks that first load those models.
+worker = [
+  "torch==2.15.0",
+  "numpy==2.5.5",
+  "scipy==1.18.1",
+  "soundfile==0.14.0",
+  "soxr==1.1.0",
+  "av==19.0.2",
+  "onnxruntime==1.32.0",
+]
 bench = []
 api = []
 

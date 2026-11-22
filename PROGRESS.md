@@ -2,7 +2,7 @@
 
 Single source of truth for where the build is. Read this first, every iteration.
 
-**Current phase: 0 (complete). Waiting for the owner before Phase 1 starts.**
+**Current phase: 1 (separation core).** The owner started it on 2026-11-22.
 
 ## How to use this file
 
@@ -39,7 +39,7 @@ Format: `- [ ] Pn.m Task. **Accept:** how to tell it is done.`
 
 ## Phase 1: separation core
 
-- [ ] P1.1 Install and pin the worker dependencies. **Accept:** `pip install -e ".[worker,dev]"` succeeds on this machine; versions are pinned in `pyproject.toml`; `runs/env/worker.json` records torch version and which of CUDA, MPS, CPU is available.
+- [x] P1.1 Install and pin the worker dependencies. **Accept:** `pip install -e ".[worker,dev]"` succeeds on this machine; versions are pinned in `pyproject.toml`; `runs/env/worker.json` records torch version and which of CUDA, MPS, CPU is available. — torch 2.15.0, numpy 2.5.5, scipy 1.18.1, soundfile 0.14.0, soxr 1.1.0, av 19.0.2 and onnxruntime 1.32.0 install on Python 3.14 arm64 and are exact-pinned. MPS is available and passes a smoke computation; no CUDA. `make env` rewrites the record. demucs and the MSST backend are left to P1.10 and P1.8 (a dry run shows demucs 4.1.0 resolves against these pins).
 - [ ] P1.2 Synthetic fixture generator (sine and noise stems for all six stems, plus lead and backing vocal parts and a reverberant variant; 44.1 kHz stereo; seeded). **Accept:** generating twice with the same seed gives identical samples; the mix equals the sum of its stems to within float error; no audio file is committed.
 - [ ] P1.3 Audio I/O: decode any supported format to 44.1 kHz stereo float32; write WAV, FLAC and MP3. **Accept:** tests cover mono to stereo, 48 kHz and 22.05 kHz input, length preserved to within one sample after resampling, WAV and FLAC round-trips are exact at 24-bit precision.
 - [ ] P1.4 Chunker with overlap and crossfade. **Accept:** an identity model reconstructs the input to within 1e-6 for inputs shorter than one chunk, exactly one chunk, and not a multiple of the hop; a fake model that adds a chunk-position ramp produces no step at chunk boundaries; stereo channels stay independent.
@@ -164,4 +164,4 @@ was moved to `docs/research-report.pdf`. Python here is the python.org 3.14 buil
 has no system CA bundle, so use `certifi` for any HTTPS. There is no ffmpeg; plan on
 `soundfile` and PyAV.
 
-**Next:** wait for the owner. Then Phase 1, starting at P1.1.
+**Next:** Phase 1, starting at P1.1 (started 2026-11-22 on the owner's go-ahead).

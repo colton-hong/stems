@@ -17,7 +17,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
-      - run: python -m pip install -e ".[dev]"
+      # CPU-only torch wheels keep the install small on Linux runners.
+      - run: python -m pip install -e ".[worker,dev]" --extra-index-url https://download.pytorch.org/whl/cpu
       - run: python -m ruff check .
       - run: python -m ruff format --check .
       - run: python -m stems_models

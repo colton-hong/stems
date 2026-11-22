@@ -3,12 +3,12 @@ PY := .venv/bin/python
 # Use the project-local Node.js if tools/install_node.sh has installed one.
 export PATH := $(CURDIR)/.tools/node/bin:$(PATH)
 
-.PHONY: setup lint format test check registry registry-sources node-setup web-setup web-check
+.PHONY: setup lint format test check env registry registry-sources node-setup web-setup web-check
 
 setup: ## create .venv and install the project with dev tools
 	test -d .venv || python3 -m venv .venv
 	$(PY) -m pip install -q --upgrade pip
-	$(PY) -m pip install -q -e ".[dev]"
+	$(PY) -m pip install -q -e ".[worker,dev]"
 
 lint:
 	$(PY) -m ruff check .
@@ -22,6 +22,9 @@ test:
 	$(PY) -m pytest
 
 check: lint test ## what every loop iteration runs before committing
+
+env: ## record this machine's devices and package versions in runs/env/worker.json
+	$(PY) -m stems_worker.env
 
 registry: ## validate models/registry.yaml and print the summary table
 	$(PY) -m stems_models
