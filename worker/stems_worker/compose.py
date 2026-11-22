@@ -26,6 +26,7 @@ import numpy as np
 from stems_common.stems import PRODUCT_STEMS
 from stems_models.registry import Registry
 from stems_worker.cache import OutputCache
+from stems_worker.ensemble import blend
 from stems_worker.separator import DEFAULT_OVERLAP, Separator, run_separator
 from stems_worker.timing import TimingLog
 
@@ -50,6 +51,35 @@ class ModelRun:
 
 
 @dataclass(frozen=True)
+class Blend:
+    """Who supplies a stem: one model, or several whose estimates are blended."""
+
+    models: tuple[str, ...]
+    # One per model, summing to 1. Empty means equal weights.
+    weights: tuple[float, ...] = ()
+    method: str = "waveform"
+
+    def __post_init__(self) -> None:
+        if not self.models or len(set(self.models)) != len(self.models):
+            raise CompositionError(f"a blend needs distinct models, got {self.models}")
+        weights = self.weights or (1.0,) * len(self.models)
+        if len(weights) != len(self.models) or min(weights) < 0 or sum(weights) <= 0:
+            raise CompositionError(f"bad weights {self.weights} for {self.models}")
+        total = float(sum(weights))
+        object.__setattr__(self, "weights", tuple(float(w) / total for w in weights))
+
+    @property
+    def is_blend(self) -> bool:
+        return len(self.models) > 1
+
+    def describe(self) -> str:
+        if not self.is_blend:
+            return self.models[0]
+        parts = [f"{m} ({w:.2f})" for m, w in zip(self.models, self.weights, strict=True)]
+        return f"blend of {', '.join(parts)}; {self.method}"
+
+
+@dataclass(frozen=True)
 class ComposePlan:
     requested: tuple[str, ...]
     runs: tuple[ModelRun, ...]
@@ -57,8 +87,12 @@ class ComposePlan:
     other_method: Literal["direct", "subtract", "residual"] | None
     # Stems computed only because something else needs them. Not delivered.
     dependencies: tuple[str, ...]
-    # Which model supplies each stem that comes straight from a model.
+    # What supplies each stem that comes straight from models: a model id, or a
+    # description of the blend.
     sources: dict[str, str] = field(default_factory=dict)
+    # The same, in full. Empty in a plan built by hand: each stem then comes from the one
+    # run that offers it.
+    blends: dict[str, Blend] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -104,14 +138,15 @@ class Composition:
 
 def plan_composition(
     requested: Sequence[str],
-    assignment: dict[str, str],
+    assignment: dict[str, str | Blend],
     registry: Registry,
     other_method: OtherMethod = "auto",
     also_compute: Sequence[str] = (),
 ) -> ComposePlan:
     """Decide which models run and what is taken from each.
 
-    ``assignment`` maps a stem name to the registry id of the model that serves it.
+    ``assignment`` maps a stem name to the registry id of the model that serves it, or to
+    a ``Blend`` of several. A model that serves several stems still runs once.
     ``also_compute`` names stems a later stage needs (the vocals, for a vocal split) that
     are computed but only delivered if they were requested too.
     """
@@ -129,12 +164,18 @@ def plan_composition(
         if other_method == "residual":
             method = "residual"
         else:
-            model = _model_for("other", assignment, registry)
-            natural = "subtract" if model.other_contains_guitar_piano else "direct"
+            models = _models_for("other", assignment, registry)
+            kinds = {m.other_contains_guitar_piano for m in models}
+            if len(kinds) != 1:
+                raise CompositionError(
+                    "other: the blend mixes 4-stem and 6-stem 'other' models "
+                    f"({[m.id for m in models]})"
+                )
+            natural = "subtract" if kinds.pop() else "direct"
             if other_method in ("direct", "subtract") and other_method != natural:
                 raise CompositionError(
-                    f"{model.id} emits a {'4' if natural == 'subtract' else '6'}-stem 'other'; "
-                    f"other_method={other_method!r} does not fit it"
+                    f"{models[0].id} emits a {'4' if natural == 'subtract' else '6'}-stem "
+                    f"'other'; other_method={other_method!r} does not fit it"
                 )
             method = natural
         extra = {"direct": (), "subtract": ("guitar", "piano"), "residual": _NAMED}[method]
@@ -144,28 +185,40 @@ def plan_composition(
     from_models = list(needed) + (["other"] if method in ("direct", "subtract") else [])
 
     sources: dict[str, str] = {}
+    blends: dict[str, Blend] = {}
     by_model: dict[str, list[str]] = {}
     for stem in from_models:
-        model = _model_for(stem, assignment, registry)
-        sources[stem] = model.id
-        by_model.setdefault(model.id, []).append(stem)
+        _models_for(stem, assignment, registry)  # validates every member
+        blend = as_blend(assignment[stem])
+        blends[stem] = blend
+        sources[stem] = blend.describe()
+        for model_id in blend.models:
+            by_model.setdefault(model_id, []).append(stem)
     runs = tuple(ModelRun(model_id, tuple(outputs)) for model_id, outputs in by_model.items())
-    return ComposePlan(requested, runs, method, dependencies, sources)
+    return ComposePlan(requested, runs, method, dependencies, sources, blends)
 
 
-def _model_for(stem: str, assignment: dict[str, str], registry: Registry):
+def as_blend(source: str | Blend) -> Blend:
+    return source if isinstance(source, Blend) else Blend((source,))
+
+
+def _models_for(stem: str, assignment: dict[str, str | Blend], registry: Registry) -> list:
+    """The registry entries serving ``stem``, each checked to be able to."""
     try:
-        model_id = assignment[stem]
+        blend = as_blend(assignment[stem])
     except KeyError:
         raise CompositionError(f"no model is assigned to {stem!r}") from None
-    if model_id not in registry:
-        raise CompositionError(f"{stem}: {model_id!r} is not in the registry")
-    model = registry.get(model_id)
-    if not model.is_loadable:
-        raise CompositionError(f"{stem}: {model_id} has status {model.status!r}")
-    if stem not in model.stems:
-        raise CompositionError(f"{stem}: {model_id} does not emit it (emits {model.stems})")
-    return model
+    models = []
+    for model_id in blend.models:
+        if model_id not in registry:
+            raise CompositionError(f"{stem}: {model_id!r} is not in the registry")
+        model = registry.get(model_id)
+        if not model.is_loadable:
+            raise CompositionError(f"{stem}: {model_id} has status {model.status!r}")
+        if stem not in model.stems:
+            raise CompositionError(f"{stem}: {model_id} does not emit it (emits {model.stems})")
+        models.append(model)
+    return models
 
 
 # --- running ------------------------------------------------------------------------------
@@ -326,6 +379,7 @@ def compose(
     With ``cache``, a model whose outputs for this audio are already stored is not run.
     """
     produced: dict[str, np.ndarray] = {}
+    per_model: dict[str, dict[str, np.ndarray]] = {}
     records: list[RunRecord] = []
     for run in plan.runs:
         outputs, run_records = run_model(
@@ -340,8 +394,15 @@ def compose(
             cache=cache,
             timings=timings,
         )
-        produced.update(outputs)
+        per_model[run.model_id] = outputs
         records.extend(run_records)
+    if plan.blends:
+        for stem, source in plan.blends.items():
+            estimates = [per_model[model_id][stem] for model_id in source.models]
+            produced[stem] = blend(estimates, list(source.weights), source.method)
+    else:
+        for outputs in per_model.values():
+            produced.update(outputs)
 
     if plan.other_method == "subtract":
         produced["other"] = produced["other"] - produced["guitar"] - produced["piano"]

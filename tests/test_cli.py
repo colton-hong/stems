@@ -454,9 +454,6 @@ def test_failures_exit_with_1_and_a_message(song, tmp_path, capsys) -> None:
     code, err = run(str(text), "--stems", "vocals", *OVERRIDES)
     assert (code, "not decodable audio" in err) == (1, True)
 
-    code, err = run(str(song.path), "--stems", "vocals", *OVERRIDES, "--mode", "full_ensemble")
-    assert (code, "not available yet" in err) == (1, True)
-
     code, err = run(str(song.path), "--stems", "vocals", "--model", "vocals=nope")
     assert (code, "not in the registry" in err) == (1, True)
 
@@ -469,8 +466,9 @@ def test_unknown_format_is_rejected_before_any_work(song, tmp_path) -> None:
     with pytest.raises(ValueError, match="unknown output format"):
         song.separate(tmp_path / "x", fmt="ogg")
     assert song.loads == 0
-    with pytest.raises(PipelineError, match="not available yet"):
-        song.separate(tmp_path / "x", mode="two_model_blend")
+    with pytest.raises(PipelineError, match="unknown mode 'three_model_blend'"):
+        song.separate(tmp_path / "x", mode="three_model_blend")
+    assert song.loads == 0
 
 
 # --- acceptance: real models (need downloaded weights) -------------------------------------

@@ -3,6 +3,7 @@
 separate song.wav --stems vocals,drums,bass,guitar,piano,other
 separate song.mp3 --stems all --format flac --out ./stems
 separate song.wav --stems bass --model bass=scnet_xl_ihf --device cpu
+separate song.wav --stems vocals,drums --mode two_model_blend
 """
 
 from __future__ import annotations
@@ -17,7 +18,13 @@ from stems_models.download import DownloadError
 from stems_worker.audio import AudioError
 from stems_worker.compose import CompositionError, SeparatorFactory
 from stems_worker.device import DeviceError
-from stems_worker.pipeline import DEFAULT_CACHE_DIR, PipelineError, SeparateOptions, separate_file
+from stems_worker.pipeline import (
+    DEFAULT_CACHE_DIR,
+    MODES,
+    PipelineError,
+    SeparateOptions,
+    separate_file,
+)
 from stems_worker.timing import DEFAULT_TIMINGS_PATH
 
 FORMATS = ("wav", "flac", "mp3_320", "mp3_192")
@@ -54,7 +61,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--format", choices=FORMATS, default=None, help="default: from config")
     parser.add_argument("--device", default=None, help="auto, cpu, mps or cuda (default: auto)")
     parser.add_argument(
-        "--mode", default="single_best", help="single_best (blends arrive in Phase 2)"
+        "--mode",
+        choices=MODES,
+        default="single_best",
+        help="one model per stem, or a blend of two or of all the models config lists for it",
     )
     parser.add_argument(
         "--model",

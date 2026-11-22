@@ -25,14 +25,17 @@ from stems_models.registry import Registry, load_registry
 from stems_worker.audio import extension_for, load_audio, save_stems
 from stems_worker.cache import OutputCache, audio_sha256, registry_fingerprint
 from stems_worker.compose import (
+    Blend,
     CompositionError,
     ModelRun,
     SeparatorFactory,
+    as_blend,
     compose,
     plan_composition,
     run_model,
 )
 from stems_worker.device import pick_device
+from stems_worker.ensemble import blend_stems
 from stems_worker.factory import build_separators
 from stems_worker.timing import DEFAULT_TIMINGS_PATH, TimingLog
 
@@ -67,13 +70,35 @@ class SeparateOptions:
     cache_dir: Path | None = DEFAULT_CACHE_DIR
 
 
-def default_assignment(defaults: Defaults, mode: str = "single_best") -> dict[str, str]:
-    if mode != "single_best":
-        raise PipelineError(
-            f"mode {mode!r} is not available yet: blends and ensembles are added with the "
-            f"benchmark that chooses them (Phase 2). Use single_best."
+MODES: tuple[str, ...] = ("single_best", "two_model_blend", "full_ensemble")
+
+
+def default_assignment(defaults: Defaults, mode: str = "single_best") -> dict[str, str | Blend]:
+    """What serves each slot in ``mode``: a model id, or a blend with the config's weights."""
+    if mode not in MODES:
+        raise PipelineError(f"unknown mode {mode!r}; choose from {', '.join(MODES)}")
+    ensembles = defaults.ensembles
+    if mode == "single_best":
+        return {slot: models.single_best for slot, models in ensembles.slots.items()}
+    return {
+        slot: Blend(
+            tuple(models.for_mode(mode)),
+            tuple(models.weights_for(mode)),
+            ensembles.method_for(slot),
         )
-    return {slot: models.single_best for slot, models in defaults.ensembles.slots.items()}
+        for slot, models in ensembles.slots.items()
+    }
+
+
+def _members(blend: Blend) -> dict[str, Any]:
+    """The members of a blended stem, for the manifest. Nothing for a single model."""
+    if not blend.is_blend:
+        return {}
+    return {
+        "models": list(blend.models),
+        "weights": [round(w, 6) for w in blend.weights],
+        "blend_method": blend.method,
+    }
 
 
 # What each optional stage takes from its model, and what the files are called.
@@ -83,16 +108,18 @@ STAGES: dict[str, dict[str, str]] = {
 }
 
 
-def _stage_model(stage: str, model_id: str, registry: Registry) -> str:
-    if model_id not in registry:
-        raise CompositionError(f"{stage}: {model_id!r} is not in the registry")
-    entry = registry.get(model_id)
-    lacking = [o for o in STAGES[stage] if o not in entry.stems]
-    if not entry.is_loadable or lacking:
-        raise CompositionError(
-            f"{stage}: {model_id} cannot serve it (status {entry.status}, emits {entry.stems})"
-        )
-    return model_id
+def _stage_blend(stage: str, source: str | Blend, registry: Registry) -> Blend:
+    blend = as_blend(source)
+    for model_id in blend.models:
+        if model_id not in registry:
+            raise CompositionError(f"{stage}: {model_id!r} is not in the registry")
+        entry = registry.get(model_id)
+        lacking = [o for o in STAGES[stage] if o not in entry.stems]
+        if not entry.is_loadable or lacking:
+            raise CompositionError(
+                f"{stage}: {model_id} cannot serve it (status {entry.status}, emits {entry.stems})"
+            )
+    return blend
 
 
 def _level_dbfs(x: np.ndarray) -> float:
@@ -150,7 +177,7 @@ def separate_file(
         for stage, wanted in (("vocal_split", options.split_vocals), ("dereverb", options.dereverb))
         if wanted
     ]
-    stage_models = {stage: _stage_model(stage, assignment[stage], registry) for stage in stages}
+    stage_blends = {stage: _stage_blend(stage, assignment[stage], registry) for stage in stages}
     plan = plan_composition(
         options.stems,
         assignment,
@@ -224,22 +251,27 @@ def separate_file(
                 fingerprint=fingerprint or registry_fingerprint(registry),
             )
         for stage in stages:
-            outputs, records = run_model(
-                ModelRun(stage_models[stage], tuple(STAGES[stage])),
-                vocals,
-                loaded.sample_rate,
-                factory,
-                device=device,
-                overlap=overlap,
-                batch_size=batch_size,
-                progress=progress,
-                cache=stage_cache,
-                timings=timings,
-                stage=stage,
-            )
+            source = stage_blends[stage]
+            per_member = []
+            for model_id in source.models:
+                outputs, records = run_model(
+                    ModelRun(model_id, tuple(STAGES[stage])),
+                    vocals,
+                    loaded.sample_rate,
+                    factory,
+                    device=device,
+                    overlap=overlap,
+                    batch_size=batch_size,
+                    progress=progress,
+                    cache=stage_cache,
+                    timings=timings,
+                    stage=stage,
+                )
+                per_member.append({output: outputs[output] for output in STAGES[stage]})
+                stage_runs += [(stage, record) for record in records]
+            blended = blend_stems(per_member, list(source.weights), source.method)
             for output, name in STAGES[stage].items():
-                extras[name] = outputs[output]
-            stage_runs += [(stage, record) for record in records]
+                extras[name] = blended[output]
 
     written = save_stems(
         output_dir, {**composition.stems, **extras}, loaded.sample_rate, options.fmt
@@ -253,12 +285,15 @@ def separate_file(
             source = "mix minus the other five stems"
         else:
             source = plan.sources[stem]
-        return {
+        described = {
             "file": written.paths[stem].name,
             "source": source,
             "rms_dbfs": _level_dbfs(delivered),
             "peak": round(float(np.abs(delivered).max()), 6),
         }
+        if stem in plan.blends:
+            described |= _members(plan.blends[stem])
+        return described
 
     def describe_extra(name: str) -> dict[str, Any]:
         delivered = extras[name] * np.float32(written.gain)
@@ -266,9 +301,10 @@ def separate_file(
         return {
             "file": written.paths[name].name,
             "stage": stage,
-            "source": f"{stage_models[stage]} on the vocals stem",
+            "source": f"{stage_blends[stage].describe()} on the vocals stem",
             "rms_dbfs": _level_dbfs(delivered),
             "peak": round(float(np.abs(delivered).max()), 6),
+            **_members(stage_blends[stage]),
         }
 
     def describe_run(record: Any, stage: str) -> dict[str, Any]:
