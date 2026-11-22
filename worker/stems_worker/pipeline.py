@@ -34,6 +34,7 @@ from stems_worker.compose import (
 )
 from stems_worker.device import pick_device
 from stems_worker.factory import build_separators
+from stems_worker.timing import DEFAULT_TIMINGS_PATH, TimingLog
 
 MANIFEST_VERSION = 1
 DEFAULT_CACHE_DIR = RUNS_DIR / "cache" / "separation"
@@ -60,6 +61,8 @@ class SeparateOptions:
     # if the vocals stem itself was not requested.
     split_vocals: bool = False  # adds lead_vocals and backing_vocals
     dereverb: bool = False  # adds vocals_dry
+    # Where model run times are appended. None disables the log.
+    timings_path: Path | None = DEFAULT_TIMINGS_PATH
     # None disables the cache.
     cache_dir: Path | None = DEFAULT_CACHE_DIR
 
@@ -175,6 +178,21 @@ def separate_file(
             fingerprint=fingerprint or registry_fingerprint(registry),
         )
 
+    code_version = _code_version()
+    timings = None
+    if options.timings_path is not None:
+        timings = TimingLog(
+            options.timings_path,
+            {
+                "audio_sha256": audio_hash,
+                "overlap": overlap,
+                "batch_size": batch_size,
+                "code_version": code_version,
+                "torch": _version("torch"),
+                "platform": platform.platform(),
+            },
+        )
+
     composition = compose(
         loaded.samples,
         loaded.sample_rate,
@@ -187,6 +205,7 @@ def separate_file(
         silent_stem_db=defaults.separation.silent_stem_db,
         progress=progress,
         cache=cache,
+        timings=timings,
     )
     # Optional stages work on the vocals stem and have their own cache entries, keyed on
     # that stem's audio.
@@ -215,6 +234,8 @@ def separate_file(
                 batch_size=batch_size,
                 progress=progress,
                 cache=stage_cache,
+                timings=timings,
+                stage=stage,
             )
             for output, name in STAGES[stage].items():
                 extras[name] = outputs[output]
@@ -268,7 +289,7 @@ def separate_file(
     manifest: dict[str, Any] = {
         "manifest_version": MANIFEST_VERSION,
         "created_at": datetime.now(UTC).isoformat(timespec="seconds"),
-        "code_version": _code_version(),
+        "code_version": code_version,
         "input": {
             "name": input_path.name,
             "audio_sha256": audio_hash,

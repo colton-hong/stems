@@ -75,6 +75,7 @@ class Song:
         self.gain = gain
         self.loads = 0
         self.cache_dir = tmp_path / "cache"
+        self.timings_path = tmp_path / "timings.jsonl"
 
     def factory(self, model_id, stems):
         outer = self
@@ -96,6 +97,7 @@ class Song:
 
     def separate(self, out, stems=PRODUCT_STEMS, **options):
         options.setdefault("cache_dir", self.cache_dir)
+        options.setdefault("timings_path", self.timings_path)
         options.setdefault("device", "cpu")
         return separate_file(
             self.path,
@@ -349,11 +351,15 @@ def test_a_stage_model_that_cannot_serve_the_stage_is_rejected(song, tmp_path) -
     from stems_worker.compose import CompositionError
 
     wrong = {**MODELS, "vocal_split": "fake_dry"}
-    options = SeparateOptions(stems=("vocals",), models=wrong, split_vocals=True, device="cpu")
+    options = SeparateOptions(
+        stems=("vocals",), models=wrong, split_vocals=True, device="cpu", timings_path=None
+    )
     with pytest.raises(CompositionError, match="vocal_split: fake_dry cannot serve it"):
         separate_file(song.path, tmp_path / "x", options, **song.inject())
     missing = {**MODELS, "dereverb": "nope"}
-    options = SeparateOptions(stems=("vocals",), models=missing, dereverb=True, device="cpu")
+    options = SeparateOptions(
+        stems=("vocals",), models=missing, dereverb=True, device="cpu", timings_path=None
+    )
     with pytest.raises(CompositionError, match="dereverb: 'nope' is not in the registry"):
         separate_file(song.path, tmp_path / "x", options, **song.inject())
     assert song.loads == 0
@@ -376,8 +382,9 @@ def test_command_flags_for_the_stages(song, tmp_path, capsys) -> None:
 
 
 def _main(song, *args):
+    log = ["--timings-log", str(song.timings_path)]
     return cli.main(
-        [str(song.path), *OVERRIDES, "--device", "cpu", "--quiet", *args], **song.inject()
+        [str(song.path), *OVERRIDES, "--device", "cpu", "--quiet", *log, *args], **song.inject()
     )
 
 
@@ -436,7 +443,7 @@ def test_usage_errors_exit_with_2(song, bad, capsys) -> None:
 
 def test_failures_exit_with_1_and_a_message(song, tmp_path, capsys) -> None:
     def run(*argv):
-        code = cli.main([*argv, "--quiet", "--no-cache"], **song.inject())
+        code = cli.main([*argv, "--quiet", "--no-cache", "--no-timings"], **song.inject())
         return code, capsys.readouterr().err
 
     code, err = run(str(tmp_path / "absent.wav"), "--stems", "vocals", *OVERRIDES)
@@ -482,6 +489,7 @@ def test_command_with_the_default_models(tmp_path, capsys) -> None:
     path = tmp_path / "fixture.wav"
     save_audio(path, generate_track(seed=1, duration_seconds=10.0).mix, SR, "wav")
     argv = [str(path), "--stems", "vocals,drums,bass,guitar,piano,other", "--quiet"]
+    argv += ["--timings-log", str(tmp_path / "timings.jsonl")]
     argv += ["--cache-dir", str(tmp_path / "cache"), "--out", str(tmp_path / "out")]
 
     assert cli.main(argv) == 0
@@ -515,6 +523,7 @@ def test_command_stages_with_the_default_models(tmp_path) -> None:
     save_audio(path, generate_track(seed=1, duration_seconds=10.0).mix, SR, "wav")
     out = tmp_path / "out"
     argv = [str(path), "--stems", "vocals", "--split-vocals", "--dereverb", "--quiet"]
+    argv += ["--timings-log", str(tmp_path / "timings.jsonl")]
     assert cli.main([*argv, "--cache-dir", str(tmp_path / "cache"), "--out", str(out)]) == 0
 
     manifest = json.loads((out / "manifest.json").read_text())

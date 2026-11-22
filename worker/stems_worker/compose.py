@@ -27,6 +27,7 @@ from stems_common.stems import PRODUCT_STEMS
 from stems_models.registry import Registry
 from stems_worker.cache import OutputCache
 from stems_worker.separator import DEFAULT_OVERLAP, Separator, run_separator
+from stems_worker.timing import TimingLog
 
 OtherMethod = Literal["auto", "direct", "subtract", "residual"]
 _NAMED = tuple(s for s in PRODUCT_STEMS if s != "other")  # the five stems that are not "other"
@@ -218,10 +219,13 @@ def run_model(
     batch_size: int = 1,
     progress: Callable[[str, int, int], None] | None = None,
     cache: OutputCache | None = None,
+    timings: TimingLog | None = None,
+    stage: str = "separation",
 ) -> tuple[dict[str, np.ndarray], list[RunRecord]]:
     """Get ``run.outputs`` of one model for ``audio``, from the cache if they are there.
 
-    The separators are loaded one at a time and always unloaded, even on failure.
+    The separators are loaded one at a time and always unloaded, even on failure. Each
+    run that really happens is written to ``timings``; a cache hit is not.
     """
     hit = cache.get(run.model_id, run.outputs) if cache is not None else None
     if hit is not None:
@@ -277,6 +281,16 @@ def run_model(
                 result.num_chunks,
             )
         )
+        if timings is not None:
+            timings.record(
+                model_id=run.model_id,
+                device=result.device,
+                outputs=wanted,
+                audio_seconds=result.audio_seconds,
+                wall_seconds=result.wall_seconds,
+                num_chunks=result.num_chunks,
+                stage=stage,
+            )
     if cache is not None:
         cache.put(
             run.model_id,
@@ -304,6 +318,7 @@ def compose(
     silent_stem_db: float = -60.0,
     progress: Callable[[str, int, int], None] | None = None,
     cache: OutputCache | None = None,
+    timings: TimingLog | None = None,
 ) -> Composition:
     """Run the plan on ``mix`` (stereo, ``(2, samples)``) and assemble the stems.
 
@@ -323,6 +338,7 @@ def compose(
             batch_size=batch_size,
             progress=progress,
             cache=cache,
+            timings=timings,
         )
         produced.update(outputs)
         records.extend(run_records)

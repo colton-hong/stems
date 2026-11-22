@@ -18,6 +18,7 @@ from stems_worker.audio import AudioError
 from stems_worker.compose import CompositionError, SeparatorFactory
 from stems_worker.device import DeviceError
 from stems_worker.pipeline import DEFAULT_CACHE_DIR, PipelineError, SeparateOptions, separate_file
+from stems_worker.timing import DEFAULT_TIMINGS_PATH
 
 FORMATS = ("wav", "flac", "mp3_320", "mp3_192")
 
@@ -76,6 +77,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--batch-size", type=int, default=None)
     parser.add_argument("--cache-dir", type=Path, default=DEFAULT_CACHE_DIR)
     parser.add_argument("--no-cache", action="store_true", help="always run every model")
+    parser.add_argument(
+        "--timings-log",
+        type=Path,
+        default=DEFAULT_TIMINGS_PATH,
+        help="file that model run times are appended to (default: runs/timings.jsonl)",
+    )
+    parser.add_argument("--no-timings", action="store_true", help="do not log run times")
     parser.add_argument("--quiet", action="store_true", help="no progress on stderr")
     return parser
 
@@ -103,6 +111,7 @@ def main(
         cache_dir=None if args.no_cache else args.cache_dir,
         split_vocals=args.split_vocals,
         dereverb=args.dereverb,
+        timings_path=None if args.no_timings else args.timings_log,
     )
     output_dir = args.out or args.file.with_name(f"{args.file.stem}_stems")
 
