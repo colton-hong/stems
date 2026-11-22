@@ -46,6 +46,9 @@ worker = [
 bench = []
 api = []
 
+[project.scripts]
+separate = "stems_worker.cli:main"
+
 [tool.setuptools.packages.find]
 where = ["common", "models", "worker", "bench", "api"]
 include = ["stems_*"]

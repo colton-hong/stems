@@ -50,6 +50,7 @@ make setup              # create .venv, install the project and dev tools
 make check              # ruff + pytest; run before every commit
 make test-slow          # tests that load real checkpoints (need downloaded weights)
 make env                # write runs/env/worker.json (devices, package versions)
+.venv/bin/separate FILE --stems all   # run the pipeline on one file
 make registry           # validate models/registry.yaml and print it
 make registry-sources   # HEAD every model URL and refresh sizes (network)
 make models-status      # which model files are downloaded or in progress

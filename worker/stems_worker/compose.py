@@ -25,6 +25,7 @@ import numpy as np
 
 from stems_common.stems import PRODUCT_STEMS
 from stems_models.registry import Registry
+from stems_worker.cache import OutputCache
 from stems_worker.separator import DEFAULT_OVERLAP, Separator, run_separator
 
 OtherMethod = Literal["auto", "direct", "subtract", "residual"]
@@ -67,6 +68,9 @@ class RunRecord:
     audio_seconds: float
     wall_seconds: float
     num_chunks: int
+    # True when the outputs were read from the cache; wall_seconds is then the time the
+    # original run took, not time spent now.
+    cached: bool = False
 
 
 @dataclass(frozen=True)
@@ -209,14 +213,35 @@ def compose(
     residual_warn_db: float = -10.0,
     silent_stem_db: float = -60.0,
     progress: Callable[[str, int, int], None] | None = None,
+    cache: OutputCache | None = None,
 ) -> Composition:
     """Run the plan on ``mix`` (stereo, ``(2, samples)``) and assemble the stems.
 
     ``progress(model_id, chunks_done, chunks_total)`` is called as each model works.
+    With ``cache``, a model whose outputs for this audio are already stored is not run.
     """
     produced: dict[str, np.ndarray] = {}
     records: list[RunRecord] = []
     for run in plan.runs:
+        hit = cache.get(run.model_id, run.outputs) if cache is not None else None
+        if hit is not None:
+            produced.update(hit.stems)
+            meta = hit.meta
+            records.append(
+                RunRecord(
+                    run.model_id,
+                    str(meta.get("device", device)),
+                    run.outputs,
+                    float(meta.get("audio_seconds", mix.shape[1] / sample_rate)),
+                    float(meta.get("wall_seconds", 0.0)),
+                    int(meta.get("num_chunks", 0)),
+                    cached=True,
+                )
+            )
+            continue
+
+        fresh: dict[str, np.ndarray] = {}
+        first_record = len(records)
         separators = list(factory(run.model_id, run.outputs))
         offered = [name for s in separators for name in s.outputs]
         lacking = [name for name in run.outputs if name not in offered]
@@ -243,7 +268,7 @@ def compose(
             finally:
                 separator.unload()
             for name in wanted:
-                produced[name] = result.stems[name]
+                fresh[name] = result.stems[name]
             records.append(
                 RunRecord(
                     run.model_id,
@@ -253,6 +278,19 @@ def compose(
                     result.wall_seconds,
                     result.num_chunks,
                 )
+            )
+        produced.update(fresh)
+        if cache is not None:
+            mine = records[first_record:]
+            cache.put(
+                run.model_id,
+                fresh,
+                {
+                    "device": mine[0].device,
+                    "audio_seconds": mine[0].audio_seconds,
+                    "wall_seconds": sum(r.wall_seconds for r in mine),
+                    "num_chunks": sum(r.num_chunks for r in mine),
+                },
             )
 
     if plan.other_method == "subtract":

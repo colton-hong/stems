@@ -4,7 +4,7 @@ Upload a song, get back separated stems: vocals, drums, bass, guitar, piano and 
 optional lead/backing vocal split and de-reverb. A personal, non-commercial project aiming
 for the best quality open models can give, with benchmarks you can re-run.
 
-**Status:** Phase 0 (plan and scaffold). There is no separation code yet.
+**Status:** Phase 1 (separation core). The `separate` command works; the web app does not exist yet.
 
 - [PLAN.md](PLAN.md): architecture and what each phase delivers
 - [PROGRESS.md](PROGRESS.md): task checklist and current state
@@ -21,6 +21,18 @@ make registry  # print the model registry
 
 make node-setup && make web-setup && make web-check   # web app (Node.js, project-local)
 ```
+
+## Separating a file
+
+```
+make setup
+.venv/bin/separate song.wav --stems vocals,drums,bass,guitar,piano,other
+.venv/bin/separate song.mp3 --stems all --format flac --out ./stems
+```
+
+The first run downloads the models it needs (a few GB). Stems and a `manifest.json` are
+written next to the input, in `<name>_stems/`. Model outputs are cached under `runs/cache/`,
+so repeating a run, or asking for another format, does not run the models again.
 
 Copy `.env.example` to `.env` when you have keys or dataset paths. Nothing in it is needed
 to run the tests.
