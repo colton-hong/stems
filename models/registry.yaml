@@ -937,12 +937,14 @@ models:
         filename: vr_model_data.json
         url: https://raw.githubusercontent.com/TRvlvr/application_data/main/vr_model_data/model_data_new.json
         size_bytes: 4380
-    config: &uvr_vr_config
+    config:
       params_from: vr_model_data.json
       params_key: md5_of_weights
+      primary_stem: Instrumental
+      primary: backing_vocals
+      secondary: lead_vocals
     licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
-    unverified: &uvr_vr_unverified
-      - VR-arch band parameters and which output is primary. Read them from UVR's VR model data (keyed by the weight file's MD5) in Phase 1.
+    notes: Run it on the isolated vocals stem. The model's primary output ("Instrumental") is then the backing vocals and the rest is the lead; on the synthetic fixture it does split the two.
 
   - id: uvr_vr_6hp_karaoke
     name: UVR 6_HP-Karaoke (VR arch)
@@ -962,9 +964,14 @@ models:
         url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/6_HP-Karaoke-UVR.pth
         size_bytes: 126782699
       - *uvr_vr_model_data
-    config: *uvr_vr_config
+    config:
+      params_from: vr_model_data.json
+      params_key: md5_of_weights
+      primary_stem: Instrumental
+      primary: backing_vocals
+      secondary: lead_vocals
     licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
-    unverified: *uvr_vr_unverified
+    notes: Run it on the isolated vocals stem. The model's primary output ("Instrumental") is then the backing vocals and the rest is the lead; on the synthetic fixture it does split the two.
 
   - id: uvr_mdxnet_kara
     name: UVR-MDX-NET Karaoke
@@ -1093,9 +1100,13 @@ models:
         url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-DeEcho-DeReverb.pth
         size_bytes: 223650277
       - *uvr_vr_model_data
-    config: *uvr_vr_config
+    config:
+      params_from: vr_model_data.json
+      params_key: md5_of_weights
+      primary_stem: No Reverb
+      primary: dry
+      secondary: null
     licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
-    unverified: *uvr_vr_unverified
 
   - id: uvr_vr_deecho_normal
     name: UVR-De-Echo-Normal (VR arch, FoxJoy)
@@ -1115,9 +1126,13 @@ models:
         url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-De-Echo-Normal.pth
         size_bytes: 127139365
       - *uvr_vr_model_data
-    config: *uvr_vr_config
+    config:
+      params_from: vr_model_data.json
+      params_key: md5_of_weights
+      primary_stem: No Echo
+      primary: dry
+      secondary: null
     licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
-    unverified: *uvr_vr_unverified
 
   - id: uvr_vr_deecho_aggressive
     name: UVR-De-Echo-Aggressive (VR arch, FoxJoy)
@@ -1137,9 +1152,13 @@ models:
         url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-De-Echo-Aggressive.pth
         size_bytes: 127139365
       - *uvr_vr_model_data
-    config: *uvr_vr_config
+    config:
+      params_from: vr_model_data.json
+      params_key: md5_of_weights
+      primary_stem: No Echo
+      primary: dry
+      secondary: null
     licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
-    unverified: *uvr_vr_unverified
 
   - id: uvr_vr_denoise
     name: UVR-DeNoise (VR arch, FoxJoy)
@@ -1159,10 +1178,14 @@ models:
         url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-DeNoise.pth
         size_bytes: 127139365
       - *uvr_vr_model_data
-    config: *uvr_vr_config
+    config:
+      params_from: vr_model_data.json
+      params_key: md5_of_weights
+      primary_stem: Noise
+      primary: null
+      secondary: dry
     licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
     notes: De-noise is not a v1 feature. Registered because the report lists it; not a candidate for any slot.
-    unverified: *uvr_vr_unverified
 
   # ---------------------------------------------------------------------------
   # In the report's table but with no downloadable weights (tracked, not loadable)

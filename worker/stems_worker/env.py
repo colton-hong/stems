@@ -37,6 +37,7 @@ TRACKED_PACKAGES: tuple[str, ...] = (
     "packaging",
     "PoPE-pytorch",
     "demucs",
+    "audioread",
 )
 
 DEVICE_PREFERENCE: tuple[str, ...] = ("cuda", "mps", "cpu")

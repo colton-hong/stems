@@ -44,6 +44,11 @@
     "sha256": "3ed9af50d5367c0b9c795b294b00e7599e4943244f4cbd376869f3bfc87721b1",
     "size_bytes": 18366619
   },
+  "https://files.pythonhosted.org/packages/83/50/29d83017f8efc049a9db683b20467083e3130256a98ea24237eb3eb6d016/audio_separator-0.48.0-py3-none-any.whl": {
+    "filename": "audio_separator-0.48.0-py3-none-any.whl",
+    "sha256": "c97b3bedcd54b401c22df7d518284a9ed143f66071496347e9f8da9d32ca7aec",
+    "size_bytes": 447552
+  },
   "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/5_HP-Karaoke-UVR.pth": {
     "filename": "5_HP-Karaoke-UVR.pth",
     "sha256": "fe00891defbb61f4261500af22f7624f1a3df8dc75fa3998d1aece02e6be4537",

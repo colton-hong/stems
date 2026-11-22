@@ -96,7 +96,7 @@ prove there are no seams and no length drift.
 | `msst` | RoFormers, SCNet, MDX23C, PolarFormer | ZFTurbo's Music-Source-Separation-Training model classes, vendored at a pinned commit (decided in P1.8, see below). |
 | `demucs` | htdemucs, htdemucs_ft, htdemucs_6s | The official `demucs` 4.1.0 package for the network; our own safe loading, chunking and whole-track normalisation. No shift trick. |
 | `uvr_mdx_onnx` | UVR and kuielab MDX-Net | `onnxruntime` on CPU (CUDA where installed; there is no MPS provider). STFT settings come from UVR's model data, looked up by UVR's hash of the file. |
-| `uvr_vr` | UVR VR-arch karaoke and de-echo | VR network code from UVR / `audio-separator`. |
+| `uvr_vr` | UVR VR-arch karaoke, de-echo, de-noise | UVR's network and multi-band spectrogram code, unpacked from the pinned `audio-separator` 0.48.0 wheel (those files only). Band resampling fixed to scipy polyphase. |
 
 Chunking, overlap and ensembling are ours for every adapter, so all models are compared
 under the same inference procedure.
