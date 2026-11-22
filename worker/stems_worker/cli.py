@@ -35,10 +35,12 @@ def _stems(value: str) -> tuple[str, ...]:
 
 
 def _override(value: str) -> tuple[str, str]:
-    stem, _, model_id = value.partition("=")
-    if stem not in PRODUCT_STEMS or not model_id:
-        raise argparse.ArgumentTypeError(f"expected STEM=MODEL_ID with a known stem, got {value!r}")
-    return stem, model_id
+    slot, _, model_id = value.partition("=")
+    if slot not in (*PRODUCT_STEMS, "vocal_split", "dereverb") or not model_id:
+        raise argparse.ArgumentTypeError(
+            f"expected SLOT=MODEL_ID where SLOT is a stem, vocal_split or dereverb; got {value!r}"
+        )
+    return slot, model_id
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -58,8 +60,16 @@ def build_parser() -> argparse.ArgumentParser:
         type=_override,
         action="append",
         default=[],
-        metavar="STEM=MODEL_ID",
-        help="use a specific registry model for one stem (repeatable)",
+        metavar="SLOT=MODEL_ID",
+        help="use a specific registry model for a stem, vocal_split or dereverb (repeatable)",
+    )
+    parser.add_argument(
+        "--split-vocals",
+        action="store_true",
+        help="also write lead_vocals and backing_vocals, split from the vocals stem",
+    )
+    parser.add_argument(
+        "--dereverb", action="store_true", help="also write vocals_dry, the vocals stem de-reverbed"
     )
     parser.add_argument("--other-method", choices=("auto", "residual"), default=None)
     parser.add_argument("--overlap", type=float, default=None, help="chunk overlap, 0 to <1")
@@ -91,6 +101,8 @@ def main(
         batch_size=args.batch_size,
         models=dict(args.model),
         cache_dir=None if args.no_cache else args.cache_dir,
+        split_vocals=args.split_vocals,
+        dereverb=args.dereverb,
     )
     output_dir = args.out or args.file.with_name(f"{args.file.stem}_stems")
 
@@ -128,8 +140,8 @@ def main(
     for run in manifest["models"]:
         how = "cached" if run["cached"] else f"{run['wall_seconds']:.1f} s on {run['device']}"
         print(f"{run['model_id']}: {', '.join(run['outputs'])} ({how})")
-    for stem, info in manifest["stems"].items():
-        print(f"{output_dir / info['file']}  [{stem}]")
+    for name, info in {**manifest["stems"], **manifest["extras"]}.items():
+        print(f"{output_dir / info['file']}  [{name}]")
     residual = manifest["residual"]
     if residual["computed"]:
         print(f"residual: {residual['level_db']} dB relative to the mix ({residual['note']})")

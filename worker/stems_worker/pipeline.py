@@ -21,11 +21,17 @@ import numpy as np
 
 from stems_common.paths import REPO_ROOT, RUNS_DIR
 from stems_common.settings import Defaults, load_defaults
-from stems_common.stems import PRODUCT_STEMS
 from stems_models.registry import Registry, load_registry
 from stems_worker.audio import extension_for, load_audio, save_stems
 from stems_worker.cache import OutputCache, audio_sha256, registry_fingerprint
-from stems_worker.compose import SeparatorFactory, compose, plan_composition
+from stems_worker.compose import (
+    CompositionError,
+    ModelRun,
+    SeparatorFactory,
+    compose,
+    plan_composition,
+    run_model,
+)
 from stems_worker.device import pick_device
 from stems_worker.factory import build_separators
 
@@ -48,8 +54,12 @@ class SeparateOptions:
     other_method: str | None = None
     overlap: float | None = None
     batch_size: int | None = None
-    # Per-stem overrides of the default model, as {stem: registry id}.
+    # Per-slot overrides of the default model, as {stem or stage: registry id}.
     models: dict[str, str] = field(default_factory=dict)
+    # Optional stages, both run on the vocals stem. The vocals are computed for them even
+    # if the vocals stem itself was not requested.
+    split_vocals: bool = False  # adds lead_vocals and backing_vocals
+    dereverb: bool = False  # adds vocals_dry
     # None disables the cache.
     cache_dir: Path | None = DEFAULT_CACHE_DIR
 
@@ -60,7 +70,26 @@ def default_assignment(defaults: Defaults, mode: str = "single_best") -> dict[st
             f"mode {mode!r} is not available yet: blends and ensembles are added with the "
             f"benchmark that chooses them (Phase 2). Use single_best."
         )
-    return {stem: defaults.ensembles.slots[stem].single_best for stem in PRODUCT_STEMS}
+    return {slot: models.single_best for slot, models in defaults.ensembles.slots.items()}
+
+
+# What each optional stage takes from its model, and what the files are called.
+STAGES: dict[str, dict[str, str]] = {
+    "vocal_split": {"lead_vocals": "lead_vocals", "backing_vocals": "backing_vocals"},
+    "dereverb": {"dry": "vocals_dry"},
+}
+
+
+def _stage_model(stage: str, model_id: str, registry: Registry) -> str:
+    if model_id not in registry:
+        raise CompositionError(f"{stage}: {model_id!r} is not in the registry")
+    entry = registry.get(model_id)
+    lacking = [o for o in STAGES[stage] if o not in entry.stems]
+    if not entry.is_loadable or lacking:
+        raise CompositionError(
+            f"{stage}: {model_id} cannot serve it (status {entry.status}, emits {entry.stems})"
+        )
+    return model_id
 
 
 def _level_dbfs(x: np.ndarray) -> float:
@@ -113,7 +142,19 @@ def separate_file(
     other_method = options.other_method or defaults.separation.other_method
     overlap = defaults.separation.overlap if options.overlap is None else options.overlap
     batch_size = options.batch_size or defaults.separation.batch_size
-    plan = plan_composition(options.stems, assignment, registry, other_method)
+    stages = [
+        stage
+        for stage, wanted in (("vocal_split", options.split_vocals), ("dereverb", options.dereverb))
+        if wanted
+    ]
+    stage_models = {stage: _stage_model(stage, assignment[stage], registry) for stage in stages}
+    plan = plan_composition(
+        options.stems,
+        assignment,
+        registry,
+        other_method,
+        also_compute=("vocals",) if stages else (),
+    )
 
     loaded = load_audio(input_path, defaults.audio.sample_rate_hz)
     device = pick_device(options.device)
@@ -147,7 +188,41 @@ def separate_file(
         progress=progress,
         cache=cache,
     )
-    written = save_stems(output_dir, composition.stems, loaded.sample_rate, options.fmt)
+    # Optional stages work on the vocals stem and have their own cache entries, keyed on
+    # that stem's audio.
+    extras: dict[str, np.ndarray] = {}
+    stage_runs: list[tuple[str, Any]] = []
+    if stages:
+        vocals = composition.stems.get("vocals", composition.dependencies.get("vocals"))
+        assert vocals is not None  # also_compute guarantees it
+        stage_cache = None
+        if options.cache_dir is not None:
+            stage_cache = OutputCache(
+                options.cache_dir,
+                audio_hash=audio_sha256(vocals, loaded.sample_rate),
+                overlap=overlap,
+                device=device,
+                fingerprint=fingerprint or registry_fingerprint(registry),
+            )
+        for stage in stages:
+            outputs, records = run_model(
+                ModelRun(stage_models[stage], tuple(STAGES[stage])),
+                vocals,
+                loaded.sample_rate,
+                factory,
+                device=device,
+                overlap=overlap,
+                batch_size=batch_size,
+                progress=progress,
+                cache=stage_cache,
+            )
+            for output, name in STAGES[stage].items():
+                extras[name] = outputs[output]
+            stage_runs += [(stage, record) for record in records]
+
+    written = save_stems(
+        output_dir, {**composition.stems, **extras}, loaded.sample_rate, options.fmt
+    )
 
     def describe(stem: str) -> dict[str, Any]:
         delivered = composition.stems[stem] * np.float32(written.gain)
@@ -162,6 +237,31 @@ def separate_file(
             "source": source,
             "rms_dbfs": _level_dbfs(delivered),
             "peak": round(float(np.abs(delivered).max()), 6),
+        }
+
+    def describe_extra(name: str) -> dict[str, Any]:
+        delivered = extras[name] * np.float32(written.gain)
+        stage = next(s for s, names in STAGES.items() if name in names.values())
+        return {
+            "file": written.paths[name].name,
+            "stage": stage,
+            "source": f"{stage_models[stage]} on the vocals stem",
+            "rms_dbfs": _level_dbfs(delivered),
+            "peak": round(float(np.abs(delivered).max()), 6),
+        }
+
+    def describe_run(record: Any, stage: str) -> dict[str, Any]:
+        return {
+            "model_id": record.model_id,
+            "stage": stage,
+            "input": "mix" if stage == "separation" else "vocals stem",
+            "outputs": list(record.outputs),
+            "device": record.device,
+            "audio_seconds": round(record.audio_seconds, 3),
+            "wall_seconds": round(record.wall_seconds, 3),
+            "realtime_factor": round(record.wall_seconds / record.audio_seconds, 4),
+            "num_chunks": record.num_chunks,
+            "cached": record.cached,
         }
 
     residual = composition.residual
@@ -185,23 +285,18 @@ def separate_file(
             "overlap": overlap,
             "batch_size": batch_size,
             "model_overrides": dict(options.models),
+            "split_vocals": options.split_vocals,
+            "dereverb": options.dereverb,
         },
         "device": device,
         "sample_rate_hz": loaded.sample_rate,
         "models": [
-            {
-                "model_id": r.model_id,
-                "outputs": list(r.outputs),
-                "device": r.device,
-                "audio_seconds": round(r.audio_seconds, 3),
-                "wall_seconds": round(r.wall_seconds, 3),
-                "realtime_factor": round(r.wall_seconds / r.audio_seconds, 4),
-                "num_chunks": r.num_chunks,
-                "cached": r.cached,
-            }
-            for r in composition.runs
+            *(describe_run(r, "separation") for r in composition.runs),
+            *(describe_run(r, stage) for stage, r in stage_runs),
         ],
         "stems": {stem: describe(stem) for stem in plan.requested},
+        # Files produced by the optional stages.
+        "extras": {name: describe_extra(name) for name in extras},
         "other_method": plan.other_method,
         "dependencies": list(plan.dependencies),
         # One gain applied to every stem, below 1.0 only if a stem would have clipped.

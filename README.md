@@ -28,6 +28,7 @@ make node-setup && make web-setup && make web-check   # web app (Node.js, projec
 make setup
 .venv/bin/separate song.wav --stems vocals,drums,bass,guitar,piano,other
 .venv/bin/separate song.mp3 --stems all --format flac --out ./stems
+.venv/bin/separate song.wav --stems vocals --split-vocals --dereverb
 ```
 
 The first run downloads the models it needs (a few GB). Stems and a `manifest.json` are

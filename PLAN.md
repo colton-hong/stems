@@ -140,8 +140,13 @@ averaging and STFT-domain averaging, each with per-model weights. Method and wei
 chosen per stem in Phase 2 on a tuning split and reported on the frozen test tracks.
 
 **CLI.** `separate <file> --stems vocals,drums,... [--split-vocals] [--dereverb]
-[--mode single_best] [--format wav|flac|mp3_320]` writes stems plus a `manifest.json` with
-the models used, the device, and wall-clock seconds per model.
+[--format wav|flac|mp3_320|mp3_192] [--model SLOT=ID]` writes the stems plus a
+`manifest.json` with the models used, the device, wall-clock seconds per model and the
+residual report. Model outputs are cached under `runs/cache/`.
+
+**Optional stages.** Vocal split and de-reverb both run on the vocals stem and add files
+(`lead_vocals`, `backing_vocals`, `vocals_dry`) without replacing it. The split models emit
+the lead and the rest of their input, so lead plus backing equals the vocals stem.
 
 ## 4. Model registry
 

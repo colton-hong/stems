@@ -106,17 +106,23 @@ def plan_composition(
     assignment: dict[str, str],
     registry: Registry,
     other_method: OtherMethod = "auto",
+    also_compute: Sequence[str] = (),
 ) -> ComposePlan:
     """Decide which models run and what is taken from each.
 
     ``assignment`` maps a stem name to the registry id of the model that serves it.
+    ``also_compute`` names stems a later stage needs (the vocals, for a vocal split) that
+    are computed but only delivered if they were requested too.
     """
     requested = tuple(dict.fromkeys(requested))
-    unknown = [s for s in requested if s not in PRODUCT_STEMS]
-    if unknown or not requested:
+    also_compute = tuple(s for s in dict.fromkeys(also_compute) if s not in requested)
+    unknown = [s for s in (*requested, *also_compute) if s not in PRODUCT_STEMS]
+    if unknown or not (requested or also_compute):
         raise CompositionError(f"requested stems must be among {PRODUCT_STEMS}, got {requested}")
+    if "other" in also_compute:
+        raise CompositionError("'other' cannot be an undelivered dependency")
 
-    needed: list[str] = [s for s in requested if s != "other"]
+    needed: list[str] = [s for s in (*requested, *also_compute) if s != "other"]
     method: Literal["direct", "subtract", "residual"] | None = None
     if "other" in requested:
         if other_method == "residual":
@@ -201,6 +207,90 @@ def residual_report(
     return ResidualReport(True, level, silent, ok, note)
 
 
+def run_model(
+    run: ModelRun,
+    audio: np.ndarray,
+    sample_rate: int,
+    factory: SeparatorFactory,
+    *,
+    device: str,
+    overlap: float = DEFAULT_OVERLAP,
+    batch_size: int = 1,
+    progress: Callable[[str, int, int], None] | None = None,
+    cache: OutputCache | None = None,
+) -> tuple[dict[str, np.ndarray], list[RunRecord]]:
+    """Get ``run.outputs`` of one model for ``audio``, from the cache if they are there.
+
+    The separators are loaded one at a time and always unloaded, even on failure.
+    """
+    hit = cache.get(run.model_id, run.outputs) if cache is not None else None
+    if hit is not None:
+        meta = hit.meta
+        record = RunRecord(
+            run.model_id,
+            str(meta.get("device", device)),
+            run.outputs,
+            float(meta.get("audio_seconds", audio.shape[1] / sample_rate)),
+            float(meta.get("wall_seconds", 0.0)),
+            int(meta.get("num_chunks", 0)),
+            cached=True,
+        )
+        return dict(hit.stems), [record]
+
+    separators = list(factory(run.model_id, run.outputs))
+    offered = [name for s in separators for name in s.outputs]
+    lacking = [name for name in run.outputs if name not in offered]
+    if lacking:
+        raise CompositionError(f"{run.model_id} did not offer {lacking} (offered {offered})")
+
+    fresh: dict[str, np.ndarray] = {}
+    records: list[RunRecord] = []
+    for separator in separators:
+        wanted = tuple(name for name in run.outputs if name in separator.outputs)
+        if not wanted:
+            continue
+        separator.load(device)
+        try:
+            result = run_separator(
+                separator,
+                audio,
+                sample_rate,
+                overlap=overlap,
+                batch_size=batch_size,
+                progress=(
+                    None
+                    if progress is None
+                    else lambda done, total, _id=run.model_id: progress(_id, done, total)
+                ),
+            )
+        finally:
+            separator.unload()
+        for name in wanted:
+            fresh[name] = result.stems[name]
+        records.append(
+            RunRecord(
+                run.model_id,
+                result.device,
+                wanted,
+                result.audio_seconds,
+                result.wall_seconds,
+                result.num_chunks,
+            )
+        )
+    if cache is not None:
+        cache.put(
+            run.model_id,
+            fresh,
+            {
+                "device": records[0].device,
+                "audio_seconds": records[0].audio_seconds,
+                "wall_seconds": sum(r.wall_seconds for r in records),
+                "num_chunks": sum(r.num_chunks for r in records),
+            },
+        )
+    return fresh, records
+
+
 def compose(
     mix: np.ndarray,
     sample_rate: int,
@@ -223,75 +313,19 @@ def compose(
     produced: dict[str, np.ndarray] = {}
     records: list[RunRecord] = []
     for run in plan.runs:
-        hit = cache.get(run.model_id, run.outputs) if cache is not None else None
-        if hit is not None:
-            produced.update(hit.stems)
-            meta = hit.meta
-            records.append(
-                RunRecord(
-                    run.model_id,
-                    str(meta.get("device", device)),
-                    run.outputs,
-                    float(meta.get("audio_seconds", mix.shape[1] / sample_rate)),
-                    float(meta.get("wall_seconds", 0.0)),
-                    int(meta.get("num_chunks", 0)),
-                    cached=True,
-                )
-            )
-            continue
-
-        fresh: dict[str, np.ndarray] = {}
-        first_record = len(records)
-        separators = list(factory(run.model_id, run.outputs))
-        offered = [name for s in separators for name in s.outputs]
-        lacking = [name for name in run.outputs if name not in offered]
-        if lacking:
-            raise CompositionError(f"{run.model_id} did not offer {lacking} (offered {offered})")
-        for separator in separators:
-            wanted = tuple(name for name in run.outputs if name in separator.outputs)
-            if not wanted:
-                continue
-            separator.load(device)
-            try:
-                result = run_separator(
-                    separator,
-                    mix,
-                    sample_rate,
-                    overlap=overlap,
-                    batch_size=batch_size,
-                    progress=(
-                        None
-                        if progress is None
-                        else lambda done, total, _id=run.model_id: progress(_id, done, total)
-                    ),
-                )
-            finally:
-                separator.unload()
-            for name in wanted:
-                fresh[name] = result.stems[name]
-            records.append(
-                RunRecord(
-                    run.model_id,
-                    result.device,
-                    wanted,
-                    result.audio_seconds,
-                    result.wall_seconds,
-                    result.num_chunks,
-                )
-            )
-        produced.update(fresh)
-        if cache is not None:
-            mine = records[first_record:]
-            cache.put(
-                run.model_id,
-                fresh,
-                {
-                    "device": mine[0].device,
-                    "audio_seconds": mine[0].audio_seconds,
-                    "wall_seconds": sum(r.wall_seconds for r in mine),
-                    "num_chunks": sum(r.num_chunks for r in mine),
-                },
-            )
+        outputs, run_records = run_model(
+            run,
+            mix,
+            sample_rate,
+            factory,
+            device=device,
+            overlap=overlap,
+            batch_size=batch_size,
+            progress=progress,
+            cache=cache,
+        )
+        produced.update(outputs)
+        records.extend(run_records)
 
     if plan.other_method == "subtract":
         produced["other"] = produced["other"] - produced["guitar"] - produced["piano"]

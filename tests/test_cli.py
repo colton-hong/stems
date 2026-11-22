@@ -34,6 +34,8 @@ REGISTRY = Registry.model_construct(
     models=[
         _entry("fake4", ["vocals", "drums", "bass", "other"]),
         _entry("fake6", list(PRODUCT_STEMS)),
+        _entry("fake_kara", ["lead_vocals", "backing_vocals"]),
+        _entry("fake_dry", ["dry"]),
     ],
 )
 MODELS = {
@@ -43,6 +45,8 @@ MODELS = {
     "other": "fake4",
     "guitar": "fake6",
     "piano": "fake6",
+    "vocal_split": "fake_kara",
+    "dereverb": "fake_dry",
 }
 OVERRIDES = [arg for stem, model in MODELS.items() for arg in ("--model", f"{stem}={model}")]
 
@@ -62,6 +66,12 @@ class Song:
         four = {k: stems[k] for k in ("vocals", "drums", "bass")}
         four["other"] = stems["other"] + stems["guitar"] + stems["piano"]
         self.truth = {"fake4": four, "fake6": stems}
+        # Stage models run on the vocals stem: a lead/backing split that adds back up to
+        # it exactly, and a "de-reverb" that is recognisable as half the level.
+        self.lead = q(track.lead_vocals)
+        self.backing = stems["vocals"] - self.lead
+        self.truth["fake_kara"] = {"lead_vocals": self.lead, "backing_vocals": self.backing}
+        self.truth["fake_dry"] = {"dry": stems["vocals"] * np.float32(0.5)}
         self.gain = gain
         self.loads = 0
         self.cache_dir = tmp_path / "cache"
@@ -262,6 +272,106 @@ def test_fingerprint_follows_the_pinned_weights_and_the_registry_config(tmp_path
     assert registry_fingerprint(other_registry, lock)("htdemucs") != pinned
 
 
+# --- acceptance: vocal split and de-reverb -------------------------------------------------
+
+
+def test_vocal_split_and_dereverb_write_extra_files_and_are_recorded(song, tmp_path) -> None:
+    out = tmp_path / "out"
+    manifest = song.separate(out, stems=["vocals", "drums"], split_vocals=True, dereverb=True)
+
+    assert sorted(p.name for p in out.iterdir()) == [
+        "backing_vocals.wav",
+        "drums.wav",
+        "lead_vocals.wav",
+        "manifest.json",
+        "vocals.wav",
+        "vocals_dry.wav",
+    ]
+    lead = load_audio(out / "lead_vocals.wav").samples
+    backing = load_audio(out / "backing_vocals.wav").samples
+    dry = load_audio(out / "vocals_dry.wav").samples
+    vocals = load_audio(out / "vocals.wav").samples
+    assert float(np.abs(lead - song.lead).max()) < 1e-6
+    assert float(np.abs(lead + backing - vocals).max()) < 1e-6  # the split adds back up
+    assert float(np.abs(dry - 0.5 * vocals).max()) < 1e-6
+
+    assert manifest["request"]["split_vocals"] is True
+    assert manifest["request"]["dereverb"] is True
+    stages = {m["stage"]: m for m in manifest["models"] if m["stage"] != "separation"}
+    assert stages["vocal_split"]["model_id"] == "fake_kara"
+    assert stages["vocal_split"]["input"] == "vocals stem"
+    assert stages["vocal_split"]["outputs"] == ["lead_vocals", "backing_vocals"]
+    assert stages["dereverb"]["model_id"] == "fake_dry"
+    assert stages["dereverb"]["wall_seconds"] >= 0
+    assert manifest["extras"]["vocals_dry"]["file"] == "vocals_dry.wav"
+    assert manifest["extras"]["vocals_dry"]["stage"] == "dereverb"
+    assert manifest["extras"]["lead_vocals"]["source"] == "fake_kara on the vocals stem"
+    assert set(manifest["extras"]) == {"lead_vocals", "backing_vocals", "vocals_dry"}
+
+
+def test_stages_compute_the_vocals_even_when_they_were_not_requested(song, tmp_path) -> None:
+    out = tmp_path / "out"
+    manifest = song.separate(out, stems=["drums"], split_vocals=True)
+    assert sorted(p.name for p in out.iterdir()) == [
+        "backing_vocals.wav",
+        "drums.wav",
+        "lead_vocals.wav",
+        "manifest.json",
+    ]
+    assert manifest["dependencies"] == ["vocals"]
+    assert "vocals" not in manifest["stems"]
+    assert float(np.abs(load_audio(out / "lead_vocals.wav").samples - song.lead).max()) < 1e-6
+
+
+def test_without_the_flags_no_stage_runs(song, tmp_path) -> None:
+    manifest = song.separate(tmp_path / "out", stems=["vocals"])
+    assert manifest["extras"] == {}
+    assert {m["stage"] for m in manifest["models"]} == {"separation"}
+    assert song.loads == 1
+
+
+def test_stage_outputs_are_cached_too(song, tmp_path) -> None:
+    song.separate(tmp_path / "a", stems=["vocals"], split_vocals=True, dereverb=True)
+    assert song.loads == 3  # the vocal model, the splitter, the de-reverb
+    again = song.separate(tmp_path / "b", stems=["vocals"], split_vocals=True, dereverb=True)
+    assert song.loads == 3
+    assert all(m["cached"] for m in again["models"])
+    # Asking for less reuses everything already done.
+    song.separate(tmp_path / "c", stems=["vocals"], split_vocals=True)
+    assert song.loads == 3
+    # Asking the vocal model for a stem it has not produced yet runs that model again,
+    # and only that model.
+    song.separate(tmp_path / "d", stems=["vocals", "drums"], split_vocals=True)
+    assert song.loads == 4
+
+
+def test_a_stage_model_that_cannot_serve_the_stage_is_rejected(song, tmp_path) -> None:
+    from stems_worker.compose import CompositionError
+
+    wrong = {**MODELS, "vocal_split": "fake_dry"}
+    options = SeparateOptions(stems=("vocals",), models=wrong, split_vocals=True, device="cpu")
+    with pytest.raises(CompositionError, match="vocal_split: fake_dry cannot serve it"):
+        separate_file(song.path, tmp_path / "x", options, **song.inject())
+    missing = {**MODELS, "dereverb": "nope"}
+    options = SeparateOptions(stems=("vocals",), models=missing, dereverb=True, device="cpu")
+    with pytest.raises(CompositionError, match="dereverb: 'nope' is not in the registry"):
+        separate_file(song.path, tmp_path / "x", options, **song.inject())
+    assert song.loads == 0
+
+
+def test_command_flags_for_the_stages(song, tmp_path, capsys) -> None:
+    out = tmp_path / "out"
+    code = _main(
+        song, "--stems", "vocals", "--split-vocals", "--dereverb", "--no-cache", "--out", str(out)
+    )
+    assert code == 0
+    printed = capsys.readouterr().out
+    for name in ("vocals", "lead_vocals", "backing_vocals", "vocals_dry"):
+        assert (out / f"{name}.wav").exists()
+        assert f"[{name}]" in printed
+    assert "fake_kara: lead_vocals, backing_vocals" in printed
+
+
 # --- the command line ----------------------------------------------------------------------
 
 
@@ -389,3 +499,33 @@ def test_command_with_the_default_models(tmp_path, capsys) -> None:
         a = load_audio(tmp_path / "out" / f"{stem}.wav").samples
         b = load_audio(tmp_path / "again" / f"{stem}.wav").samples
         assert np.array_equal(a, b)
+
+
+@pytest.mark.slow
+def test_command_stages_with_the_default_models(tmp_path) -> None:
+    from stems_common.settings import load_defaults
+    from stems_models.download import is_downloaded
+
+    registry, slots = load_registry(), load_defaults().ensembles.slots
+    needed = {slots[s].single_best for s in ("vocals", "vocal_split", "dereverb")}
+    if not all(is_downloaded(registry.get(m)) for m in needed):
+        pytest.skip("default vocal, split and de-reverb models are not all downloaded")
+
+    path = tmp_path / "fixture.wav"
+    save_audio(path, generate_track(seed=1, duration_seconds=10.0).mix, SR, "wav")
+    out = tmp_path / "out"
+    argv = [str(path), "--stems", "vocals", "--split-vocals", "--dereverb", "--quiet"]
+    assert cli.main([*argv, "--cache-dir", str(tmp_path / "cache"), "--out", str(out)]) == 0
+
+    manifest = json.loads((out / "manifest.json").read_text())
+    assert [m["stage"] for m in manifest["models"]] == ["separation", "vocal_split", "dereverb"]
+    vocals = load_audio(out / "vocals.wav").samples
+    lead = load_audio(out / "lead_vocals.wav").samples
+    backing = load_audio(out / "backing_vocals.wav").samples
+    dry = load_audio(out / "vocals_dry.wav").samples
+    for audio in (lead, backing, dry):
+        assert audio.shape == vocals.shape
+        assert np.isfinite(audio).all()
+    # The default splitter emits the lead and the rest of its input, so the two add back
+    # up to the vocals stem (to within 24-bit rounding of three files).
+    assert float(np.abs(lead + backing - vocals).max()) < 1e-5
