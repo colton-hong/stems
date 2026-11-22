@@ -10,6 +10,7 @@ anywhere: other people's numbers were measured under other protocols and are not
 | `device-spread-synthetic.md` | The same models run twice per device, and across devices | `make bench-device-spread` |
 | `musdb18hq.md` | MUSDB18-HQ test | **Not run.** Needs the dataset (BLOCKED.md B2) |
 | `moisesdb.md` | The frozen MoisesDB subset | **Not run.** Needs the dataset (BLOCKED.md B3) |
+| `tuning-*.md` | Blend method and weights per slot, chosen on tuning tracks | `bench tune`. **Not run on music.** Needs the datasets |
 | `recommendation.md` | Default model or blend per stem | **Not written.** Needs both of the above |
 
 Each `.md` has a `.json` beside it with the same figures and the SHA-256 of every result file
@@ -101,3 +102,17 @@ MoisesDB, once `MOISESDB_PATH` is set:
 
 selects and freezes the 50-track subset in `bench/frozen/moisesdb_subset.json`. Commit it,
 then run with `--dataset moisesdb_subset`.
+
+## Tuning blends
+
+Blend weights and methods are chosen on tracks that are in no test list: MUSDB18-HQ's
+train split, and MoisesDB tracks outside the frozen subset
+(`python -m stems_bench.datasets.moisesdb --freeze-tuning`, after the subset is frozen).
+`bench tune` checks that before it runs anything.
+
+```bash
+.venv/bin/bench tune --dataset musdb18hq_train --out docs/benchmarks/tuning-musdb18hq.md
+```
+
+It prints what it chose as a config snippet and applies nothing. Put the snippet in
+`config/defaults.yaml`, then score it on the test lists with an ordinary `bench run`.

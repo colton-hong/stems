@@ -32,6 +32,7 @@ from stems_common.stems import PRODUCT_STEMS
 from stems_common.synthetic import SyntheticTrack, generate_track
 
 FROZEN_PATH = FROZEN_DIR / "synthetic.json"
+TUNING_FROZEN_PATH = FROZEN_DIR / "synthetic_tuning.json"
 # Generated audio is compared with the frozen fingerprints to this absolute tolerance. It
 # is far above the last-bit differences between platforms and far below any real change.
 FINGERPRINT_TOLERANCE = 1e-6
@@ -45,6 +46,11 @@ SPEC: tuple[dict[str, Any], ...] = (
     {"id": "synth-07", "seed": 107, "active_stems": ["vocals", "drums", "bass", "other"]},
     {"id": "synth-08", "seed": 108, "active_stems": ["drums", "bass", "guitar", "piano", "other"]},
 )  # fmt: skip
+# A second list with other seeds, for tuning blends: nothing tuned on it is scored on it.
+TUNING_SPEC: tuple[dict[str, Any], ...] = tuple(
+    {"id": f"tune-{i:02d}", "seed": 200 + i, "active_stems": list(PRODUCT_STEMS)}
+    for i in range(1, 5)
+)
 
 
 def fingerprint(audio: np.ndarray) -> list[float]:
@@ -76,16 +82,16 @@ def _generate(entry: dict[str, Any], sample_rate: int) -> SyntheticTrack:
     )
 
 
-def build_frozen() -> dict[str, Any]:
-    """The frozen list for ``SPEC``, with fingerprints of the audio it generates today."""
+def build_frozen(name: str = "synthetic") -> dict[str, Any]:
+    """The frozen list for a spec, with fingerprints of the audio it generates today."""
     tracks = []
-    for spec in SPEC:
+    for spec in SPEC if name == "synthetic" else TUNING_SPEC:
         entry = {**spec, "duration_seconds": DURATION_SECONDS}
         signals = _signals(_generate(entry, SAMPLE_RATE))
         entry["fingerprint"] = {name: fingerprint(x) for name, x in signals.items()}
         tracks.append(entry)
     return {
-        "dataset": "synthetic",
+        "dataset": name,
         "protocol_version": PROTOCOL_VERSION,
         "sample_rate": SAMPLE_RATE,
         "generator": "stems_common.synthetic.generate_track",
@@ -99,8 +105,10 @@ class SyntheticDataset(Dataset):
     inputs = ("mix", "vocals", "vocals_wet")
     reliable_metrics = ("sdr",)
 
-    def __init__(self, frozen_path: Path = FROZEN_PATH) -> None:
-        self._frozen_path = frozen_path
+    def __init__(self, frozen_path: Path | None = None, name: str = "synthetic") -> None:
+        self.name = name
+        default = FROZEN_PATH if name == "synthetic" else TUNING_FROZEN_PATH
+        self._frozen_path = frozen_path or default
         self._frozen: FrozenList | None = None
 
     @property
@@ -143,15 +151,17 @@ class SyntheticDataset(Dataset):
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Freeze or check the synthetic track list.")
     parser.add_argument("--freeze", action="store_true", help="write the list if there is none")
-    parser.add_argument("--path", type=Path, default=FROZEN_PATH)
+    parser.add_argument("--name", choices=("synthetic", "synthetic_tuning"), default="synthetic")
+    parser.add_argument("--path", type=Path, default=None)
     args = parser.parse_args(argv)
+    dataset = SyntheticDataset(args.path, args.name)
+    args.path = dataset._frozen_path
     if args.freeze:
         if args.path.exists():
             print(f"{args.path} already exists; a frozen list is not rewritten", file=sys.stderr)
             return 1
-        write_frozen(args.path, build_frozen())
+        write_frozen(args.path, build_frozen(args.name))
         print(f"wrote {args.path}")
-    dataset = SyntheticDataset(args.path)
     try:
         for track_id in dataset.track_ids():
             dataset.load(track_id)

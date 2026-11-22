@@ -56,54 +56,76 @@ def _istft(spectrum: torch.Tensor, samples: int) -> np.ndarray:
     return audio.numpy().astype(np.float32)
 
 
+class Blender:
+    """Several estimates of one stem, ready to be blended in more than one way.
+
+    The spectrograms are computed once, on first need, so trying many weights or methods
+    on the same estimates costs one inverse transform each.
+    """
+
+    def __init__(self, estimates: Sequence[np.ndarray]) -> None:
+        if not estimates:
+            raise EnsembleError("nothing to blend")
+        shape = estimates[0].shape
+        if any(e.shape != shape or e.ndim != 2 for e in estimates):
+            raise EnsembleError(f"estimates differ in shape: {[e.shape for e in estimates]}")
+        self.estimates = list(estimates)
+        self.shape = shape
+        self._spectra: dict[int, torch.Tensor] = {}
+
+    def _spectrum(self, index: int) -> torch.Tensor:
+        if index not in self._spectra:
+            self._spectra[index] = _stft(self.estimates[index])
+        return self._spectra[index]
+
+    def blend(self, weights: Sequence[float] | None = None, method: str = "waveform") -> np.ndarray:
+        """One estimate from all of them.
+
+        A single estimate is returned unchanged whatever the method. Estimates given a
+        weight of zero take no part.
+        """
+        if method not in METHODS:
+            raise EnsembleError(f"unknown blend method {method!r}; choose from {METHODS}")
+        if method in ("stft_min", "stft_max") and weights is not None and len(set(weights)) > 1:
+            raise EnsembleError(f"{method} chooses per bin and takes no weights")
+        w = normalise_weights(weights, len(self.estimates))
+        used = [(i, float(wi)) for i, wi in enumerate(w) if wi > 0]
+        if len(used) == 1:
+            return np.array(self.estimates[used[0][0]], dtype=np.float32)
+        samples = self.shape[1]
+        if samples < N_FFT and method != "waveform":
+            raise EnsembleError(f"{method} needs at least {N_FFT} samples, got {samples}")
+
+        if method == "waveform":
+            total = np.zeros(self.shape, dtype=np.float64)
+            for index, weight in used:
+                total += weight * self.estimates[index]
+            return total.astype(np.float32)
+
+        # (models, channels, bins, frames)
+        spectra = torch.stack([self._spectrum(index) for index, _ in used])
+        if method == "stft_magnitude":
+            weight = torch.tensor([wi for _, wi in used], dtype=torch.float64)[:, None, None, None]
+            magnitude = (weight * spectra.abs()).sum(dim=0)
+            combined = (weight * spectra).sum(dim=0)
+            # Where the weighted sum cancels to nothing there is no phase to take: borrow
+            # the first estimate's.
+            direction = torch.where(combined.abs() > 0, combined, spectra[0])
+            result = torch.polar(magnitude, torch.angle(direction))
+        else:
+            magnitudes = spectra.abs()
+            index = magnitudes.argmin(dim=0) if method == "stft_min" else magnitudes.argmax(dim=0)
+            result = torch.gather(spectra, 0, index[None])[0]
+        return _istft(result, samples)
+
+
 def blend(
     estimates: Sequence[np.ndarray],
     weights: Sequence[float] | None = None,
     method: str = "waveform",
 ) -> np.ndarray:
-    """One estimate from several of the same stem.
-
-    A single estimate is returned unchanged whatever the method. Estimates given a weight
-    of zero take no part.
-    """
-    if method not in METHODS:
-        raise EnsembleError(f"unknown blend method {method!r}; choose from {METHODS}")
-    if not estimates:
-        raise EnsembleError("nothing to blend")
-    shape = estimates[0].shape
-    if any(e.shape != shape or e.ndim != 2 for e in estimates):
-        raise EnsembleError(f"estimates differ in shape: {[e.shape for e in estimates]}")
-    if method in ("stft_min", "stft_max") and weights is not None and len(set(weights)) > 1:
-        raise EnsembleError(f"{method} chooses per bin and takes no weights")
-    w = normalise_weights(weights, len(estimates))
-    used = [(e, float(wi)) for e, wi in zip(estimates, w, strict=True) if wi > 0]
-    if len(used) == 1:
-        return np.array(used[0][0], dtype=np.float32)
-    samples = shape[1]
-    if samples < N_FFT and method != "waveform":
-        raise EnsembleError(f"{method} needs at least {N_FFT} samples, got {samples}")
-
-    if method == "waveform":
-        total = np.zeros(shape, dtype=np.float64)
-        for estimate, weight in used:
-            total += weight * estimate
-        return total.astype(np.float32)
-
-    spectra = torch.stack([_stft(e) for e, _ in used])  # (models, channels, bins, frames)
-    if method == "stft_magnitude":
-        weight = torch.tensor([wi for _, wi in used], dtype=torch.float64)[:, None, None, None]
-        magnitude = (weight * spectra.abs()).sum(dim=0)
-        combined = (weight * spectra).sum(dim=0)
-        # Where the weighted sum cancels to nothing there is no phase to take: borrow the
-        # first estimate's.
-        direction = torch.where(combined.abs() > 0, combined, spectra[0])
-        phase = torch.angle(direction)
-        result = torch.polar(magnitude, phase)
-    else:
-        magnitudes = spectra.abs()
-        index = magnitudes.argmin(dim=0) if method == "stft_min" else magnitudes.argmax(dim=0)
-        result = torch.gather(spectra, 0, index[None])[0]
-    return _istft(result, samples)
+    """One estimate from several of the same stem. See ``Blender.blend``."""
+    return Blender(estimates).blend(weights, method)
 
 
 def blend_stems(

@@ -50,6 +50,9 @@ from stems_common.stems import PRODUCT_STEMS
 ENV_VAR = "MOISESDB_PATH"
 NAME = "moisesdb_subset"
 FROZEN_PATH = FROZEN_DIR / f"{NAME}.json"
+TUNING_NAME = "moisesdb_tuning"
+TUNING_FROZEN_PATH = FROZEN_DIR / f"{TUNING_NAME}.json"
+TUNING_SIZE = 30
 RELEASED_TRACKS = 240
 
 # MoisesDB top-level stem -> our stem (the dataset's own ``mix_6_stems``).
@@ -329,14 +332,56 @@ def build_frozen(
     }
 
 
+def build_tuning_frozen(
+    root: Path,
+    subset: dict[str, Any],
+    *,
+    seed: int = SELECTION_SEED,
+    size: int = TUNING_SIZE,
+) -> dict[str, Any]:
+    """A seeded random list of tracks that are not in the frozen subset, for tuning blends."""
+    excluded = {t["id"] for t in subset["tracks"]}
+    outside = sorted(
+        (m for m in scan(root) if m.track_id not in excluded), key=lambda m: m.track_id
+    )
+    if len(outside) < size:
+        raise DatasetError(f"only {len(outside)} tracks outside the subset, tuning needs {size}")
+    random.Random(seed).shuffle(outside)
+    chosen = sorted(outside[:size], key=lambda m: m.track_id)
+    return {
+        "dataset": TUNING_NAME,
+        "protocol_version": PROTOCOL_VERSION,
+        "sample_rate": SAMPLE_RATE,
+        "selection": {"seed": seed, "size": size, "excludes": NAME},
+        "tracks": [
+            {
+                "id": meta.track_id,
+                "provider": meta.provider,
+                "genre": meta.genre,
+                "strata": [],
+                "files": _file_hashes(meta, root),
+            }
+            for meta in chosen
+        ],
+    }
+
+
 class MoisesDbDataset(Dataset):
-    name = NAME
     targets = (*PRODUCT_STEMS, "other_4stem", "instrumental", "lead_vocals", "backing_vocals")
     inputs = ("mix", "vocals")
 
-    def __init__(self, *, root: Path | str | None = None, frozen_path: Path = FROZEN_PATH) -> None:
+    def __init__(
+        self,
+        *,
+        root: Path | str | None = None,
+        frozen_path: Path | None = None,
+        name: str = NAME,
+    ) -> None:
+        if name not in (NAME, TUNING_NAME):
+            raise DatasetError(f"unknown MoisesDB list {name!r}")
+        self.name = name
         self._root = Path(root) if root is not None else None
-        self._frozen_path = frozen_path
+        self._frozen_path = frozen_path or (FROZEN_PATH if name == NAME else TUNING_FROZEN_PATH)
         self._frozen: FrozenList | None = None
 
     @property
@@ -405,9 +450,23 @@ def summarise(data: dict[str, Any]) -> str:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Freeze or check the MoisesDB subset.")
     parser.add_argument("--freeze", action="store_true", help="select and write the subset")
+    parser.add_argument(
+        "--freeze-tuning",
+        action="store_true",
+        help="write the tuning list: tracks outside the subset (the subset must exist first)",
+    )
     args = parser.parse_args(argv)
     dataset = MoisesDbDataset()
     try:
+        if args.freeze_tuning:
+            if TUNING_FROZEN_PATH.exists():
+                print(f"{TUNING_FROZEN_PATH} already exists; a frozen list is not rewritten")
+                return 1
+            data = build_tuning_frozen(dataset.root, dataset.frozen.data)
+            write_frozen(TUNING_FROZEN_PATH, data)
+            print(f"wrote {TUNING_FROZEN_PATH}: {len(data['tracks'])} tracks outside the subset")
+            print("Commit this file before tuning.")
+            return 0
         if args.freeze:
             if FROZEN_PATH.exists():
                 print(f"{FROZEN_PATH} already exists; a frozen list is not rewritten")

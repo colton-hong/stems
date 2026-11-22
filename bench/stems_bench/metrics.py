@@ -208,3 +208,34 @@ def bss_eval_stem(
         window_seconds=window_seconds,
     )
     return scores["target"]
+
+
+def sdr_frames(
+    reference: np.ndarray,
+    estimate: np.ndarray,
+    sample_rate: int,
+    *,
+    window_seconds: float = WINDOW_SECONDS,
+) -> np.ndarray:
+    """SDR per window straight from its definition: reference energy over error energy.
+
+    This is what museval's SDR is (the tests check it), without the cost of the projection
+    that SIR and SAR need, so thousands of candidate blends can be compared. A window with
+    a silent reference or no error at all has no value (``nan``). It is used to choose
+    between candidates, never for a reported score.
+    """
+    window = round(window_seconds * sample_rate)
+    windows = reference.shape[-1] // window
+    ref = reference[..., : windows * window].astype(np.float64)
+    error = fit_length(estimate, reference.shape[-1])[..., : windows * window] - ref
+    signal = (ref.reshape(-1, windows, window) ** 2).sum(axis=(0, 2))
+    noise = (error.reshape(-1, windows, window) ** 2).sum(axis=(0, 2))
+    out = np.full(windows, np.nan)
+    scored = (signal > 0) & (noise > 0)
+    out[scored] = 10.0 * np.log10(signal[scored] / noise[scored])
+    return out
+
+
+def median_sdr(reference: np.ndarray, estimate: np.ndarray, sample_rate: int) -> float:
+    """The median of ``sdr_frames``, or ``nan`` if no window has a value."""
+    return _median(sdr_frames(reference, estimate, sample_rate))

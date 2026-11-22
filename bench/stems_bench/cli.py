@@ -8,6 +8,7 @@
     bench status [<run-id>]                              # the latest run if no id is given
     bench report [<run-id>] [--out docs/benchmarks/synthetic.md]
     bench compare --pair <run> <run> [--pair ...] --out FILE   # run-to-run and device spread
+    bench tune --dataset synthetic_tuning --out FILE     # blend methods and weights
 
 ``python -m stems_bench`` is the same command.
 """
@@ -89,6 +90,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="two run ids that did the same jobs (repeatable)",
     )
     compare.add_argument("--out", type=Path, required=True)
+    tune = commands.add_parser("tune", help="choose blend methods and weights on a tuning list")
+    tune.add_argument("--dataset", required=True, help="a tuning list, such as synthetic_tuning")
+    tune.add_argument("--slots", type=_csv, default=None, help="only these slots")
+    tune.add_argument("--device", default=None)
+    tune.add_argument("--overlap", type=float, default=None)
+    tune.add_argument("--run-id", default=None)
+    tune.add_argument("--out", type=Path, default=None, help="default: <tune folder>/tuning.md")
+    tune.add_argument("--quiet", action="store_true")
     report = commands.add_parser("report", help="write a run's Markdown report")
     report.add_argument("run_id", nargs="?", help="default: the most recently updated run")
     report.add_argument("--out", type=Path, default=None, help="default: <run folder>/report.md")
@@ -120,6 +129,7 @@ def main(
     dataset: Dataset | None = None,
     bench_dir: Path = BENCH_DIR,
     defaults: Defaults | None = None,
+    test_lists: list[Dataset] | None = None,
 ) -> int:
     """Run the command. The keyword arguments let tests swap in weightless models."""
     argv = sys.argv[1:] if argv is None else argv
@@ -157,11 +167,47 @@ def main(
     from stems_worker.timing import TimingLog
 
     defaults = defaults or load_defaults()
+    registry = registry or load_registry()
+    if factory is None:
+        from stems_worker.factory import build_separators
+
+        def factory(model_id: str, stems: tuple[str, ...]):
+            return build_separators(model_id, stems, registry=registry)
+
+    lock = ChecksumLock()
+    run_id = args.run_id or f"{args.dataset}-{datetime.now(UTC):%Y%m%dT%H%M%SZ}"
+
+    if args.command == "tune":
+        from stems_bench import tune as tuning
+
+        try:
+            result = tuning.tune(
+                dataset or get_dataset(args.dataset),
+                defaults=defaults,
+                registry=registry,
+                factory=factory,
+                fingerprint=registry_fingerprint(registry, lock),
+                device=pick_device(args.device),
+                overlap=defaults.separation.overlap if args.overlap is None else args.overlap,
+                run_id=run_id,
+                slots=args.slots,
+                bench_dir=bench_dir,
+                test_lists=test_lists,
+                command="bench " + " ".join(argv),
+                log=None if args.quiet else lambda message: print(message, flush=True),
+            )
+        except (DatasetError, BenchError, DeviceError) as e:
+            print(f"bench: {e}", file=sys.stderr)
+            return 2
+        out = args.out or bench_dir / "tune" / run_id / "tuning.md"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(tuning.render(result) + "\n", encoding="utf-8")
+        print(f"wrote {out}")
+        return 0
+
     if not (args.all or args.models or args.ensembles):
         print("bench: give --models, --all or --ensembles", file=sys.stderr)
         return 2
-    registry = registry or load_registry()
-    run_id = args.run_id or f"{args.dataset}-{datetime.now(UTC):%Y%m%dT%H%M%SZ}"
 
     if args.background:
         run_dir = bench_dir / run_id
@@ -192,13 +238,6 @@ def main(
             unknown = [m for m in models if m not in registry]
             if unknown:
                 raise BenchError(f"not in the registry: {unknown}")
-        if factory is None:
-            from stems_worker.factory import build_separators
-
-            def factory(model_id: str, stems: tuple[str, ...]):
-                return build_separators(model_id, stems, registry=registry)
-
-        lock = ChecksumLock()
 
         def weights_sha256(model_id: str) -> dict[str, str]:
             pinned = {f.filename: lock.get(f.url) for f in registry.get(model_id).files}

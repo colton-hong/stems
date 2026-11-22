@@ -158,18 +158,26 @@ class Dataset(ABC):
         """Decode one track of the frozen list. Raises ``DatasetError`` if it has changed."""
 
 
+# Lists that blends may be tuned on, and the test lists each must share no track with.
+TUNING_LISTS: dict[str, tuple[str, ...]] = {
+    "synthetic_tuning": ("synthetic",),
+    "musdb18hq_train": ("musdb18hq_test",),
+    "moisesdb_tuning": ("moisesdb_subset",),
+}
+
+
 def get_dataset(name: str) -> Dataset:
     """The dataset registered under ``name``."""
-    if name == "synthetic":
+    if name in ("synthetic", "synthetic_tuning"):
         from stems_bench.datasets.synthetic import SyntheticDataset
 
-        return SyntheticDataset()
+        return SyntheticDataset(name=name)
     if name in ("musdb18hq_test", "musdb18hq_train"):
         from stems_bench.datasets.musdb import Musdb18HqDataset
 
         return Musdb18HqDataset(name.removeprefix("musdb18hq_"))
-    if name == "moisesdb_subset":
+    if name in ("moisesdb_subset", "moisesdb_tuning"):
         from stems_bench.datasets.moisesdb import MoisesDbDataset
 
-        return MoisesDbDataset()
+        return MoisesDbDataset(name=name)
     raise DatasetError(f"unknown dataset {name!r}")

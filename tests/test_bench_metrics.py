@@ -175,6 +175,28 @@ def test_estimate_length_is_fitted_to_the_reference(track) -> None:
     assert fit_length(np.ones((2, 5)), 3).shape == (2, 3)
 
 
+def test_plain_sdr_is_museval_sdr(track) -> None:
+    from stems_bench.metrics import median_sdr, sdr_frames
+
+    reference = track.stems["drums"]
+    estimate = reference + _noise(reference.shape, 0.01) + 0.2 * track.stems["bass"]
+    museval = bss_eval_stem(reference, estimate, track.mix, track.sample_rate)
+    frames = sdr_frames(reference, estimate, track.sample_rate)
+    np.testing.assert_allclose(frames, museval.frames["sdr"], atol=0.01)
+    plain = median_sdr(reference, estimate, track.sample_rate)
+    assert plain == pytest.approx(museval.sdr, abs=0.01)
+    # No value where the reference is silent or the estimate is exact.
+    silent_start = reference.copy()
+    silent_start[:, : track.sample_rate] = 0.0
+    frames = sdr_frames(silent_start, estimate, track.sample_rate)
+    assert np.isnan(frames[0])
+    assert not np.isnan(frames[1:]).any()
+    assert np.isnan(sdr_frames(reference, reference, track.sample_rate)).all()
+    assert math.isnan(median_sdr(reference, reference, track.sample_rate))
+    # A shorter estimate is padded, as in the museval path.
+    assert sdr_frames(reference, estimate[:, :-500], track.sample_rate).shape == (5,)
+
+
 def test_bad_input_is_refused(track) -> None:
     rate = track.sample_rate
     with pytest.raises(MetricsError, match="must match"):
