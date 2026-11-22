@@ -15,6 +15,8 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from stems_common.paths import DEFAULTS_PATH
 
 EnsembleMode = Literal["single_best", "two_model_blend", "full_ensemble"]
+# How the members of a blend are combined (stems_worker.ensemble).
+BlendMethod = Literal["waveform", "stft_magnitude", "stft_min", "stft_max"]
 OutputFormat = Literal["wav", "flac", "mp3_320", "mp3_192"]
 
 ENSEMBLE_SLOTS: tuple[str, ...] = (
@@ -76,6 +78,11 @@ class SlotModels(_Strict):
     single_best: str
     two_model_blend: list[str] = Field(min_length=2, max_length=2)
     full_ensemble: list[str] = Field(min_length=2)
+    # None: use ensembles.blend_method.
+    blend_method: BlendMethod | None = None
+    # Per-model weights, in the order the models are listed. None: equal weights.
+    two_model_weights: list[float] | None = None
+    full_ensemble_weights: list[float] | None = None
 
     @model_validator(mode="after")
     def _check(self) -> SlotModels:
@@ -83,6 +90,17 @@ class SlotModels(_Strict):
             ids = getattr(self, name)
             if len(set(ids)) != len(ids):
                 raise ValueError(f"{name} lists a model twice: {ids}")
+        for name, ids in (
+            ("two_model_weights", self.two_model_blend),
+            ("full_ensemble_weights", self.full_ensemble),
+        ):
+            weights = getattr(self, name)
+            if weights is None:
+                continue
+            if len(weights) != len(ids):
+                raise ValueError(f"{name} needs one weight per model ({len(ids)})")
+            if min(weights) < 0 or sum(weights) <= 0:
+                raise ValueError(f"{name} must be non-negative and not all zero")
         return self
 
     def for_mode(self, mode: EnsembleMode) -> list[str]:
@@ -90,13 +108,27 @@ class SlotModels(_Strict):
             return [self.single_best]
         return list(getattr(self, mode))
 
+    def weights_for(self, mode: EnsembleMode) -> list[float]:
+        """One weight per model of ``mode``, summing to 1."""
+        if mode == "single_best":
+            return [1.0]
+        key = "two_model_weights" if mode == "two_model_blend" else "full_ensemble_weights"
+        raw = getattr(self, key) or [1.0] * len(self.for_mode(mode))
+        total = float(sum(raw))
+        return [float(w) / total for w in raw]
+
 
 class EnsembleSettings(_Strict):
     # True until the Phase 2 benchmark has chosen these from measured results.
     provisional: bool
     basis: str
     default_mode: EnsembleMode
+    # How blend members are combined unless a slot says otherwise.
+    blend_method: BlendMethod = "waveform"
     slots: dict[str, SlotModels]
+
+    def method_for(self, slot: str) -> BlendMethod:
+        return self.slots[slot].blend_method or self.blend_method
 
     @model_validator(mode="after")
     def _check(self) -> EnsembleSettings:

@@ -54,6 +54,11 @@ ensembles:
   provisional: true
   basis: First-listed candidates from the project brief; not benchmarked.
   default_mode: single_best # single_best | two_model_blend | full_ensemble
+  # How the members of a blend are combined: waveform | stft_magnitude | stft_min | stft_max.
+  # A slot may override it with its own blend_method, and may weight its models with
+  # two_model_weights and full_ensemble_weights (one number per model, in listed order).
+  # No weights means equal weights. None are set: they are tuned in the benchmark (P2.12).
+  blend_method: waveform
   slots:
     vocals:
       single_best: mel_roformer_kim_vocals
