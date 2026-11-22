@@ -58,7 +58,9 @@ def test_tracked_packages_are_exactly_the_pinned_worker_dependencies() -> None:
 def test_installed_versions_match_the_pins() -> None:
     installed = env.describe_environment()["packages"]
     for name, pinned in _worker_pins().items():
-        assert installed[name] == pinned, name
+        # A wheel from another index carries a local tag (CI's CPU-only torch is
+        # "2.15.0+cpu"): the same release, built differently.
+        assert installed[name].split("+")[0] == pinned, name
 
 
 def test_write_environment_creates_the_file(tmp_path) -> None:
