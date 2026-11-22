@@ -545,6 +545,7 @@ def run_benchmark(
             "models": [e.id for e in entries],
             "tracks": track_ids,
             "keep_estimates": list(spec.keep_estimates),
+            "reliable_metrics": list(dataset.reliable_metrics),
             "command": command,
             "git": git_state(),
             "packages": package_versions(),

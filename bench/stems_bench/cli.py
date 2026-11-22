@@ -5,6 +5,7 @@
     bench run --dataset musdb18hq_test --all --background
     bench run --dataset synthetic --all --run-id <id>    # resume: finished jobs are skipped
     bench status [<run-id>]                              # the latest run if no id is given
+    bench report [<run-id>] [--out docs/benchmarks/synthetic.md]
 
 ``python -m stems_bench`` is the same command.
 """
@@ -19,6 +20,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from stems_bench.datasets import Dataset, DatasetError, get_dataset
+from stems_bench.report import ReportError, write_report
 from stems_bench.run import (
     BENCH_DIR,
     BenchError,
@@ -60,6 +62,9 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--quiet", action="store_true")
     status = commands.add_parser("status", help="show a run's progress")
     status.add_argument("run_id", nargs="?", help="default: the most recently updated run")
+    report = commands.add_parser("report", help="write a run's Markdown report")
+    report.add_argument("run_id", nargs="?", help="default: the most recently updated run")
+    report.add_argument("--out", type=Path, default=None, help="default: <run folder>/report.md")
     return parser
 
 
@@ -92,12 +97,20 @@ def main(
     argv = sys.argv[1:] if argv is None else argv
     args = build_parser().parse_args(argv)
 
-    if args.command == "status":
+    if args.command in ("status", "report"):
         run_dir = bench_dir / args.run_id if args.run_id else latest_run(bench_dir)
         if run_dir is None or not (run_dir / "status.json").exists():
             print("bench: no such run", file=sys.stderr)
             return 2
-        return _print_status(run_dir)
+        if args.command == "status":
+            return _print_status(run_dir)
+        try:
+            path = write_report(run_dir, args.out)
+        except ReportError as e:
+            print(f"bench: {e}", file=sys.stderr)
+            return 2
+        print(f"wrote {path} and {path.with_suffix('.json')}")
+        return 0
 
     from stems_common.settings import load_defaults
     from stems_models.download import ChecksumLock
