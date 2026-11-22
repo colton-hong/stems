@@ -203,8 +203,6 @@ models:
       params_from: mdx_model_data.json
       params_key: md5_of_weights
     licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
-    unverified: &uvr_mdx_unverified
-      - Which output is the primary stem and the n_fft / dim_f / compensation values. Read them from UVR's model data (keyed by the weight file's MD5) in Phase 1.
 
   - id: uvr_mdxnet_main
     name: UVR-MDX-NET Main
@@ -226,7 +224,6 @@ models:
       - *uvr_mdx_model_data
     config: *uvr_mdx_config
     licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
-    unverified: *uvr_mdx_unverified
 
   - id: uvr_mdxnet_inst_hq_1
     name: UVR-MDX-NET Inst HQ 1
@@ -248,7 +245,6 @@ models:
       - *uvr_mdx_model_data
     config: *uvr_mdx_config
     licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
-    unverified: *uvr_mdx_unverified
 
   - id: uvr_mdxnet_inst_hq_2
     name: UVR-MDX-NET Inst HQ 2
@@ -270,7 +266,6 @@ models:
       - *uvr_mdx_model_data
     config: *uvr_mdx_config
     licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
-    unverified: *uvr_mdx_unverified
 
   - id: uvr_mdxnet_inst_hq_3
     name: UVR-MDX-NET Inst HQ 3
@@ -292,7 +287,6 @@ models:
       - *uvr_mdx_model_data
     config: *uvr_mdx_config
     licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
-    unverified: *uvr_mdx_unverified
 
   - id: uvr_mdxnet_inst_hq_4
     name: UVR-MDX-NET Inst HQ 4
@@ -314,7 +308,6 @@ models:
       - *uvr_mdx_model_data
     config: *uvr_mdx_config
     licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
-    unverified: *uvr_mdx_unverified
 
   - id: uvr_mdxnet_inst_hq_5
     name: UVR-MDX-NET Inst HQ 5
@@ -336,7 +329,6 @@ models:
       - *uvr_mdx_model_data
     config: *uvr_mdx_config
     licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
-    unverified: *uvr_mdx_unverified
 
   # ---------------------------------------------------------------------------
   # 4-stem models (vocals / drums / bass / other)
@@ -654,7 +646,6 @@ models:
       - *uvr_mdx_model_data
     config: *uvr_mdx_config
     licence_note: MIT (kuielab/mdx-net, report §10).
-    unverified: *uvr_mdx_unverified
 
   - id: mdxnet_kuielab_b
     name: MDX-Net kuielab (model set B, one ONNX per stem)
@@ -692,7 +683,6 @@ models:
       - *uvr_mdx_model_data
     config: *uvr_mdx_config
     licence_note: MIT (kuielab/mdx-net, report §10).
-    unverified: *uvr_mdx_unverified
 
   - id: bs_roformer_viperx_other
     name: BS-RoFormer "other" single-stem (viperx ep_937)
@@ -996,9 +986,12 @@ models:
         url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR_MDXNET_KARA.onnx
         size_bytes: 29704436
       - *uvr_mdx_model_data
-    config: *uvr_mdx_config
+    config:
+      params_from: mdx_model_data.json
+      params_key: md5_of_weights
+      instrument_names: {Vocals: lead_vocals}
     licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
-    unverified: *uvr_mdx_unverified
+    notes: Run it on the isolated vocals stem. The model emits the lead vocal; backing_vocals is the input minus that.
 
   - id: uvr_mdxnet_kara_2
     name: UVR-MDX-NET Karaoke 2
@@ -1018,9 +1011,12 @@ models:
         url: https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR_MDXNET_KARA_2.onnx
         size_bytes: 52786726
       - *uvr_mdx_model_data
-    config: *uvr_mdx_config
+    config:
+      params_from: mdx_model_data.json
+      params_key: md5_of_weights
+      instrument_names: {Instrumental: backing_vocals}
     licence_note: UVR models - MIT plus credit to UVR and its developers (report §1).
-    unverified: *uvr_mdx_unverified
+    notes: Run it on the isolated vocals stem. The model emits everything except the lead vocal (its "Instrumental"); lead_vocals is the input minus that.
 
   # ---------------------------------------------------------------------------
   # De-reverb / de-echo / de-noise (run on a stem, usually vocals)

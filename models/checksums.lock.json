@@ -29,6 +29,21 @@
     "sha256": "ba3fe64ae8ef66ac9a4857222ce48efbdc5eb3ad375cb79dd13debee5aaa4066",
     "size_bytes": 84141271
   },
+  "https://essentia.upf.edu/models/classification-heads/mtg_jamendo_instrument/mtg_jamendo_instrument-discogs-effnet-1.json": {
+    "filename": "mtg_jamendo_instrument-discogs-effnet-1.json",
+    "sha256": "7d02204c6451b5615e2968ec6364bbae3b915c886e608f05f00d3a38dc5177c4",
+    "size_bytes": 3382
+  },
+  "https://essentia.upf.edu/models/classification-heads/mtg_jamendo_instrument/mtg_jamendo_instrument-discogs-effnet-1.pb": {
+    "filename": "mtg_jamendo_instrument-discogs-effnet-1.pb",
+    "sha256": "2e8c3003c722e098da371b6a1f7ad0ce62fac0dcfc09c7c7997d430941196c2a",
+    "size_bytes": 2706836
+  },
+  "https://essentia.upf.edu/models/feature-extractors/discogs-effnet/discogs-effnet-bs64-1.pb": {
+    "filename": "discogs-effnet-bs64-1.pb",
+    "sha256": "3ed9af50d5367c0b9c795b294b00e7599e4943244f4cbd376869f3bfc87721b1",
+    "size_bytes": 18366619
+  },
   "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/5_HP-Karaoke-UVR.pth": {
     "filename": "5_HP-Karaoke-UVR.pth",
     "sha256": "fe00891defbb61f4261500af22f7624f1a3df8dc75fa3998d1aece02e6be4537",
@@ -58,6 +73,11 @@
     "filename": "UVR-DeEcho-DeReverb.pth",
     "sha256": "e644028ec82865dc0fe082bc6fea85a43f7c71cfe375caee2da2d154aa661ee7",
     "size_bytes": 223650277
+  },
+  "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-DeNoise.pth": {
+    "filename": "UVR-DeNoise.pth",
+    "sha256": "5addf43ece5bddd18da9f575a02d7ffdb32342414e6ad7ac8d1dd7a04138a628",
+    "size_bytes": 127139365
   },
   "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-MDX-NET-Inst_HQ_1.onnx": {
     "filename": "UVR-MDX-NET-Inst_HQ_1.onnx",
@@ -153,6 +173,11 @@
     "filename": "model_bs_roformer_ep_317_sdr_12.9755.ckpt",
     "sha256": "5b84f37e8d444c8cb30c79d77f613a41c05868ff9c9ac6c7049c00aefae115aa",
     "size_bytes": 639331213
+  },
+  "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/model_bs_roformer_ep_937_sdr_10.5309.ckpt": {
+    "filename": "model_bs_roformer_ep_937_sdr_10.5309.ckpt",
+    "sha256": "a2e825a03bc908cb04dbd88eddeefbf5147dd1cf1f95cebf453d9dbfabec494b",
+    "size_bytes": 393068365
   },
   "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/model_mel_band_roformer_ep_3005_sdr_11.4360.ckpt": {
     "filename": "model_mel_band_roformer_ep_3005_sdr_11.4360.ckpt",
@@ -274,6 +299,16 @@
     "sha256": "b558996f1e25eb48798bd6502505a5de94c4f966d6edfb1a0420f06cc40b501a",
     "size_bytes": 4653
   },
+  "https://github.com/nomadkaraoke/python-audio-separator/releases/download/model-configs/bs_roformer_karaoke_anvuew.ckpt": {
+    "filename": "bs_roformer_karaoke_anvuew.ckpt",
+    "sha256": "206d04757cb5f75ca3b55f8a0a48f5c26aa2351d4ff3c7adbfc9affa30ea3ae4",
+    "size_bytes": 204486925
+  },
+  "https://github.com/nomadkaraoke/python-audio-separator/releases/download/model-configs/bs_roformer_karaoke_frazer_becruily.ckpt": {
+    "filename": "bs_roformer_karaoke_frazer_becruily.ckpt",
+    "sha256": "eb90ee24c1154d83fbcfd27e96182f19e061557cc6e4746953125e08c29389f9",
+    "size_bytes": 204436907
+  },
   "https://github.com/nomadkaraoke/python-audio-separator/releases/download/model-configs/config_bs_roformer_karaoke_anvuew.yaml": {
     "filename": "config_bs_roformer_karaoke_anvuew.yaml",
     "sha256": "5cb3f127ecbc6a8e37f31ea7e05f60f360a44da43e857bde805b7b68558f6338",
@@ -288,6 +323,11 @@
     "filename": "config_mel_band_roformer_karaoke_becruily.yaml",
     "sha256": "cd37b0dcc285fc22d88090415722ac7127ee1d9ea2f3346c3b8d8fcc61e0c74b",
     "size_bytes": 1724
+  },
+  "https://github.com/nomadkaraoke/python-audio-separator/releases/download/model-configs/mel_band_roformer_karaoke_becruily.ckpt": {
+    "filename": "mel_band_roformer_karaoke_becruily.ckpt",
+    "sha256": "d3aa262ac01df870b9fc033e9c7b6cad33fe04fc9c148b6c40841326a515a0e0",
+    "size_bytes": 1719139254
   },
   "https://huggingface.co/KimberleyJSN/melbandroformer/resolve/main/MelBandRoformer.ckpt": {
     "filename": "MelBandRoformer.ckpt",
@@ -328,6 +368,16 @@
     "filename": "music_audioset_epoch_15_esc_90.14.pt",
     "sha256": "fae3e9c087f2909c28a09dc31c8dfcdacbc42ba44c70e972b58c1bd1caf6dedd",
     "size_bytes": 2352471003
+  },
+  "https://huggingface.co/m-a-p/MERT-v1-95M/resolve/main/config.json": {
+    "filename": "config.json",
+    "sha256": "ea2627c4c7825cd66f3c944b6b966331604c35928174e0100cd4a82829424e32",
+    "size_bytes": 1817
+  },
+  "https://huggingface.co/m-a-p/MERT-v1-95M/resolve/main/pytorch_model.bin": {
+    "filename": "pytorch_model.bin",
+    "sha256": "a2b8b747f72c06e0595aeae41ae5473f4364938c6b39b2c58be38c48e6bd3fcd",
+    "size_bytes": 377552987
   },
   "https://raw.githubusercontent.com/TRvlvr/application_data/main/mdx_model_data/mdx_c_configs/config_mel_band_roformer_karaoke.yaml": {
     "filename": "config_mel_band_roformer_karaoke.yaml",
