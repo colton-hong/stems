@@ -16,6 +16,9 @@ anywhere: other people's numbers were measured under other protocols and are not
 Each `.md` has a `.json` beside it with the same figures and the SHA-256 of every result file
 they came from.
 
+The seconds in `synthetic.md` were measured on 12-second clips while other work ran on the
+machine. They show that each model runs, not what a song costs.
+
 **The synthetic set says nothing about quality on music.** Its tracks are sine tones and
 noise with exactly known stems. It exists so the whole harness can be run and checked with
 no music on disk. No model has been chosen from it, and none should be.
