@@ -304,6 +304,11 @@ they are placeholders.
   MoisesDB subset (the same ids the Clef-omni test uses). Reported separately, never
   averaged. MoisesDB is the only ground truth for guitar, piano and lead vs backing.
   "Other" is scored as 4-stem other on MUSDB18-HQ and 6-stem other on MoisesDB.
+- **MoisesDB subset**: chosen by a seeded script under the report's strata (at least 8 with
+  lead vocals, 8 instrumental, 10 guitar, 10 piano, 10 prominent drums and bass, 6 genres)
+  plus at least 8 tracks with both lead and backing vocals. "Present" means above −60 dBFS
+  whole-track RMS; "prominent" means within 12 dB of the mix. The mix is the sum of the
+  dataset's sources, grouped by its own six-stem mapping.
 - **Frozen before any run**: track-id lists, seeds and the protocol version are committed
   first, and the commit hash is written into every result.
 - **Comparison**: every registry model on its stems, then single best vs two-model blend vs

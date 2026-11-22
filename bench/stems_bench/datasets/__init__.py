@@ -168,4 +168,8 @@ def get_dataset(name: str) -> Dataset:
         from stems_bench.datasets.musdb import Musdb18HqDataset
 
         return Musdb18HqDataset(name.removeprefix("musdb18hq_"))
+    if name == "moisesdb_subset":
+        from stems_bench.datasets.moisesdb import MoisesDbDataset
+
+        return MoisesDbDataset()
     raise DatasetError(f"unknown dataset {name!r}")
