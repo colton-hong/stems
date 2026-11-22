@@ -10,7 +10,8 @@ anywhere: other people's numbers were measured under other protocols and are not
 | `device-spread-synthetic.md` | The same models run twice per device, and across devices | `make bench-device-spread` |
 | `musdb18hq.md` | MUSDB18-HQ test | **Not run.** Needs the dataset (BLOCKED.md B2) |
 | `moisesdb.md` | The frozen MoisesDB subset | **Not run.** Needs the dataset (BLOCKED.md B3) |
-| `tuning-*.md` | Blend method and weights per slot, chosen on tuning tracks | `bench tune`. **Not run on music.** Needs the datasets |
+| `tuning-synthetic.md` | The blend tuner run once with real models on the synthetic tuning list. It shows the tool works; its choices are meaningless for music and are not applied | `bench tune --dataset synthetic_tuning` |
+| `tuning-musdb18hq.md`, `tuning-moisesdb.md` | Blend method and weights per slot, chosen on tuning tracks | **Not run.** Needs the datasets |
 | `recommendation.md` | Default model or blend per stem | **Not written.** Needs both of the above |
 
 Each `.md` has a `.json` beside it with the same figures and the SHA-256 of every result file
