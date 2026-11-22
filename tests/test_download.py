@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import socketserver
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -23,6 +24,14 @@ from stems_models.download import (
 from stems_models.registry import ModelEntry, ModelFile, Registry
 
 PAYLOAD = bytes(range(256)) * 2000  # 512,000 bytes, not a multiple of the read block
+
+
+class _QuickServer(ThreadingHTTPServer):
+    def server_bind(self) -> None:
+        # The stock server_bind looks up the host's fully qualified name, which can take
+        # tens of seconds on a machine with slow reverse DNS. Tests do not need it.
+        socketserver.TCPServer.server_bind(self)
+        self.server_name, self.server_port = "127.0.0.1", self.server_address[1]
 
 
 class _Server:
@@ -70,8 +79,10 @@ class _Server:
                     return
                 self.wfile.write(chunk)
 
-        self.httpd = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
-        self.thread = threading.Thread(target=self.httpd.serve_forever, daemon=True)
+        self.httpd = _QuickServer(("127.0.0.1", 0), Handler)
+        self.thread = threading.Thread(
+            target=self.httpd.serve_forever, kwargs={"poll_interval": 0.01}, daemon=True
+        )
         self.thread.start()
 
     @property
