@@ -18,6 +18,8 @@ for the best quality open models can give, with benchmarks you can re-run.
 make setup     # Python 3.11+; creates .venv
 make check     # lint and tests
 make registry  # print the model registry
+
+make node-setup && make web-setup && make web-check   # web app (Node.js, project-local)
 ```
 
 Copy `.env.example` to `.env` when you have keys or dataset paths. Nothing in it is needed

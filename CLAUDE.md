@@ -48,13 +48,16 @@ make setup              # create .venv, install the project and dev tools
 make check              # ruff + pytest; run before every commit
 make registry           # validate models/registry.yaml and print it
 make registry-sources   # HEAD every model URL and refresh sizes (network)
-make web-check          # needs Node.js (BLOCKED.md B1)
+make node-setup         # project-local Node.js into .tools/node (once per clone)
+make web-setup          # npm ci in web/
+make web-check          # web lint, typecheck, build
 ```
 
 ## Environment notes
 
 - The interpreter is `.venv/bin/python` (python.org 3.14, no system CA bundle: use
   `certifi` for HTTPS).
-- No Node.js, ffmpeg or Homebrew is installed. Do not install system software; ask in
-  `BLOCKED.md`.
+- Node.js lives in `.tools/node` (project-local, git-ignored). Run web commands through
+  `make`, or put `.tools/node/bin` on `PATH` first.
+- No ffmpeg or Homebrew is installed. Do not install system software; ask in `BLOCKED.md`.
 - Apple Silicon, no NVIDIA GPU. Local timings are MPS or CPU and must be labelled as such.

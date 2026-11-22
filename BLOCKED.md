@@ -11,7 +11,6 @@ unblocked task.
 
 | # | What I need | Exactly | Unblocks | First needed |
 |---|---|---|---|---|
-| B1 | Node.js 22.13 or newer on this machine | Install it however you prefer (nodejs.org installer, nvm, Homebrew). Or tell me to install a project-local copy and I will. | P0.9 (web scaffold has never been installed, linted or built) and all of Phase 6 | Now, but only Phase 6 truly depends on it |
 | B2 | MUSDB18-HQ on local disk | Request access on Zenodo (https://zenodo.org/records/3338373), download, unpack, and set `MUSDB18HQ_PATH` in `.env` to the folder that contains `train/` and `test/`. About 23 GB. | P2.10 (real MUSDB18-HQ benchmark) | Phase 2 |
 | B3 | MoisesDB on local disk | Request access through the Moises / Music.AI research site, download, unpack, and set `MOISESDB_PATH` in `.env`. | P2.5 real subset freeze, P2.11, all of the Clef-omni test (P3.5, P3.9), P7.1 calibration | Phase 2 |
 | B4 | Modal account and token | Create the account, add a payment method, then set `MODAL_TOKEN_ID` and `MODAL_TOKEN_SECRET` in `.env`. | GPU timings in Phase 2 (without it every timing is Apple MPS), P5.12 live check, P7.3 cost per song | Phase 2, optional until Phase 5 |
@@ -31,6 +30,12 @@ I picked a default for each so the work does not stop. Say so if you want a diff
 | D2 | Upload limits | 250 MiB and 20 minutes per file, in `config/defaults.yaml` | One config line |
 | D3 | Output sample rate | Stems are delivered at 44.1 kHz stereo even if the upload was 48 kHz or mono | Small (one resample step) |
 | D4 | Weights location and volume | All 48 loadable models, 16.66 GB, into `models/weights/` (git-ignored), downloaded in the background in Phase 1. Set `STEMS_MODELS_DIR` to put them elsewhere. | None |
+
+## Resolved
+
+- **B1 Node.js** (2026-11-22): the owner asked for a project-local install. Node v24.22.3 LTS
+  is in `.tools/node` (git-ignored), installed by `tools/install_node.sh`, which verifies the
+  nodejs.org checksum. `make` targets pick it up automatically.
 
 ## Possible blocker to watch
 

@@ -9,8 +9,7 @@ This plan rests on `docs/research-report.pdf`. Where the report and the project 
 disagree, the brief wins. Where the report was wrong or out of date, the fix is in
 `docs/corrections.md` and this plan uses the corrected fact.
 
-**Status:** Phase 0 is complete except one task that needs Node.js (see `PROGRESS.md`).
-No pipeline code exists yet.
+**Status:** Phase 0 is complete (see `PROGRESS.md`). No pipeline code exists yet.
 
 ## 1. Fixed decisions
 
@@ -297,13 +296,13 @@ are MPS or CPU timings and are labelled as such. Timings on a T4 or L4 need Moda
 
 | Phase | Delivers | Needs from you |
 |---|---|---|
-| 0 | This plan, scaffold, tooling, CI file, registry, PROGRESS.md, BLOCKED.md | Node.js for the web scaffold check |
+| 0 | This plan, scaffold, tooling, CI file, registry, PROGRESS.md, BLOCKED.md | Nothing |
 | 1 | Download scripts, chunked inference, adapters, `separate` CLI, per-model timing, synthetic fixture and tests | Nothing (about 17 GB of downloads) |
 | 2 | Metrics, dataset loaders, resumable benchmark runner, ensemble comparison, recommended defaults | MUSDB18-HQ and MoisesDB paths; Modal for GPU timings |
 | 3 | BEATs and CLAP wrappers, `track_features`, pre-registered Clef-omni test and report | Cloudflare token, MoisesDB |
 | 4 | Jev client, three schemas, answer mapping, fallbacks, gate with retries, recorded mock | Jev key only for a live check |
 | 5 | API, queue, storage backends, signed links, sweeper, rate limits, Modal worker | Modal token; bucket credentials only for live checks |
-| 6 | The web app | Node.js |
+| 6 | The web app | Nothing |
 | 7 | Calibrated gate, end-to-end tests, cost per song, deployment guide, listening-test kit | Listeners; benchmark data |
 
 `PROGRESS.md` breaks each phase into tasks with acceptance checks. `BLOCKED.md` lists what
@@ -315,8 +314,11 @@ is needed from you in the order it is needed.
   torch, torchaudio, onnxruntime, demucs, museval, librosa, laion-clap, transformers,
   fastapi, modal, typesafe-sdk and audio-separator for it. Whether each has a working
   3.14 wheel on Apple Silicon is confirmed at install time in the phase that needs it.
-- No Node.js, ffmpeg, Homebrew or uv. Decoding will use `soundfile` and PyAV wheels (which
-  bundle their codecs), so ffmpeg is not required. The web scaffold is unverified.
+- No ffmpeg, Homebrew or uv. Decoding will use `soundfile` and PyAV wheels (which bundle
+  their codecs), so ffmpeg is not required.
+- Node.js v24.22.3 LTS is installed inside the repo at `.tools/node` by
+  `tools/install_node.sh`. The web scaffold (Next 16.4, React 19.3, TypeScript 6.0,
+  ESLint 9) installs, lints, type-checks and builds.
 - 760 GB of free disk.
 - The python.org build has no system CA certificates, so HTTPS code uses `certifi`.
 

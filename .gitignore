@@ -48,3 +48,6 @@ runs/*
 .DS_Store
 .idea/
 .vscode/
+
+# Project-local toolchains (tools/install_node.sh)
+.tools/

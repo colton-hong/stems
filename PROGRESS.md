@@ -2,8 +2,7 @@
 
 Single source of truth for where the build is. Read this first, every iteration.
 
-**Current phase: 0 (complete except P0.9, which is blocked). Waiting for the owner before
-Phase 1 starts.**
+**Current phase: 0 (complete). Waiting for the owner before Phase 1 starts.**
 
 ## How to use this file
 
@@ -36,7 +35,7 @@ Format: `- [ ] Pn.m Task. **Accept:** how to tell it is done.`
 - [x] P0.6 `config/defaults.yaml` with gate thresholds, retention, limits and per-slot models. **Accept:** `tests/test_defaults.py` passes, including the cross-check against the registry. — Models are marked `provisional: true` until Phase 2.
 - [x] P0.7 CI workflow. **Accept:** `.github/workflows/ci.yml` runs lint, registry validation and tests. — Committed but never executed: the repo has no remote yet.
 - [x] P0.8 `PROGRESS.md`, `BLOCKED.md`, `CLAUDE.md`, `.env.example`, `.gitignore`. **Accept:** files exist; weights, audio, datasets and `.env` are git-ignored. — Done.
-- [ ] P0.9 Web scaffold installs and passes its checks. **Accept:** `make web-setup && make web-check` passes and `web/package-lock.json` is committed. — **BLOCKED (B1):** no Node.js on this machine. The files in `web/` are hand-written and have never been installed or built; expect to adjust versions (TypeScript 7 with Next 16 is untested).
+- [x] P0.9 Web scaffold installs and passes its checks. **Accept:** `make web-setup && make web-check` passes and `web/package-lock.json` is committed. — Node v24.22.3 LTS installed project-locally (`make node-setup`); lint, typecheck and build pass. TypeScript pinned to 6.0 and ESLint to 9 because `eslint-config-next`'s plugins reject TypeScript 7 and ESLint 10 (see `web/README.md`).
 
 ## Phase 1: separation core
 
@@ -119,7 +118,7 @@ Format: `- [ ] Pn.m Task. **Accept:** how to tell it is done.`
 
 ## Phase 6: web app
 
-- [ ] P6.1 App shell, typed API client, error states. **Accept:** `make web-check` passes. (All of Phase 6 is **BLOCKED (B1)** until Node.js is installed.)
+- [ ] P6.1 App shell, typed API client, error states. **Accept:** `make web-check` passes.
 - [ ] P6.2 Upload page: file drop, stem choices, optional free-text request with confirmation when `needs_review`, format and quality mode.
 - [ ] P6.3 Job page: named stages with per-stem progress, live via server-sent events.
 - [ ] P6.4 Stem player: waveform, solo and mute, all stems sample-synchronised.
@@ -129,7 +128,7 @@ Format: `- [ ] Pn.m Task. **Accept:** how to tell it is done.`
 - [ ] P6.8 Terms and Privacy placeholder pages that say they are placeholders.
 - [ ] P6.9 Browser test of the whole flow against the API with the fake separator; keyboard and screen-reader pass on the player.
 
-(Acceptance checks for P6.2 to P6.9 are written when Phase 6 starts, once the UI stack is confirmed to install.)
+(Acceptance checks for P6.2 to P6.9 are written when Phase 6 starts.)
 
 ## Phase 7: calibration and hardening
 
@@ -154,9 +153,11 @@ workflow. The model registry holds 53 entries with every download URL verified a
 (16.66 GB for the 48 loadable ones). `config/defaults.yaml` carries the gate thresholds,
 retention, limits and provisional per-slot models. 46 tests pass.
 
-Not done: the web scaffold has never been installed or built because this machine has no
-Node.js (P0.9, B1). CI has never run because the repo has no remote. No pipeline code
-exists, by design.
+The web scaffold installs, lints, type-checks and builds on a project-local Node v24 LTS
+(`.tools/node`, installed at the owner's request).
+
+Not done: CI has never run because the repo has no remote. No pipeline code exists, by
+design.
 
 Notes for the next iteration: the report PDF was at the repo root under another name and
 was moved to `docs/research-report.pdf`. Python here is the python.org 3.14 build, which
