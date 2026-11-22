@@ -121,11 +121,19 @@ YAML configs go through a safe loader that accepts the one non-standard tag they
 - A 4-stem model's `other` still contains guitar and piano.
 - The product's `other` is what is left after all five named stems are removed.
 
-So in a 6-stem job a 4-stem model's `other` has the chosen guitar and piano stems
-subtracted from it. The alternative is the pure residual, `mix − (vocals + drums + bass +
-guitar + piano)`. Which one ships (or a blend) is a benchmark question. Separately, the
-**residual check** reports the energy of `mix − sum(all six stems)` relative to the mix
-for every job; a large value means something was lost or duplicated, and it feeds the gate.
+The product's `other` always means the second thing, whichever stems a job asks for. So
+when `other` comes from a 4-stem model, the composer subtracts the guitar and piano stems
+from it, and runs the guitar and piano models to get them even if the job did not request
+those stems (they are computed but not delivered). A 6-stem model's `other` is used as it
+is. The alternative is the pure residual, `mix − (vocals + drums + bass + guitar + piano)`,
+selected with `separation.other_method: residual`. Which one ships (or a blend) is a
+benchmark question.
+
+Separately, the **residual check** reports the level of `mix − sum(all six stems)` relative
+to the mix for every six-stem job, and names any stem that came back silent. A poor level
+means content was lost or counted twice, which happens when the models serving different
+stems disagree about what a sound is. It feeds the gate. Its thresholds are in
+`config/defaults.yaml` and are uncalibrated.
 
 **Ensembling.** When several models produce the same stem the combiner supports waveform
 averaging and STFT-domain averaging, each with per-model weights. Method and weights are

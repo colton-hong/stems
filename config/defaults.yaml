@@ -8,6 +8,20 @@ audio:
   channels: 2
   output_format: wav # wav | flac | mp3_320 | mp3_192
 
+separation:
+  # Fraction of each chunk shared with its neighbour and crossfaded.
+  overlap: 0.25
+  batch_size: 1
+  # How "other" is built: auto (from its model, minus guitar and piano when that model
+  # is a 4-stem one) or residual (the mix minus the other five stems).
+  other_method: auto
+  # Residual check: level of (mix minus the sum of all six stems) relative to the mix.
+  # Above residual_warn_db the stems are flagged as not adding up. A stem quieter than
+  # silent_stem_db relative to the mix counts as silent. Both are uncalibrated and are
+  # tuned on benchmark data in Phase 7.
+  residual_warn_db: -10
+  silent_stem_db: -60
+
 uploads:
   # Proposed limits, not requirements from the brief (BLOCKED.md, decision D2).
   max_bytes: 262144000 # 250 MiB

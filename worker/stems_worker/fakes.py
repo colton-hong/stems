@@ -60,3 +60,67 @@ class BandSplitSeparator(Separator):
     def unload(self) -> None:
         self._masks = None
         super().unload()
+
+
+class OracleSeparator(Separator):
+    """A "perfect model": returns stems it was given in advance, whatever the chunking.
+
+    A separator only ever sees chunks, with no idea where in the track they came from. So
+    ``prepare`` swaps the audio for a signal that encodes each sample's own position, the
+    chunker cuts and pads that as usual, and ``separate_chunks`` decodes the positions and
+    looks the answers up. Reflect padding mirrors the positions, which is exactly what it
+    would have done to the true stems.
+
+    ``silence`` names outputs to return as silence instead, to imitate a model that drops
+    a stem. ``gains`` scales outputs, to imitate one that gets levels wrong.
+    """
+
+    _BLOCK = 4096
+
+    def __init__(
+        self,
+        stems: dict[str, np.ndarray],
+        *,
+        model_id: str = "fake_oracle",
+        chunk_size: int = 44100,
+        silence: Sequence[str] = (),
+        gains: dict[str, float] | None = None,
+    ) -> None:
+        if not stems:
+            raise ValueError("an oracle needs at least one stem")
+        lengths = {s.shape for s in stems.values()}
+        if len(lengths) != 1:
+            raise ValueError("all oracle stems must have the same shape")
+        unknown = [n for n in (*silence, *(gains or {})) if n not in stems]
+        if unknown:
+            raise ValueError(f"unknown outputs {unknown}")
+        self.model_id = model_id
+        self.outputs = tuple(stems)
+        self.chunk_size = chunk_size
+        scale = {name: (0.0 if name in silence else (gains or {}).get(name, 1.0)) for name in stems}
+        self._answers = np.stack(
+            [stems[name].astype(np.float32) * np.float32(scale[name]) for name in stems]
+        )
+        self._length = self._answers.shape[2]
+        self._blocks = -(-self._length // self._BLOCK)
+
+    def load(self, device: str) -> None:
+        self.device = device
+
+    def prepare(self, audio: np.ndarray) -> tuple[np.ndarray, None]:
+        if audio.shape[1] != self._length:
+            raise ValueError(f"oracle holds {self._length} samples but was given {audio.shape[1]}")
+        index = np.arange(self._length)
+        # Both parts are exact in float32: a multiple of 1/4096, and a small integer ratio.
+        within = (index % self._BLOCK) / self._BLOCK
+        block = (index // self._BLOCK) / self._blocks
+        return np.stack([within, block]).astype(np.float32), None
+
+    def separate_chunks(self, batch: np.ndarray) -> np.ndarray:
+        if self.device is None:
+            raise RuntimeError("not loaded")
+        within = np.rint(batch[:, 0] * self._BLOCK).astype(np.int64)
+        block = np.rint(batch[:, 1] * self._blocks).astype(np.int64)
+        index = np.clip(block * self._BLOCK + within, 0, self._length - 1)
+        # (outputs, channels, batch, chunk) -> (batch, outputs, channels, chunk)
+        return np.ascontiguousarray(self._answers[:, :, index].transpose(2, 0, 1, 3))

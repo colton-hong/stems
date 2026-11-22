@@ -39,6 +39,14 @@ class AudioSettings(_Strict):
     output_format: OutputFormat
 
 
+class SeparationSettings(_Strict):
+    overlap: float = Field(ge=0, lt=1)
+    batch_size: int = Field(ge=1)
+    other_method: Literal["auto", "residual"]
+    residual_warn_db: float = Field(le=0)
+    silent_stem_db: float = Field(le=0)
+
+
 class UploadSettings(_Strict):
     max_bytes: int = Field(gt=0)
     max_duration_seconds: int = Field(gt=0, le=3600)
@@ -101,6 +109,7 @@ class EnsembleSettings(_Strict):
 
 class Defaults(_Strict):
     audio: AudioSettings
+    separation: SeparationSettings
     uploads: UploadSettings
     retention: RetentionSettings
     decision: DecisionSettings

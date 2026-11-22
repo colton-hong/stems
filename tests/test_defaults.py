@@ -32,6 +32,16 @@ def test_jev_model_is_pinned_and_retention_is_seven_days() -> None:
     assert defaults.retention.days == 7
 
 
+def test_separation_settings_are_present_and_bounded(raw: dict) -> None:
+    separation = load_defaults().separation
+    assert (separation.overlap, separation.other_method) == (0.25, "auto")
+    assert separation.residual_warn_db < 0
+    assert separation.silent_stem_db < 0
+    raw["separation"]["overlap"] = 1.0
+    with pytest.raises(ValueError, match="overlap"):
+        Defaults.model_validate(raw)
+
+
 def test_models_are_marked_provisional_until_benchmarked() -> None:
     # Phase 2 flips this once defaults come from measured results.
     assert load_defaults().ensembles.provisional is True
