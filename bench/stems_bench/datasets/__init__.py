@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -105,6 +106,26 @@ def write_frozen(path: Path, data: dict[str, Any]) -> None:
     path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
 
 
+def is_committed(path: Path) -> bool:
+    """True if ``path`` is tracked by git and has no uncommitted changes."""
+    git = ["git", "-C", str(path.parent)]
+    try:
+        status = subprocess.run(
+            [*git, "status", "--porcelain", "--", path.name],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        tracked = subprocess.run(
+            [*git, "ls-files", "--error-unmatch", "--", path.name],
+            capture_output=True,
+            check=False,
+        )
+    except OSError:
+        return False
+    return status.returncode == 0 and not status.stdout.strip() and tracked.returncode == 0
+
+
 class Dataset(ABC):
     """A frozen list of tracks and a way to load each one."""
 
@@ -123,6 +144,15 @@ class Dataset(ABC):
     def track_ids(self) -> list[str]:
         return self.frozen.track_ids
 
+    def check_ready(self) -> None:
+        """Refuse to be benchmarked on unless the frozen list is committed as it stands."""
+        path = self.frozen.path
+        if not is_committed(path):
+            raise DatasetError(
+                f"{path} is not committed (or has uncommitted changes). Commit the frozen "
+                "track list before benchmarking, so every result can name the list it used."
+            )
+
     @abstractmethod
     def load(self, track_id: str) -> TrackAudio:
         """Decode one track of the frozen list. Raises ``DatasetError`` if it has changed."""
@@ -134,4 +164,8 @@ def get_dataset(name: str) -> Dataset:
         from stems_bench.datasets.synthetic import SyntheticDataset
 
         return SyntheticDataset()
+    if name in ("musdb18hq_test", "musdb18hq_train"):
+        from stems_bench.datasets.musdb import Musdb18HqDataset
+
+        return Musdb18HqDataset(name.removeprefix("musdb18hq_"))
     raise DatasetError(f"unknown dataset {name!r}")
