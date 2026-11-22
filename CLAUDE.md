@@ -49,6 +49,7 @@ make check              # ruff + pytest; run before every commit
 make env                # write runs/env/worker.json (devices, package versions)
 make registry           # validate models/registry.yaml and print it
 make registry-sources   # HEAD every model URL and refresh sizes (network)
+make models-status      # which model files are downloaded or in progress
 make node-setup         # project-local Node.js into .tools/node (once per clone)
 make web-setup          # npm ci in web/
 make web-check          # web lint, typecheck, build

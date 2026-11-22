@@ -3,7 +3,7 @@ PY := .venv/bin/python
 # Use the project-local Node.js if tools/install_node.sh has installed one.
 export PATH := $(CURDIR)/.tools/node/bin:$(PATH)
 
-.PHONY: setup lint format test check env registry registry-sources node-setup web-setup web-check
+.PHONY: setup lint format test check env registry registry-sources models-status node-setup web-setup web-check
 
 setup: ## create .venv and install the project with dev tools
 	test -d .venv || python3 -m venv .venv
@@ -31,6 +31,9 @@ registry: ## validate models/registry.yaml and print the summary table
 
 registry-sources: ## HEAD every download URL and refresh size_bytes (network)
 	$(PY) -m stems_models.check_sources --write
+
+models-status: ## show which model files are downloaded or in progress
+	$(PY) -m stems_models.download --status
 
 node-setup: ## install Node.js into .tools/node (skip if you have Node >= 22.13 already)
 	sh tools/install_node.sh

@@ -9,8 +9,27 @@ python -m stems_models.check_sources            # HEAD every URL, write runs/reg
 python -m stems_models.check_sources --write    # also refresh size_bytes in registry.yaml
 ```
 
-Weights are downloaded to `models/weights/` (or `STEMS_MODELS_DIR`) by the Phase 1 download
-scripts and are never committed.
+## Downloading
+
+```
+python -m stems_models.download mel_roformer_kim_vocals      # one model, by id
+python -m stems_models.download htdemucs_ft --stem bass      # only the files one stem needs
+python -m stems_models.download --tier candidate --background
+python -m stems_models.download --status                     # or: make models-status
+```
+
+Files go to `models/weights/<id>/` (or under `STEMS_MODELS_DIR`) and are never committed.
+Downloads resume from a `.part` file, skip anything already complete, and check the byte
+count against the registry.
+
+`checksums.lock.json` is committed. The first download of a URL records its SHA-256 there;
+every later download, and every load, must match. If a file changes upstream the download
+is refused: check the source, then delete that URL's entry from the lock file to accept the
+new content.
+
+Progress for each model is in `runs/downloads/<id>/status.json`, and background runs log to
+`runs/downloads/background.log`. In code, call `stems_models.download.ensure_model(id)`,
+which returns the verified file paths.
 
 ## Entry fields
 
