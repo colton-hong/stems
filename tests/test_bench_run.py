@@ -19,13 +19,19 @@ from stems_bench.run import (  # noqa: E402
     BenchError,
     RunSpec,
     applicability,
+    ensemble_systems,
     latest_run,
     read_status,
     result_key,
     run_benchmark,
 )
+from stems_common.settings import Defaults, load_defaults  # noqa: E402
 from stems_common.stems import PRODUCT_STEMS  # noqa: E402
-from stems_models.registry import ModelEntry, Registry  # noqa: E402
+from stems_models.registry import (  # noqa: E402
+    ModelEntry,
+    Registry,
+    load_registry,
+)
 from stems_worker.cache import audio_sha256  # noqa: E402
 from stems_worker.separator import Separator  # noqa: E402
 from stems_worker.timing import TimingLog, read_timings  # noqa: E402
@@ -102,9 +108,17 @@ REGISTRY = Registry.model_construct(
         _entry("dereverb", ["dry"]),
         _entry("guitar_only", ["guitar"]),
         _entry("unbuildable", ["vocals"]),
+        _entry("four_stem_b", ["vocals", "drums", "bass", "other"]),
+        _entry("piano_only", ["piano"]),
+        _entry("splitter_b", ["lead_vocals", "backing_vocals"]),
+        _entry("dereverb_b", ["dry"]),
         _entry("a_tagger", [], kind="tagger"),
     ],
 )
+
+
+# Every fake model returns its input times a gain; these differ so blends can be told apart.
+GAINS = {"four_stem": 0.3, "six_stem": 0.2, "four_stem_b": 0.4, "splitter_b": 0.1}
 
 
 class Scaler(Separator):
@@ -153,7 +167,8 @@ class World:
             raise FileNotFoundError("checkpoint is missing")
         if model_id == "per_stem_bag":
             return [Scaler(model_id, {s: 0.5}, self) for s in stems]
-        return [Scaler(model_id, dict.fromkeys(REGISTRY.get(model_id).stems, 0.5), self)]
+        gain = GAINS.get(model_id, 0.5)
+        return [Scaler(model_id, dict.fromkeys(REGISTRY.get(model_id).stems, gain), self)]
 
     def fingerprint(self, model_id):
         return self.fingerprints.get(model_id, f"weights-of-{model_id}")
@@ -578,4 +593,251 @@ def test_command_all_means_every_loadable_separator(world, dataset, tmp_path, ca
     code = cli.main([*argv, "--tracks", "synth-01"], bench_dir=tmp_path, **common)
     assert code == 1  # "unbuildable" fails; everything else runs
     summary = json.loads(capsys.readouterr().out)
-    assert (summary["computed"], summary["failed"]) == (7, 1)
+    assert (summary["computed"], summary["failed"]) == (11, 1)
+
+
+# --- blends -------------------------------------------------------------------------------
+
+SLOTS = {
+    "vocals": ["two_stem", "four_stem", "six_stem"],
+    "drums": ["four_stem", "six_stem", "per_stem_bag"],
+    "bass": ["four_stem", "six_stem", "per_stem_bag"],
+    "guitar": ["six_stem", "guitar_only"],
+    "piano": ["six_stem", "piano_only"],
+    "other": ["four_stem", "four_stem_b"],
+    "vocal_split": ["splitter", "splitter_b"],
+    "dereverb": ["dereverb", "dereverb_b"],
+}
+
+
+def fake_defaults(**changes) -> Defaults:
+    raw = load_defaults().model_dump()
+    raw["ensembles"]["slots"] = {
+        slot: {"single_best": ids[0], "two_model_blend": ids[:2], "full_ensemble": ids}
+        for slot, ids in SLOTS.items()
+    }
+    for slot, fields in changes.items():
+        raw["ensembles"]["slots"][slot].update(fields)
+    return Defaults.model_validate(raw)
+
+
+def systems(*slots, **changes):
+    return tuple(ensemble_systems(fake_defaults(**changes), REGISTRY, slots or None))
+
+
+def test_the_real_config_gives_three_modes_per_slot_and_a_composed_other() -> None:
+    built = ensemble_systems(load_defaults(), load_registry())
+    by_id = {system.id: system for system in built}
+    assert len(built) == 8 * 3 + 3
+    assert by_id["vocals:single_best"].members == ("mel_roformer_kim_vocals",)
+    assert by_id["vocals:two_model_blend"].weights == (0.5, 0.5)
+    assert by_id["vocals:full_ensemble"].method == "waveform"
+    assert by_id["vocal_split:single_best"].outputs == ("lead_vocals", "backing_vocals")
+    assert by_id["vocal_split:single_best"].input == "vocals"
+    assert by_id["dereverb:two_model_blend"].input == "vocals_wet"
+    # The config's "other" models are four-stem ones...
+    assert by_id["other:full_ensemble"].targets == ("other_4stem",)
+    # ...so the product's six-stem other is that blend minus the same mode's guitar and piano.
+    composed = by_id["other_composed:two_model_blend"]
+    assert composed.targets == ("other",)
+    assert [sub.id for sub in composed.minus] == ["guitar:two_model_blend", "piano:two_model_blend"]
+    assert set(composed.all_members) == {
+        "scnet_xl_ihf",
+        "scnet_large",
+        "bs_roformer_sw_6stem",
+        "mel_roformer_guitar_becruily",
+        "htdemucs_6s",
+    }
+    assert composed.needed()["bs_roformer_sw_6stem"] == {"guitar", "piano"}
+    assert composed.needed()["scnet_xl_ihf"] == {"other"}
+
+
+def test_inconsistent_ensembles_are_refused() -> None:
+    with pytest.raises(BenchError, match="guitar: two_stem does not emit"):
+        systems(guitar={"single_best": "two_stem"})
+    mixed = {"two_model_blend": ["four_stem", "six_stem"]}
+    with pytest.raises(BenchError, match="mixes four-stem and six-stem 'other' models"):
+        systems(other=mixed)
+
+
+def test_blends_are_scored_from_their_members_kept_audio(world, dataset, tmp_path) -> None:
+    summary = run(world, dataset, tmp_path, [], track_ids=("synth-01",), ensembles=systems())
+    assert summary.ok
+    assert summary.count("computed") == 11 + 27  # every member model, then every system
+    # Each member ran once; nothing else did.
+    assert sorted(m for m, _ in world.runs()) == sorted(
+        [m for m in {x for ids in SLOTS.values() for x in ids} if m != "per_stem_bag"]
+        + ["per_stem_bag"] * 2
+    )
+    track = dataset.load("synth-01")
+
+    single = _result(summary, "vocals:single_best", "synth-01")
+    assert single["kind"] == "ensemble"
+    assert (single["slot"], single["mode"], single["members"]) == (
+        "vocals",
+        "single_best",
+        ["two_stem"],
+    )
+    # The single best as a system scores exactly as that model does on its own.
+    own = _result(summary, "two_stem", "synth-01")
+    assert own["kind"] == "model"
+    assert single["outputs"]["vocals"]["bss"] == own["outputs"]["vocals"]["bss"]
+
+    blend = _result(summary, "vocals:two_model_blend", "synth-01")
+    assert (blend["members"], blend["weights"], blend["method"]) == (
+        ["two_stem", "four_stem"],
+        [0.5, 0.5],
+        "waveform",
+    )
+    expected = _plain_sdr(track.references["vocals"], 0.4 * track.mix, track.mix, 44100)
+    assert blend["outputs"]["vocals"]["bss"]["sdr"] == pytest.approx(expected.sdr, abs=1e-3)
+    full = _result(summary, "vocals:full_ensemble", "synth-01")
+    expected = _plain_sdr(track.references["vocals"], track.mix / 3, track.mix, 44100)
+    assert full["outputs"]["vocals"]["bss"]["sdr"] == pytest.approx(expected.sdr, abs=1e-3)
+
+    # A blend costs the time of all its members.
+    members = [_result(summary, m, "synth-01") for m in blend["members"]]
+    total = sum(m["wall_seconds"] for m in members) + blend["blend_seconds"]
+    assert blend["wall_seconds"] == pytest.approx(total, abs=1e-3)
+    assert blend["device"] == "cpu"
+
+    # Two outputs for the vocal split, fed the vocals stem.
+    split = _result(summary, "vocal_split:two_model_blend", "synth-01")
+    assert set(split["outputs"]) == {"lead_vocals", "backing_vocals"}
+    assert split["input"] == "vocals"
+    expected = _plain_sdr(
+        track.references["lead_vocals"], 0.3 * track.inputs["vocals"], track.inputs["vocals"], 44100
+    )
+    assert split["outputs"]["lead_vocals"]["bss"]["sdr"] == pytest.approx(expected.sdr, abs=1e-3)
+
+
+def test_composed_other_is_the_four_stem_blend_minus_guitar_and_piano(
+    world, dataset, tmp_path
+) -> None:
+    chosen = systems("other", "other_composed", "guitar", "piano")
+    summary = run(world, dataset, tmp_path, [], track_ids=("synth-01",), ensembles=chosen)
+    track = dataset.load("synth-01")
+    four = _result(summary, "other:two_model_blend", "synth-01")
+    assert four["outputs"]["other"]["target"] == "other_4stem"
+    composed = _result(summary, "other_composed:two_model_blend", "synth-01")
+    assert composed["outputs"]["other"]["target"] == "other"
+    assert composed["minus"] == [
+        {"slot": "guitar", "members": ["six_stem", "guitar_only"], "weights": [0.5, 0.5]},
+        {"slot": "piano", "members": ["six_stem", "piano_only"], "weights": [0.5, 0.5]},
+    ]
+    assert composed["all_members"] == [
+        "four_stem",
+        "four_stem_b",
+        "six_stem",
+        "guitar_only",
+        "piano_only",
+    ]
+    # (0.3 + 0.4) / 2 of the mix, minus (0.2 + 0.5) / 2 for guitar and the same for piano.
+    gain = 0.35 - 0.35 - 0.35
+    expected = _plain_sdr(track.references["other"], gain * track.mix, track.mix, 44100)
+    assert composed["outputs"]["other"]["bss"]["sdr"] == pytest.approx(expected.sdr, abs=1e-3)
+    walls = [_result(summary, m, "synth-01")["wall_seconds"] for m in composed["all_members"]]
+    assert composed["wall_seconds"] >= sum(walls)
+
+
+def test_only_what_blends_read_is_kept_on_disk(world, dataset, tmp_path) -> None:
+    run(world, dataset, tmp_path, [], track_ids=("synth-01",), ensembles=systems())
+    kept: dict[str, set[str]] = {}
+    for path in (tmp_path / "estimates" / "synthetic").rglob("*.npy"):
+        kept.setdefault(path.parts[-3], set()).add(path.stem)
+    assert kept["two_stem"] == {"vocals"}  # its instrumental is scored but not kept
+    assert kept["six_stem"] == {"vocals", "drums", "bass", "guitar", "piano"}  # not its other
+    assert kept["four_stem"] == {"vocals", "drums", "bass", "other"}
+    assert kept["splitter"] == {"lead_vocals", "backing_vocals"}
+
+
+def test_blends_resume_and_reuse_like_any_other_job(world, dataset, tmp_path) -> None:
+    chosen = systems("vocals", "drums")
+    run(world, dataset, tmp_path, [], ensembles=chosen)
+    world.events.clear()
+    again = run(world, dataset, tmp_path, [], ensembles=chosen)
+    assert world.events == []
+    assert again.count("cached") == len(again.jobs) == (4 + 6) * 3
+    # Other weights are another blend: only the systems that use them are scored again.
+    weighted = systems("vocals", "drums", vocals={"two_model_weights": [3, 1]})
+    third = run(world, dataset, tmp_path, [], run_id="r2", ensembles=weighted)
+    assert world.events == []
+    redone = [(j.model_id, j.track_id) for j in third.jobs if j.outcome == "computed"]
+    assert redone == [("vocals:two_model_blend", t) for t in TRACKS]
+    result = _result(third, "vocals:two_model_blend", "synth-01")
+    assert result["weights"] == [0.75, 0.25]
+    track = dataset.load("synth-01")
+    expected = _plain_sdr(track.references["vocals"], 0.45 * track.mix, track.mix, 44100)
+    assert result["outputs"]["vocals"]["bss"]["sdr"] == pytest.approx(expected.sdr, abs=1e-3)
+
+
+def test_models_scored_earlier_are_separated_again_but_keep_their_scores(
+    world, dataset, tmp_path
+) -> None:
+    first = run(world, dataset, tmp_path, ["two_stem", "four_stem"], track_ids=("synth-01",))
+    before = _result(first, "two_stem", "synth-01")
+    world.events.clear()
+    chosen = tuple(s for s in systems("vocals") if s.mode != "full_ensemble")
+    second = run(world, dataset, tmp_path, [], track_ids=("synth-01",), ensembles=chosen)
+    assert second.ok
+    assert world.runs() == [("two_stem", "synth-01"), ("four_stem", "synth-01")]
+    jobs = {j.model_id: j for j in second.jobs}
+    assert jobs["two_stem"].outcome == "cached"
+    assert jobs["two_stem"].detail == "scores kept; audio separated again for the blends"
+    assert _result(second, "two_stem", "synth-01") == before  # the result file is untouched
+    assert jobs["vocals:two_model_blend"].outcome == "computed"
+
+
+def test_a_blend_with_a_failed_member_fails_and_says_why(world, dataset, tmp_path) -> None:
+    world.unloadable = {"four_stem"}
+    summary = run(
+        world, dataset, tmp_path, [], track_ids=("synth-01",), ensembles=systems("vocals")
+    )
+    outcomes = {j.model_id: (j.outcome, j.detail) for j in summary.jobs}
+    assert outcomes["vocals:single_best"][0] == "computed"  # two_stem alone
+    assert outcomes["vocals:two_model_blend"] == (
+        "failed",
+        "BenchError: four_stem has no separated audio for this track "
+        "(it failed, or was not part of this run)",
+    )
+    assert outcomes["vocals:full_ensemble"][0] == "failed"
+    assert not summary.ok
+
+
+def test_blends_a_dataset_cannot_score_are_not_applicable(world, frozen_path, tmp_path) -> None:
+    mix_only = MixOnlyDataset(frozen_path)
+    chosen = systems("vocals", "guitar", "vocal_split", "dereverb", "other", "other_composed")
+    summary = run(world, mix_only, tmp_path, [], track_ids=("synth-01",), ensembles=chosen)
+    outcomes = {j.model_id: (j.outcome, j.detail) for j in summary.jobs if ":" in j.model_id}
+    assert outcomes["vocals:full_ensemble"][0] == "computed"
+    assert outcomes["other:two_model_blend"][0] == "computed"  # four-stem other is there
+    assert outcomes["guitar:single_best"] == ("not_applicable", "synthetic has no guitar reference")
+    assert outcomes["other_composed:single_best"] == (
+        "not_applicable",
+        "synthetic has no other reference",
+    )
+    assert outcomes["dereverb:single_best"][1].startswith("needs the 'vocals_wet' input")
+    assert outcomes["vocal_split:single_best"][1].startswith("needs the 'vocals' input")
+
+
+def test_command_with_ensembles_adds_their_members(world, dataset, tmp_path, capsys) -> None:
+    common = {"factory": world.factory, "registry": REGISTRY, "dataset": dataset}
+    common |= {"bench_dir": tmp_path, "defaults": fake_defaults()}
+    argv = ["run", "--dataset", "synthetic", "--ensembles", "--device", "cpu", "--quiet"]
+    assert cli.main([*argv, "--tracks", "synth-01", "--run-id", "e1"], **common) == 0
+    summary = json.loads(capsys.readouterr().out)
+    assert (summary["computed"], summary["failed"]) == (11 + 27, 0)
+    run_file = json.loads((tmp_path / "e1" / "run.json").read_text())
+    assert len(run_file["ensembles"]) == 27
+    assert "two_stem" in run_file["models"]
+    assert cli.main(["run", "--dataset", "synthetic"], **common) == 2
+    assert "give --models, --all or --ensembles" in capsys.readouterr().err
+    # The report has the comparison section.
+    assert cli.main(["report", "e1"], bench_dir=tmp_path) == 0
+    text = (tmp_path / "e1" / "report.md").read_text()
+    assert "## Single best, two-model blend, full ensemble" in text
+    assert "### other_composed" in text
+    assert "| two-model blend | vocals | vocals |" in text
+    # Blends are compared in their own section, not mixed into the per-model tables.
+    vocals_table = text[text.index("## vocals") : text.index("## drums")]
+    assert "vocals:two_model_blend" not in vocals_table

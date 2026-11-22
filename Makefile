@@ -3,7 +3,7 @@ PY := .venv/bin/python
 # Use the project-local Node.js if tools/install_node.sh has installed one.
 export PATH := $(CURDIR)/.tools/node/bin:$(PATH)
 
-.PHONY: setup lint format test test-slow smoke check env registry registry-sources models-status node-setup web-setup web-check
+.PHONY: setup lint format test test-slow smoke bench-synthetic check env registry registry-sources models-status node-setup web-setup web-check
 
 setup: ## create .venv and install the project with dev tools
 	test -d .venv || python3 -m venv .venv
@@ -28,6 +28,11 @@ smoke: ## load and run every separator on the fixture; writes runs/smoke/report.
 	$(PY) -m stems_worker.smoke
 
 check: lint test ## what every loop iteration runs before committing
+
+bench-synthetic: ## every separator and every blend on the synthetic set; writes docs/benchmarks/synthetic.md
+	-$(PY) -m stems_bench run --dataset synthetic --all --ensembles --run-id synthetic-v1
+	$(PY) -m stems_bench report synthetic-v1 --out docs/benchmarks/synthetic.md
+	$(PY) -m stems_bench status synthetic-v1
 
 env: ## record this machine's devices and package versions in runs/env/worker.json
 	$(PY) -m stems_worker.env

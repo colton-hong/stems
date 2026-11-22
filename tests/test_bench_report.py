@@ -277,6 +277,46 @@ def test_a_tiny_negative_is_not_printed_as_minus_zero(tmp_path) -> None:
     assert "| `m` | 0.00 | n/a | n/a | 1 of 1 | 1.00 | 0.30 | mps | 0.0 |" in text
 
 
+def _system(mode, sdr, wall, members, weights, *, track="t1", minus=()):
+    result = _result(f"vocals:{mode}", track, {"vocals": _output(sdr, target="vocals")}, wall)
+    extra = {"kind": "ensemble", "slot": "vocals", "mode": mode, "members": members}
+    return {**result, **extra, "weights": weights, "method": "waveform", "minus": list(minus)}
+
+
+def test_blends_get_their_own_section_with_gain_and_cost(tmp_path) -> None:
+    results = [
+        _result("alpha", "t1", {"vocals": _output(8.0, target="vocals")}, 20.0),
+        _result("alpha", "t2", {"vocals": _output(10.0, target="vocals")}, 30.0),
+        _system("full_ensemble", 9.75, 70.0, ["alpha", "beta", "gamma"], [0.5, 0.25, 0.25]),
+        _system("single_best", 8.0, 20.0, ["alpha"], [1.0]),
+        _system("two_model_blend", 8.5, 45.0, ["alpha", "beta"], [0.5, 0.5]),
+        _system("two_model_blend", 7.5, 55.0, ["alpha", "beta"], [0.5, 0.5], track="t2"),
+    ]
+    text = write_report(_make_run(tmp_path, results), repo_root=tmp_path).read_text()
+    section = text[text.index("## Single best, two-model blend, full ensemble") :]
+    rows = [line for line in section.splitlines() if line.startswith("| ") and "vocals" in line]
+    assert rows == [
+        "| single best | vocals | vocals | 8.00 | n/a | n/a |  | 1 of 1 | 20.00 | 6.00 | mps | `alpha` (1.00) |  |",
+        "| two-model blend | vocals | vocals | 8.00 | n/a | n/a | +0.00 | 2 of 2 | 50.00 | 15.00 | mps | `alpha` (0.50), `beta` (0.50) | waveform |",
+        "| full ensemble | vocals | vocals | 9.75 | n/a | n/a | +1.75 | 1 of 1 | 70.00 | 21.00 | mps | `alpha` (0.50), `beta` (0.25), `gamma` (0.25) | waveform |",
+    ]
+    # The per-model table has the model only.
+    table = text[text.index("## vocals") : text.index("## Single best")]
+    assert [
+        line.split("|")[1].strip() for line in table.splitlines() if line.startswith("| `")
+    ] == ["`alpha`"]
+
+
+def test_a_composed_system_names_what_is_taken_out(tmp_path) -> None:
+    minus = [{"slot": "guitar", "members": ["g"], "weights": [1.0]}]
+    system = _system("single_best", 3.0, 9.0, ["o"], [1.0], minus=minus)
+    system |= {"slot": "other_composed", "model_id": "other_composed:single_best"}
+    text = write_report(_make_run(tmp_path, [system]), repo_root=tmp_path).read_text()
+    assert "### other_composed" in text
+    assert "The four-stem blend with the same mode's guitar taken out" in text
+    assert "`o` (1.00), minus guitar: `g`" in text
+
+
 def test_render_is_a_function_of_the_loaded_run_only(tmp_path) -> None:
     data = load_run(_make_run(tmp_path), repo_root=tmp_path)
     rows = aggregate([r for _, _, r in data.results])

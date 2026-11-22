@@ -234,9 +234,11 @@ def render(data: RunData, rows: list[Row]) -> str:
         ]
     lines.append("")
 
+    systems = {r["model_id"]: r for _, _, r in data.results if r.get("kind") == "ensemble"}
     by_target: dict[str, list[Row]] = {}
     for row in rows:
-        by_target.setdefault(row.target, []).append(row)
+        if row.system not in systems:
+            by_target.setdefault(row.target, []).append(row)
     for target in sorted(by_target, key=_target_key):
         lines += [f"## {target}", ""]
         if target in TARGET_NOTES:
@@ -266,6 +268,7 @@ def render(data: RunData, rows: list[Row]) -> str:
             lines.append("| " + " | ".join(cells) + " |")
         lines.append("")
 
+    lines += _ensemble_section(rows, systems, metrics)
     failed = [j for j in data.jobs if j["outcome"] == "failed"]
     skipped = [j for j in data.jobs if j["outcome"] == "not_applicable"]
     if failed:
@@ -282,6 +285,85 @@ def render(data: RunData, rows: list[Row]) -> str:
     if status["state"] != "done":
         lines += [f"**This run did not finish (state `{status['state']}`).**", ""]
     return "\n".join(lines)
+
+
+MODE_ORDER = ("single_best", "two_model_blend", "full_ensemble")
+MODE_LABELS = {
+    "single_best": "single best",
+    "two_model_blend": "two-model blend",
+    "full_ensemble": "full ensemble",
+}
+
+
+def _ensemble_section(
+    rows: list[Row], systems: dict[str, dict[str, Any]], metrics: list[str]
+) -> list[str]:
+    """Per slot: its three modes side by side, with what each costs in time."""
+    if not systems:
+        return []
+    lines = [
+        "## Single best, two-model blend, full ensemble",
+        "",
+        "Each slot of `config/defaults.yaml` in its three modes, on the same tracks. A blend's",
+        "time is the sum of the times of every model it needs, as if that stem alone were",
+        "asked for. \"vs single best\" is the blend's median SDR minus the single best's.",
+        "",
+    ]
+    by_slot: dict[str, list[Row]] = {}
+    for row in rows:
+        if row.system in systems:
+            by_slot.setdefault(systems[row.system]["slot"], []).append(row)
+    for slot, slot_rows in by_slot.items():
+        example = systems[slot_rows[0].system]
+        lines += [f"### {slot}", ""]
+        if example["minus"]:
+            taken = " and ".join(sub["slot"] for sub in example["minus"])
+            lines += [
+                f"The four-stem blend with the same mode's {taken} taken out: what the "
+                "pipeline delivers as the six-stem other.",
+                "",
+            ]
+        header = ["mode", "output", "scored against", *(METRIC_LABELS[m] for m in metrics)]
+        header += ["vs single best", "tracks", "s per track", "s per min of audio", "device"]
+        header += ["models (weight)", "method"]
+        lines.append("| " + " | ".join(header) + " |")
+        lines.append("|---|---|---|" + "---:|" * (len(metrics) + 4) + "---|---|---|")
+        baseline = {
+            row.output: row.medians["sdr"]
+            for row in slot_rows
+            if systems[row.system]["mode"] == "single_best"
+        }
+        slot_rows.sort(key=lambda r: (r.output, MODE_ORDER.index(systems[r.system]["mode"])))
+        for row in slot_rows:
+            system = systems[row.system]
+            sdr, base = row.medians["sdr"], baseline.get(row.output)
+            gain = None if sdr is None or base is None else sdr - base
+            members = [
+                f"`{model}` ({weight:.2f})"
+                for model, weight in zip(system["members"], system["weights"], strict=True)
+            ]
+            for sub in system["minus"]:
+                members += [f"minus {sub['slot']}: `{model}`" for model in sub["members"]]
+            cells = [
+                MODE_LABELS[system["mode"]],
+                row.output,
+                row.target,
+                *(_number(row.medians[m]) for m in metrics),
+                "" if system["mode"] == "single_best" else _signed(gain),
+                f"{row.tracks_scored} of {row.tracks}",
+                _number(row.seconds_per_track),
+                _number(row.seconds_per_audio_minute),
+                ", ".join(row.devices),
+                ", ".join(members),
+                system["method"] if len(system["members"]) > 1 else "",
+            ]
+            lines.append("| " + " | ".join(cells) + " |")
+        lines.append("")
+    return lines
+
+
+def _signed(value: float | None) -> str:
+    return "n/a" if value is None else f"{round(value, 2) + 0.0:+.2f}"
 
 
 def write_report(run_dir: Path, out: Path | None = None, *, repo_root: Path = REPO_ROOT) -> Path:

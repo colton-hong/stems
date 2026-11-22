@@ -2,6 +2,7 @@
 
     bench run --dataset synthetic --all                  # every loadable separator
     bench run --dataset synthetic --models htdemucs,scnet_xl_ihf --device cpu
+    bench run --dataset synthetic --all --ensembles      # ...and every slot's three modes
     bench run --dataset musdb18hq_test --all --background
     bench run --dataset synthetic --all --run-id <id>    # resume: finished jobs are skipped
     bench status [<run-id>]                              # the latest run if no id is given
@@ -26,11 +27,13 @@ from stems_bench.run import (
     BenchError,
     Factory,
     RunSpec,
+    ensemble_systems,
     latest_run,
     read_status,
     run_benchmark,
 )
 from stems_common.paths import REPO_ROOT
+from stems_common.settings import Defaults
 from stems_models.registry import Registry, load_registry
 
 
@@ -43,7 +46,7 @@ def build_parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command", required=True)
     run = commands.add_parser("run", help="score models on a dataset's frozen track list")
     run.add_argument("--dataset", required=True, help="synthetic, musdb18hq_test, moisesdb_subset")
-    which = run.add_mutually_exclusive_group(required=True)
+    which = run.add_mutually_exclusive_group()
     which.add_argument("--models", type=_csv, help="comma-separated registry ids")
     which.add_argument("--all", action="store_true", help="every loadable separator")
     run.add_argument("--tracks", type=_csv, default=None, help="only these track ids")
@@ -57,6 +60,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=(),
         metavar="MODELS",
         help="keep the separated audio of these models under runs/bench/estimates",
+    )
+    run.add_argument(
+        "--ensembles",
+        action="store_true",
+        help="also score every slot's single best, two-model blend and full ensemble "
+        "(config/defaults.yaml); their member models are added to the run",
     )
     run.add_argument("--background", action="store_true", help="detach and log to the run folder")
     run.add_argument("--quiet", action="store_true")
@@ -92,6 +101,7 @@ def main(
     registry: Registry | None = None,
     dataset: Dataset | None = None,
     bench_dir: Path = BENCH_DIR,
+    defaults: Defaults | None = None,
 ) -> int:
     """Run the command. The keyword arguments let tests swap in weightless models."""
     argv = sys.argv[1:] if argv is None else argv
@@ -118,7 +128,10 @@ def main(
     from stems_worker.device import DeviceError, pick_device
     from stems_worker.timing import TimingLog
 
-    defaults = load_defaults()
+    defaults = defaults or load_defaults()
+    if not (args.all or args.models or args.ensembles):
+        print("bench: give --models, --all or --ensembles", file=sys.stderr)
+        return 2
     registry = registry or load_registry()
     run_id = args.run_id or f"{args.dataset}-{datetime.now(UTC):%Y%m%dT%H%M%SZ}"
 
@@ -147,7 +160,7 @@ def main(
         if args.all:
             models = tuple(m.id for m in registry.models if m.kind == "separator" and m.is_loadable)
         else:
-            models = args.models
+            models = args.models or ()
             unknown = [m for m in models if m not in registry]
             if unknown:
                 raise BenchError(f"not in the registry: {unknown}")
@@ -171,6 +184,7 @@ def main(
             batch_size=args.batch_size or defaults.separation.batch_size,
             track_ids=args.tracks,
             keep_estimates=args.keep_estimates,
+            ensembles=tuple(ensemble_systems(defaults, registry)) if args.ensembles else (),
         )
         summary = run_benchmark(
             spec,
