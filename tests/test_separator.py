@@ -155,6 +155,27 @@ def test_a_model_that_emits_the_wrong_number_of_stems_is_caught(mix) -> None:
         run_separator(liar, mix, SR)
 
 
+def test_whole_track_hooks_wrap_the_chunked_run(mix) -> None:
+    class Scaled(BandSplitSeparator):
+        """Halves the track before the model and doubles the stems after it."""
+
+        calls: list[str] = []  # noqa: RUF012 - shared on purpose, one instance per test
+
+        def prepare(self, audio):
+            self.calls.append("prepare")
+            return audio * np.float32(0.5), 2.0
+
+        def finish(self, stems, state):
+            self.calls.append("finish")
+            return stems * np.float32(state)
+
+    separator = Scaled()
+    separator.load("cpu")
+    result = run_separator(separator, mix, SR)
+    assert Scaled.calls == ["prepare", "finish"]
+    assert float(np.abs(result.stems["low"] + result.stems["high"] - mix).max()) < 2e-6
+
+
 def test_fake_rejects_inconsistent_configuration() -> None:
     with pytest.raises(ValueError, match="one cutoff"):
         BandSplitSeparator(outputs=("a", "b", "c"), cutoffs_hz=(100.0,))

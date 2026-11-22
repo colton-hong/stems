@@ -10,6 +10,7 @@ from __future__ import annotations
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
@@ -41,6 +42,17 @@ class Separator(ABC):
     def separate_chunks(self, batch: np.ndarray) -> np.ndarray:
         """``(batch, channels, chunk_size)`` float32 in, ``(batch, outputs, channels,
         chunk_size)`` float32 out, as numpy arrays on the CPU."""
+
+    def prepare(self, audio: np.ndarray) -> tuple[np.ndarray, Any]:
+        """Whole-track preprocessing before chunking (for example normalisation).
+
+        Returns the audio to chunk and any state ``finish`` needs to undo it.
+        """
+        return audio, None
+
+    def finish(self, stems: np.ndarray, state: Any) -> np.ndarray:
+        """Whole-track postprocessing of the stitched ``(outputs, channels, samples)``."""
+        return stems
 
     def unload(self) -> None:
         """Release the model. Safe to call when nothing is loaded."""
@@ -89,14 +101,16 @@ def run_separator(
     hop = hop_for_overlap(separator.chunk_size, overlap)
     plan = plan_chunks(audio.shape[1], separator.chunk_size, hop)
     started = time.perf_counter()
+    prepared, state = separator.prepare(audio)
     stacked = apply_chunked(
-        audio,
+        prepared,
         separator.separate_chunks,
         chunk_size=separator.chunk_size,
         hop=hop,
         batch_size=batch_size,
         progress=progress,
     )
+    stacked = separator.finish(stacked, state)
     wall = time.perf_counter() - started
     if stacked.shape[0] != len(separator.outputs):
         raise ValueError(

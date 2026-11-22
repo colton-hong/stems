@@ -4,6 +4,11 @@
     "sha256": "f3cf25b222c4eed7cd49dd8b2c9597d50c18bd154090f7b919cfa5f93cf22c49",
     "size_bytes": 84141271
   },
+  "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/5c90dfd2-34c22ccb.th": {
+    "filename": "5c90dfd2-34c22ccb.th",
+    "sha256": "34c22ccb381c6f9fdbf324f04e1e2fe21aaaf293f5ded163a162697ff9a02ddd",
+    "size_bytes": 54996327
+  },
   "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/92cfc3b6-ef3bcb9c.th": {
     "filename": "92cfc3b6-ef3bcb9c.th",
     "sha256": "ef3bcb9c8b40d14ae5d51b6db2587339cc12c6b77c0be151ce6d69002e087bf2",
@@ -23,6 +28,116 @@
     "filename": "f7e0c4bc-ba3fe64a.th",
     "sha256": "ba3fe64ae8ef66ac9a4857222ce48efbdc5eb3ad375cb79dd13debee5aaa4066",
     "size_bytes": 84141271
+  },
+  "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/5_HP-Karaoke-UVR.pth": {
+    "filename": "5_HP-Karaoke-UVR.pth",
+    "sha256": "fe00891defbb61f4261500af22f7624f1a3df8dc75fa3998d1aece02e6be4537",
+    "size_bytes": 126782699
+  },
+  "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/6_HP-Karaoke-UVR.pth": {
+    "filename": "6_HP-Karaoke-UVR.pth",
+    "sha256": "4ce7eaaa9e56f09366b788aebf6d3a72aec8145692c56f1e090e4e7e2d7ce65f",
+    "size_bytes": 126782699
+  },
+  "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-De-Echo-Aggressive.pth": {
+    "filename": "UVR-De-Echo-Aggressive.pth",
+    "sha256": "1bd1d79d9c5d1b17d20f96f8a9f8aff1b55a83014f70712446bf420c0188e0a0",
+    "size_bytes": 127139365
+  },
+  "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-De-Echo-Normal.pth": {
+    "filename": "UVR-De-Echo-Normal.pth",
+    "sha256": "b849dd575643b075c257fb7a96c2ef5a79d7a5e7df74a2b319ad47118f1ee769",
+    "size_bytes": 127139365
+  },
+  "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-DeEcho-DeReverb.pth": {
+    "filename": "UVR-DeEcho-DeReverb.pth",
+    "sha256": "e644028ec82865dc0fe082bc6fea85a43f7c71cfe375caee2da2d154aa661ee7",
+    "size_bytes": 223650277
+  },
+  "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-MDX-NET-Inst_HQ_1.onnx": {
+    "filename": "UVR-MDX-NET-Inst_HQ_1.onnx",
+    "sha256": "38a045c4ded87e3bf97b609ec5be7910e8a7cecec455f507227ab12b5e29f7f9",
+    "size_bytes": 66759214
+  },
+  "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-MDX-NET-Inst_HQ_2.onnx": {
+    "filename": "UVR-MDX-NET-Inst_HQ_2.onnx",
+    "sha256": "197f8ab296df850f961e68c595f6649acb7d9e621b5600b460f3458967299112",
+    "size_bytes": 66759214
+  },
+  "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-MDX-NET-Inst_HQ_3.onnx": {
+    "filename": "UVR-MDX-NET-Inst_HQ_3.onnx",
+    "sha256": "317554b07fe1ea5279a77f2b1520a41ea4b93432560c4ffd08792c30fddf9adc",
+    "size_bytes": 66759214
+  },
+  "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-MDX-NET-Inst_HQ_4.onnx": {
+    "filename": "UVR-MDX-NET-Inst_HQ_4.onnx",
+    "sha256": "3c4b5b9b05090fdf238f38ba5046813982d50e2a652e9cb3324ea79720c3c9c8",
+    "size_bytes": 59074342
+  },
+  "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-MDX-NET-Inst_HQ_5.onnx": {
+    "filename": "UVR-MDX-NET-Inst_HQ_5.onnx",
+    "sha256": "811cb24095d865763752310848b7ec86aeede0626cb05749ab35350e46897000",
+    "size_bytes": 59074342
+  },
+  "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-MDX-NET-Voc_FT.onnx": {
+    "filename": "UVR-MDX-NET-Voc_FT.onnx",
+    "sha256": "534b2070fcc7df514b13ef660dc8cbb328679c2374d04354a5c42bb14ecce111",
+    "size_bytes": 66762490
+  },
+  "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR_MDXNET_KARA.onnx": {
+    "filename": "UVR_MDXNET_KARA.onnx",
+    "sha256": "e3167c87333a48548413e972a286bf40bf5694001d2853861eb1435953f02d63",
+    "size_bytes": 29704436
+  },
+  "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR_MDXNET_KARA_2.onnx": {
+    "filename": "UVR_MDXNET_KARA_2.onnx",
+    "sha256": "bf32e15105a09c0f7dddd2b67346146334d6f3ecb399ed7638eba2ab07cbf5f4",
+    "size_bytes": 52786726
+  },
+  "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR_MDXNET_Main.onnx": {
+    "filename": "UVR_MDXNET_Main.onnx",
+    "sha256": "8289784cda38543ff431add4070662813311a8cccfc0112ca82f76d9dba2b4ca",
+    "size_bytes": 66759214
+  },
+  "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/kuielab_a_bass.onnx": {
+    "filename": "kuielab_a_bass.onnx",
+    "sha256": "0c3e77b9963185b1ea6bb46a4b8924137d9370fc1ccdefec7b1b416ef550dcaa",
+    "size_bytes": 29703204
+  },
+  "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/kuielab_a_drums.onnx": {
+    "filename": "kuielab_a_drums.onnx",
+    "sha256": "40f586b7091934dd6f5563f0cba8f14bad57ce88440da1098bf388ea716c2901",
+    "size_bytes": 29703204
+  },
+  "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/kuielab_a_other.onnx": {
+    "filename": "kuielab_a_other.onnx",
+    "sha256": "7b67a1dcb5f232153528c59960b4c7bf8dc736b8114de360af0e719633f53358",
+    "size_bytes": 29703204
+  },
+  "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/kuielab_a_vocals.onnx": {
+    "filename": "kuielab_a_vocals.onnx",
+    "sha256": "daba83c2ee1afee9139766ad64c9b6808d6b6f092fff04bed3338be50baac721",
+    "size_bytes": 29703204
+  },
+  "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/kuielab_b_bass.onnx": {
+    "filename": "kuielab_b_bass.onnx",
+    "sha256": "b4b7080fe501d0bece62076c5d4eda4d6590c5207ed78ec84a57bac0740a061d",
+    "size_bytes": 29703204
+  },
+  "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/kuielab_b_drums.onnx": {
+    "filename": "kuielab_b_drums.onnx",
+    "sha256": "a6fecee758059b33ed99f6dabba297439b3e7cacfac4b1097bd324aff8052208",
+    "size_bytes": 21930313
+  },
+  "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/kuielab_b_other.onnx": {
+    "filename": "kuielab_b_other.onnx",
+    "sha256": "b0d0b63950ac332333fea2d58f68c92fd3ab0aae071398c2a8beeae1ad15b655",
+    "size_bytes": 29703204
+  },
+  "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/kuielab_b_vocals.onnx": {
+    "filename": "kuielab_b_vocals.onnx",
+    "sha256": "9b7dcb9d878acb0f3e64ff3fd27750faae96577013f6d50f5996875bf4250713",
+    "size_bytes": 29703204
   },
   "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/mel_band_roformer_karaoke_aufr33_viperx_sdr_10.1956.ckpt": {
     "filename": "mel_band_roformer_karaoke_aufr33_viperx_sdr_10.1956.ckpt",
@@ -44,15 +159,30 @@
     "sha256": "19103def86d549701f824804fc5f3d244e8e8ccd4032da6ee9d5b4f2a5f2da16",
     "size_bytes": 1739
   },
+  "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v.1.0.6/scnet_checkpoint_musdb18.ckpt": {
+    "filename": "scnet_checkpoint_musdb18.ckpt",
+    "sha256": "1bc0d1abb20bfdf966dcd07637bafd03e4bc13653d09ef18bc9b3e342eafe2aa",
+    "size_bytes": 42434986
+  },
   "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.0/config_vocals_mdx23c.yaml": {
     "filename": "config_vocals_mdx23c.yaml",
     "sha256": "9b2bf974ee274439ff29b4be4c26e4bc2b9e339cf01a5f6c0c6d5fecd00d4c20",
     "size_bytes": 1197
   },
+  "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.0/model_vocals_mdx23c_sdr_10.17.ckpt": {
+    "filename": "model_vocals_mdx23c_sdr_10.17.ckpt",
+    "sha256": "49d51472769e34a2501cd1da782346a3212555c3a5619fc2c53507445528d816",
+    "size_bytes": 448101203
+  },
   "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.1/config_musdb18_mdx23c.yaml": {
     "filename": "config_musdb18_mdx23c.yaml",
     "sha256": "85b78dbaaa32ba1a72d98f3097c1ecc89d2888d066d3356e7a8e4bda1c3ac30f",
     "size_bytes": 1217
+  },
+  "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.1/model_mdx23c_ep_168_sdr_7.0207.ckpt": {
+    "filename": "model_mdx23c_ep_168_sdr_7.0207.ckpt",
+    "sha256": "c1d31e3c47a98e8cdb12b3382a1a313c1a95c835da4310dd6350e7e1892f821c",
+    "size_bytes": 448119834
   },
   "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.12/config_bs_roformer_384_8_2_485100.yaml": {
     "filename": "config_bs_roformer_384_8_2_485100.yaml",
@@ -183,6 +313,16 @@
     "filename": "model_2_stem_full_band_8k.yaml",
     "sha256": "451765e869b78dcb9ca9188a74da31f581b7254ff0e8b532aa76b974148de947",
     "size_bytes": 709
+  },
+  "https://raw.githubusercontent.com/TRvlvr/application_data/main/mdx_model_data/model_data_new.json": {
+    "filename": "mdx_model_data.json",
+    "sha256": "1aca8f9bcc57233bc714029663a9ec2345d9c7721f91e5e08f46392a879c6a9a",
+    "size_bytes": 15358
+  },
+  "https://raw.githubusercontent.com/TRvlvr/application_data/main/vr_model_data/model_data_new.json": {
+    "filename": "vr_model_data.json",
+    "sha256": "6a2021b9aa355c10f845b68c73944d47bd9e1fdf37b8a584b14ce8f88b09bb2f",
+    "size_bytes": 4380
   },
   "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/KimberleyJensen/config_vocals_mel_band_roformer_kj.yaml": {
     "filename": "config_vocals_mel_band_roformer_kj.yaml",

@@ -520,6 +520,8 @@ models:
     config:
       bag: htdemucs
       signatures: ["955717e8"]
+      sources: [drums, bass, other, vocals]
+      segment_seconds: 7.8
     licence_note: Code MIT. Author states the pretrained weights are for scientific purposes only (report §1, §7).
 
   - id: htdemucs_ft
@@ -558,6 +560,8 @@ models:
     config:
       bag: htdemucs_ft
       signatures: ["f7e0c4bc", "d12395a8", "92cfc3b6", "04573f0d"]
+      sources: [drums, bass, other, vocals]
+      segment_seconds: 7.8
     licence_note: Code MIT. Author states the pretrained weights are for scientific purposes only (report §1, §7).
     notes: One fine-tuned model per stem, so a single-stem request only needs one of the four files.
 
@@ -771,6 +775,8 @@ models:
     config:
       bag: htdemucs_6s
       signatures: ["5c90dfd2"]
+      sources: [drums, bass, other, vocals, guitar, piano]
+      segment_seconds: 7.8
     licence_note: Code MIT. Author states the pretrained weights are for scientific purposes only (report §1, §7).
     notes: Baseline only. Its author describes the piano source as not working well.
 
