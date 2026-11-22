@@ -9,7 +9,8 @@ This plan rests on `docs/research-report.pdf`. Where the report and the project 
 disagree, the brief wins. Where the report was wrong or out of date, the fix is in
 `docs/corrections.md` and this plan uses the corrected fact.
 
-**Status:** Phase 0 is complete (see `PROGRESS.md`). No pipeline code exists yet.
+**Status:** Phases 0 and 1 are complete (see `PROGRESS.md`). The `separate` command works
+with real models. No benchmark has been run and no quality number exists yet.
 
 ## 1. Fixed decisions
 

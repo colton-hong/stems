@@ -2,7 +2,7 @@
 
 Single source of truth for where the build is. Read this first, every iteration.
 
-**Current phase: 1 (separation core).** The owner started it on 2026-11-22.
+**Current phase: 1 (separation core), complete. Waiting for the owner before Phase 2 starts.**
 
 ## How to use this file
 
@@ -166,3 +166,54 @@ has no system CA bundle, so use `certifi` for any HTTPS. There is no ffmpeg; pla
 `soundfile` and PyAV.
 
 **Next:** Phase 1, starting at P1.1 (started 2026-11-22 on the owner's go-ahead).
+
+### Phase 1 (2026-11-22)
+
+Done: all 17 tasks. `separate <file> --stems ...` turns an audio file into stems with a
+manifest, using real models, on this machine.
+
+- **Models**: 47 of the 48 loadable registry models are downloaded (16 GB) with every file's
+  SHA-256 pinned. All 43 separators load and run (`make smoke`: 43 of 43).
+- **Adapters**: `msst` (RoFormers, SCNet, MDX23C, PolarFormer; upstream code vendored at a
+  pinned commit), `demucs`, `uvr_mdx_onnx`, `uvr_vr` (UVR code vendored from a pinned
+  wheel). Every checkpoint loads with `weights_only=True`; configs use a safe YAML loader.
+- **Core**: decoding without ffmpeg, soxr resampling, chunking with overlap and crossfade,
+  the composer (shared model runs, "other", residual check), optional vocal split and
+  de-reverb, a cache of model outputs, a timing log, and a synthetic fixture with exact
+  "perfect model" fakes.
+- **Tests**: 330 fast (`make check`, about 15 s) and 55 with real weights (`make test-slow`,
+  about 3 minutes; 1 more needs CUDA).
+
+Blocked: only the BEATs checkpoint (B10), which Phase 3 needs. Nothing in Phase 2 needs it.
+
+Findings worth carrying forward:
+
+1. **Device sensitivity.** The same model gives measurably different output on CPU and MPS
+   (about −20 dB relative on the fixture for Kim vocals), because the models amplify tiny
+   numeric differences. Task P2.14 measures this on real tracks.
+2. **The fixture's limits.** Models recognise its drums and bass, and the VR karaoke models
+   split its lead from its backing, but most vocal, guitar and piano models hear sine tones
+   as "not that instrument". Phase 1 could therefore check output naming, not quality.
+3. **The residual check works.** With the provisional defaults on the fixture it reports
+   about −9 dB and names the silent stems, because the models serving different stems
+   disagree about the synthetic voice. Whether "other" should come from its model or be the
+   mix minus the other five stems is a Phase 2 question.
+4. **No published SDR figure was used anywhere**, and no quality number exists yet.
+
+Choices made here that the owner can overrule (see `PLAN.md` section 13 for the earlier
+ones):
+
+- "other" always means the six-stem other, so guitar and piano are computed to build it
+  even when not requested.
+- Vocal split and de-reverb each work on the vocals stem independently; lead and backing
+  are not de-reverbed.
+- Demucs runs without its random-shift averaging; VR band resampling is fixed to one
+  method on every platform; MDX-Net's optional denoise pass is off.
+- Timings are logged by audio hash only, never by file name.
+
+Not done, by design or for lack of access: blends and ensembles (Phase 2 chooses them),
+any benchmark (needs the datasets), GPU timings (this machine has MPS and CPU only), and
+CI has still never run because the repo has no remote.
+
+**Next:** wait for the owner. Phase 2 starts at P2.1. Its harness tasks (P2.1 to P2.9,
+P2.14 on synthetic data) need nothing from the owner; the real benchmarks need B2 and B3.

@@ -4,7 +4,8 @@ Upload a song, get back separated stems: vocals, drums, bass, guitar, piano and 
 optional lead/backing vocal split and de-reverb. A personal, non-commercial project aiming
 for the best quality open models can give, with benchmarks you can re-run.
 
-**Status:** Phase 1 (separation core). The `separate` command works; the web app does not exist yet.
+**Status:** Phase 1 (separation core) is complete. The `separate` command works with real
+models. There is no benchmark yet and no web app yet.
 
 - [PLAN.md](PLAN.md): architecture and what each phase delivers
 - [PROGRESS.md](PROGRESS.md): task checklist and current state
