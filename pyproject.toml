@@ -11,6 +11,8 @@ dependencies = [
   "certifi>=2024.8.30",
   "pydantic>=2.9,<3",
   "pyyaml>=6.0.2,<7",
+  # Validates the JSON objects exchanged between the listening and decision layers.
+  "jsonschema>=4.23,<5",
 ]
 
 # Extras are filled in by the phase that first needs them, with versions pinned
@@ -58,6 +60,9 @@ bench = "stems_bench.cli:main"
 [tool.setuptools.packages.find]
 where = ["common", "models", "worker", "bench", "api"]
 include = ["stems_*"]
+
+[tool.setuptools.package-data]
+stems_common = ["schemas/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

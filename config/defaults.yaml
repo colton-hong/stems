@@ -47,6 +47,31 @@ gate:
   confidence_min: 0.7
   max_retries_per_stem: 2
 
+# How tagger outputs (AudioSet class probabilities per 10-second window) become
+# track_features and per-stem signals. UNCALIBRATED: these values are first guesses, not
+# measurements. They are measured on labelled clean and bled stems in Phase 7 (P7.1), and
+# `calibrated` stays false until then.
+listening:
+  calibrated: false
+  presence:
+    # A stem's score for a track: the mean of its best quarter of audible windows, so an
+    # instrument that plays in only part of the track still counts.
+    top_fraction: 0.25
+    present_min: 0.5
+    absent_max: 0.2
+  # Bleed on an output stem, by the tagger score of the strongest other source in it.
+  bleed:
+    slight_min: 0.2
+    moderate_min: 0.5
+    severe_min: 0.8
+  # The genre hint is given only when its class is at least this probable.
+  genre_min: 0.3
+  # Score of the reverberation classes. Below moderate_min the estimate is left unknown:
+  # not hearing reverberation is not evidence of a dry recording.
+  reverb:
+    moderate_min: 0.2
+    wet_min: 0.5
+
 # Which models run for each slot, per ensemble mode.
 # PROVISIONAL: these are the first-listed candidates from the project brief. No benchmark
 # has been run yet. Phase 2 replaces them with measured choices and sets provisional: false.

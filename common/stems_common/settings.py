@@ -74,6 +74,60 @@ class GateSettings(_Strict):
     max_retries_per_stem: int = Field(ge=0, le=2)
 
 
+class PresenceSettings(_Strict):
+    # A score is the mean of a class group's best `top_fraction` of audible windows.
+    top_fraction: float = Field(gt=0, le=1)
+    # At or above: present. At or below `absent_max`: absent. Between: unknown.
+    present_min: float = Field(ge=0, le=1)
+    absent_max: float = Field(ge=0, le=1)
+
+    @model_validator(mode="after")
+    def _check(self) -> PresenceSettings:
+        if self.absent_max >= self.present_min:
+            raise ValueError("absent_max must be below present_min")
+        return self
+
+
+class BleedSettings(_Strict):
+    # Tagger score of the strongest other source heard on a stem.
+    slight_min: float = Field(ge=0, le=1)
+    moderate_min: float = Field(ge=0, le=1)
+    severe_min: float = Field(ge=0, le=1)
+
+    @model_validator(mode="after")
+    def _check(self) -> BleedSettings:
+        if not self.slight_min < self.moderate_min < self.severe_min:
+            raise ValueError("bleed thresholds must rise: slight < moderate < severe")
+        return self
+
+    def level(self, score: float) -> Literal["none", "slight", "moderate", "severe"]:
+        if score >= self.severe_min:
+            return "severe"
+        if score >= self.moderate_min:
+            return "moderate"
+        return "slight" if score >= self.slight_min else "none"
+
+
+class ReverbSettings(_Strict):
+    moderate_min: float = Field(ge=0, le=1)
+    wet_min: float = Field(ge=0, le=1)
+
+    @model_validator(mode="after")
+    def _check(self) -> ReverbSettings:
+        if self.moderate_min >= self.wet_min:
+            raise ValueError("moderate_min must be below wet_min")
+        return self
+
+
+class ListeningSettings(_Strict):
+    # False until the thresholds below have been measured on labelled audio (P7.1).
+    calibrated: bool
+    presence: PresenceSettings
+    bleed: BleedSettings
+    genre_min: float = Field(ge=0, le=1)
+    reverb: ReverbSettings
+
+
 class SlotModels(_Strict):
     single_best: str
     two_model_blend: list[str] = Field(min_length=2, max_length=2)
@@ -146,6 +200,7 @@ class Defaults(_Strict):
     retention: RetentionSettings
     decision: DecisionSettings
     gate: GateSettings
+    listening: ListeningSettings
     ensembles: EnsembleSettings
 
 

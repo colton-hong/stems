@@ -1,0 +1,93 @@
+# AudioSet classes read for `track_features` and the per-stem signals, beyond the six
+# stem scores of audioset_stem_map.yaml. Class names are exactly those of
+# audioset_class_labels.csv. Validated by stems_worker.listening.features.
+#
+# None of this is part of the Clef-omni pre-registration (that is the stem map alone).
+version: 1
+
+# The vocal classes that are taken as backing vocals when no other vocal class is heard.
+# AudioSet has no "backing vocals" class, so this is a proxy: a choir or humming with no
+# solo singing or speech. Every other class of the stem map's `vocals` counts as lead.
+backing_vocals:
+  - Choir
+  - Chant
+  - Humming
+
+# Named families inside the stem map's `other`, reported as detected instruments. The rest
+# of `other` is reported as "other".
+instrument_groups:
+  strings:
+    - Bowed string instrument
+    - String section
+    - Violin, fiddle
+    - Pizzicato
+    - Cello
+  synth:
+    - Synthesizer
+    - Sampler
+  brass:
+    - Brass instrument
+    - French horn
+    - Trumpet
+    - Trombone
+
+# The genre hint is the most probable of these, if any is probable enough.
+genres:
+  - Pop music
+  - Hip hop music
+  - Rock music
+  - Heavy metal
+  - Punk rock
+  - Grunge
+  - Progressive rock
+  - Rock and roll
+  - Psychedelic rock
+  - Rhythm and blues
+  - Soul music
+  - Reggae
+  - Country
+  - Swing music
+  - Bluegrass
+  - Funk
+  - Folk music
+  - Middle Eastern music
+  - Jazz
+  - Disco
+  - Classical music
+  - Opera
+  - Electronic music
+  - House music
+  - Techno
+  - Dubstep
+  - Drum and bass
+  - Electronica
+  - Electronic dance music
+  - Ambient music
+  - Trance music
+  - Music of Latin America
+  - Salsa music
+  - Flamenco
+  - Blues
+  - New-age music
+  - Music of Africa
+  - Afrobeat
+  - Gospel music
+  - Music of Asia
+  - Carnatic music
+  - Music of Bollywood
+  - Ska
+  - Traditional music
+
+# Evidence of audible reverberation.
+reverb:
+  - Reverberation
+  - Echo
+
+# Text prompts scored by CLAP against each output stem, as a second opinion. "other" has
+# no prompt: there is no one sound to describe.
+clap_prompts:
+  vocals: the sound of singing
+  drums: the sound of drums
+  bass: the sound of a bass guitar
+  guitar: the sound of a guitar
+  piano: the sound of a piano

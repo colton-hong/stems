@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/track-features/v1",
+  "title": "TrackFeatures",
+  "description": "The track_features object of schema (b), EnsemblePlan, in research report section 4. Transcribed unchanged.",
+  "type": "object",
+  "required": ["duration_seconds", "sample_rate_hz", "channels", "vocal_presence", "detected_instruments", "genre_hint"],
+  "additionalProperties": false,
+  "properties": {
+    "duration_seconds": { "type": "number", "exclusiveMinimum": 0, "maximum": 3600 },
+    "sample_rate_hz": { "type": "integer", "enum": [8000, 16000, 22050, 32000, 44100, 48000, 96000] },
+    "channels": { "type": "integer", "enum": [1, 2] },
+    "vocal_presence": { "type": "string", "enum": ["lead_vocals", "backing_only", "none", "unknown"] },
+    "detected_instruments": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["vocals", "drums", "bass", "guitar", "piano", "strings", "synth", "brass", "other"] },
+      "uniqueItems": true
+    },
+    "genre_hint": { "type": ["string", "null"], "maxLength": 100 },
+    "reverb_estimate": { "type": ["string", "null"], "enum": ["dry", "moderate", "wet", null] },
+    "loudness_lufs": { "type": ["number", "null"], "minimum": -70, "maximum": 0 }
+  }
+}

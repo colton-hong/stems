@@ -107,7 +107,8 @@ MoisesDB, once `MOISESDB_PATH` is set:
 selects and freezes the 50-track subset in `bench/frozen/moisesdb_subset.json`. Commit it,
 then run with `--dataset moisesdb_subset`.
 
-Both datasets in one go, defaults and blends first, then every other separator:
+Both datasets in one go: defaults and blends first, then the blend tuner on the two tuning
+lists, then every other separator:
 
 ```bash
 sh tools/run_real_benchmarks.sh

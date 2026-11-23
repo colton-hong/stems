@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/stem-metrics/v1",
+  "title": "StemMetrics",
+  "description": "The metrics object of schema (c), StemQualityAssessment, in research report section 4. Transcribed unchanged.",
+  "type": "object",
+  "required": ["duration_seconds", "rms_dbfs", "peak_dbfs", "silence_fraction"],
+  "additionalProperties": false,
+  "properties": {
+    "sdr_db": { "type": ["number", "null"], "description": "Null when no reference stem exists (normal for user uploads)." },
+    "sir_db": { "type": ["number", "null"] },
+    "sar_db": { "type": ["number", "null"] },
+    "duration_seconds": { "type": "number", "exclusiveMinimum": 0 },
+    "rms_dbfs": { "type": "number", "maximum": 0 },
+    "peak_dbfs": { "type": "number", "maximum": 0 },
+    "silence_fraction": { "type": "number", "minimum": 0, "maximum": 1, "description": "Fraction below -60 dBFS. Near 1.0 on a stem that should be present suggests failed separation." },
+    "bleed_estimate": {
+      "type": ["object", "null"],
+      "required": ["suspected_source", "level"],
+      "additionalProperties": false,
+      "properties": {
+        "suspected_source": { "type": "string", "enum": ["vocals", "drums", "bass", "guitar", "piano", "other", "none"] },
+        "level": { "type": "string", "enum": ["none", "slight", "moderate", "severe"] }
+      }
+    },
+    "tagger_notes": { "type": "string", "maxLength": 1000 }
+  }
+}
