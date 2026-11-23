@@ -1,0 +1,1176 @@
+{
+  "version": 1,
+  "title": "Clef-omni against BEATs on MoisesDB: pre-registration",
+  "created": "2026-11-23",
+  "source": "docs/research-report.pdf, section 5, with docs/corrections.md",
+  "dataset": {
+    "name": "moisesdb_subset",
+    "frozen_list": "moisesdb_subset.json",
+    "frozen_sha256": "4a5dfd20b191282dc68ffd6d2f24e3f8b80ca16ab913f5d308820267ebdc2035"
+  },
+  "seed": 2307,
+  "excerpt": {
+    "rule": "the loudest window of the mix by RMS; the same window for the mix and every stem of the track",
+    "seconds": 30.0,
+    "grid_seconds": 1.0
+  },
+  "presence_rule": {
+    "rule": "a stem is present if its RMS over the excerpt is at least rms_dbfs_min and it is non-silent for at least sounding_seconds_min",
+    "rms_dbfs_min": -40.0,
+    "sounding_seconds_min": 5.0,
+    "silence_dbfs": -60.0,
+    "silence_window_seconds": 0.1
+  },
+  "clip_format": {
+    "sample_rate_hz": 16000,
+    "channels": 1,
+    "encoding": "WAV, 16-bit PCM; turned down only if it would clip",
+    "max_bytes": 8388608
+  },
+  "class_to_stem": {
+    "file": "models/listening/audioset_stem_map.yaml",
+    "version": 1,
+    "sha256": "eedb78785e3fefd60c5b7dd4fcb05b0734115b997ff2c88ce67c17499f8a64d9",
+    "labels_sha256": "cdd1049833c4b86127c2773ac0d14a2754b6a6d0d1798002ed5c66e699708429"
+  },
+  "clef_omni": {
+    "model": "@cf/cloudflare/clef-omni",
+    "present_threshold": 0.5,
+    "presence_questions": {
+      "type": "noul",
+      "per_stem": {
+        "vocals": "Are vocals (singing, rapping or speech) audible in this clip?",
+        "drums": "Are drums audible in this clip?",
+        "bass": "Is a bass instrument (bass guitar, double bass or synth bass) audible in this clip?",
+        "guitar": "Is a guitar audible in this clip?",
+        "piano": "Is a piano audible in this clip?",
+        "other": "Is any instrument other than vocals, drums, bass, guitar and piano audible in this clip?"
+      }
+    },
+    "bleed_question": {
+      "type": "noul",
+      "text": "Is any instrument other than {target} audible?"
+    },
+    "bleed_score": {
+      "type": "score",
+      "text": "This clip should contain only {target}. How much of another instrument is audible?",
+      "legend": [
+        "Clean — only the named instrument is audible",
+        "Faint bleed — another instrument is just audible",
+        "Audible bleed — another instrument is clearly audible",
+        "Heavy bleed — another instrument is prominent"
+      ]
+    },
+    "lead_backing": {
+      "type": "choice",
+      "text": "Which vocals are audible in this clip?",
+      "options": [
+        "lead only",
+        "backing only",
+        "both",
+        "neither"
+      ],
+      "asked_on": "the isolated vocals stem of each lead_backing track"
+    },
+    "reverb": {
+      "type": "noul",
+      "text": "Is there audible reverberation on {target} in this clip?"
+    },
+    "target_names": {
+      "vocals": "vocals",
+      "drums": "drums",
+      "bass": "the bass",
+      "guitar": "the guitar",
+      "piano": "the piano",
+      "other": "the named instrument"
+    }
+  },
+  "beats": {
+    "windows": "three consecutive 10-second windows of the excerpt; class probabilities are averaged over them",
+    "stem_score": "the largest probability among the stem's classes",
+    "present_threshold": 0.5,
+    "secondary": "also reported at the threshold with the best F1, labelled as chosen after the fact",
+    "bleed_score": "the largest probability among the classes of every stem other than the target"
+  },
+  "bleed_levels": {
+    "clean": 0,
+    "+30 dB SIR": 1,
+    "+20 dB SIR": 2,
+    "+12 dB SIR": 3,
+    "+6 dB SIR": 4
+  },
+  "reverb_wet_db": -12.0,
+  "thresholds": {
+    "A1": {
+      "what": "presence accuracy over every mix decision (tracks x 6 stems)",
+      "min_accuracy": 0.85
+    },
+    "A2": {
+      "what": "presence accuracy per stem",
+      "min_accuracy": {
+        "vocals": 0.8,
+        "drums": 0.8,
+        "bass": 0.8,
+        "guitar": 0.8,
+        "piano": 0.8,
+        "other": 0.7
+      }
+    },
+    "A3": {
+      "what": "vocals present or absent",
+      "min_accuracy": 0.9
+    },
+    "B1": {
+      "what": "clean against bleed, by the probability of the 'any other instrument' question, as area under the ROC curve",
+      "min_auc_pooled": 0.85,
+      "min_auc_hardest": 0.8,
+      "hardest_sir_db": 30.0
+    },
+    "B2": {
+      "what": "Spearman correlation between the bleed score and the true bleed level (clean 0, +30 dB 1, +20 dB 2, +12 dB 3, +6 dB 4)",
+      "min_spearman": 0.7
+    },
+    "B3": {
+      "what": "share of clean clips called bleeding: score at or above 1, or the 'any other instrument' probability at or above 0.5",
+      "max_false_positive_rate": 0.1
+    },
+    "C": {
+      "what": "Clef-omni's margin over BEATs on A1 (accuracy) and B1 (pooled AUC), in percentage points, on the same clips",
+      "min_margin_points": 5.0
+    }
+  },
+  "decision_rule": "Clef-omni passes for quality gating only if A1, A2, A3, B1, B2 and B3 all hold, and is preferred over BEATs only if C also holds on both A1 and B1. If it fails any of B1 to B3 but passes A1 to A3 it may be used for presence and routing only, never for gating. Otherwise BEATs is used, with CLAP as a second opinion.",
+  "logging": "every request and response is appended to a JSONL log with question ids, probabilities and token usage; the log header carries this file's commit",
+  "counts": {
+    "tracks": 50,
+    "mix_decisions": 300,
+    "present": {
+      "vocals": 44,
+      "drums": 48,
+      "bass": 48,
+      "guitar": 45,
+      "piano": 14,
+      "other": 24
+    },
+    "absent": {
+      "vocals": 6,
+      "drums": 2,
+      "bass": 2,
+      "guitar": 5,
+      "piano": 36,
+      "other": 26
+    },
+    "lead_backing_clips": 23,
+    "lead_backing_answers": {
+      "lead only": 1,
+      "backing only": 1,
+      "both": 18,
+      "neither": 3
+    },
+    "part_b_clean": 20,
+    "part_b_bleed": 80,
+    "part_b_targets": {
+      "vocals": 5,
+      "drums": 5,
+      "bass": 5,
+      "guitar": 3,
+      "piano": 2
+    },
+    "reverb_clips": 5
+  },
+  "notes": [
+    "The report asks for at least 8 instrumental tracks among the 50. MoisesDB has one track without vocals in 240, so the frozen subset has one (docs/corrections.md, C15).",
+    "As a result A3 rests on few negatives: vocals are absent from 6 of 50 excerpts by the presence rule. A3 is still scored against its threshold as written; the report also gives the counts, and the accuracy of always answering 'present', so the reader can see how much A3 can show.",
+    "Part B's five guitar-or-piano stems are taken as guitar, piano, guitar, piano, guitar. The reverb probe uses Part B's clean vocal stems.",
+    "The lead-or-backing sub-test and the reverb probe are exploratory and are not part of the pass decision."
+  ],
+  "cannot_show": [
+    "anything above 8 kHz: both models hear 16 kHz audio",
+    "stereo bleed: the clips are mono",
+    "differences of a point or two between the models: 300 decisions give about 4 points of precision on A1, hence the 5-point margin in C"
+  ],
+  "plan": {
+    "dataset": "moisesdb_subset",
+    "sample_rate": 44100,
+    "seed": 2307,
+    "tracks": {
+      "014f3712-293b-42af-9f29-0ed1785be792": {
+        "window": {
+          "start_sample": 13362300,
+          "num_samples": 1323000,
+          "start_seconds": 303.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": true
+        }
+      },
+      "01c8ba69-8eee-485b-bab0-41a76f9e8892": {
+        "window": {
+          "start_sample": 8731800,
+          "num_samples": 1323000,
+          "start_seconds": 198.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": false,
+          "piano": false,
+          "other": true
+        }
+      },
+      "028c6f6a-f4f6-4795-84f2-a81222b38e7e": {
+        "window": {
+          "start_sample": 5159700,
+          "num_samples": 1323000,
+          "start_seconds": 117.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": true
+        },
+        "lead_backing": "both"
+      },
+      "07c17c22-a321-4a98-a486-ef7ee1bae50e": {
+        "window": {
+          "start_sample": 8731800,
+          "num_samples": 1323000,
+          "start_seconds": 198.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": false
+        },
+        "lead_backing": "both"
+      },
+      "0f5fb60c-51d4-4618-871d-650c9e927b79": {
+        "window": {
+          "start_sample": 8246700,
+          "num_samples": 1323000,
+          "start_seconds": 187.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": true,
+          "other": true
+        },
+        "lead_backing": "both"
+      },
+      "11845abc-8ca3-4fb2-bd84-521aeeff56f4": {
+        "window": {
+          "start_sample": 5159700,
+          "num_samples": 1323000,
+          "start_seconds": 117.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": true
+        }
+      },
+      "1921a83e-0373-4bf7-8dc9-6cc9401c9309": {
+        "window": {
+          "start_sample": 485100,
+          "num_samples": 1323000,
+          "start_seconds": 11.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": false
+        }
+      },
+      "1e957e76-d7a2-4b84-bc4a-afa87979ff57": {
+        "window": {
+          "start_sample": 4013100,
+          "num_samples": 1323000,
+          "start_seconds": 91.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": false,
+          "piano": true,
+          "other": false
+        }
+      },
+      "1ee489e8-55ad-4d4a-8277-24051b85c02d": {
+        "window": {
+          "start_sample": 5997600,
+          "num_samples": 1323000,
+          "start_seconds": 136.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": true
+        },
+        "lead_backing": "both"
+      },
+      "21ce1331-6066-4ff4-9a54-f6f62bb5fb0d": {
+        "window": {
+          "start_sample": 8026200,
+          "num_samples": 1323000,
+          "start_seconds": 182.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": true
+        }
+      },
+      "24f8a652-0168-4702-8725-42f9924e6729": {
+        "window": {
+          "start_sample": 6570900,
+          "num_samples": 1323000,
+          "start_seconds": 149.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": false
+        },
+        "lead_backing": "both"
+      },
+      "2973adc9-6bf8-4422-9f7a-6fd0038eb565": {
+        "window": {
+          "start_sample": 1764000,
+          "num_samples": 1323000,
+          "start_seconds": 40.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": true
+        }
+      },
+      "2e5d996d-43f3-4359-b7c5-afebe9997556": {
+        "window": {
+          "start_sample": 6923700,
+          "num_samples": 1323000,
+          "start_seconds": 157.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": true,
+          "other": false
+        }
+      },
+      "334ed0e5-1761-4ee9-9d39-a555eb9b64a0": {
+        "window": {
+          "start_sample": 2028600,
+          "num_samples": 1323000,
+          "start_seconds": 46.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": false
+        }
+      },
+      "35a19148-49bf-451d-9a0e-5ab8e914c367": {
+        "window": {
+          "start_sample": 5733000,
+          "num_samples": 1323000,
+          "start_seconds": 130.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": true
+        },
+        "lead_backing": "both"
+      },
+      "3c557409-3a34-43c2-9159-5421bbad5ecb": {
+        "window": {
+          "start_sample": 19359900,
+          "num_samples": 1323000,
+          "start_seconds": 439.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": false,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": false
+        }
+      },
+      "3e389000-8fdc-4b63-b8b8-ab044273790d": {
+        "window": {
+          "start_sample": 7585200,
+          "num_samples": 1323000,
+          "start_seconds": 172.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": true,
+          "other": true
+        },
+        "lead_backing": "both"
+      },
+      "3e7985e5-408f-4cf8-92b9-b9f62f738dd3": {
+        "window": {
+          "start_sample": 8379000,
+          "num_samples": 1323000,
+          "start_seconds": 190.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": false
+        }
+      },
+      "3f5233cb-57fa-4772-b389-f295a6f416ae": {
+        "window": {
+          "start_sample": 5336100,
+          "num_samples": 1323000,
+          "start_seconds": 121.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": true,
+          "other": true
+        }
+      },
+      "46bc5393-7753-44ae-913b-bd5fa8f33e98": {
+        "window": {
+          "start_sample": 5556600,
+          "num_samples": 1323000,
+          "start_seconds": 126.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": false,
+          "drums": false,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": false
+        }
+      },
+      "4a896cde-57c6-4646-b610-1b0b654d0349": {
+        "window": {
+          "start_sample": 5115600,
+          "num_samples": 1323000,
+          "start_seconds": 116.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": true,
+          "other": true
+        },
+        "lead_backing": "lead only"
+      },
+      "5640831d-7853-4d06-8166-988e2844b652": {
+        "window": {
+          "start_sample": 5644800,
+          "num_samples": 1323000,
+          "start_seconds": 128.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": true
+        },
+        "lead_backing": "both"
+      },
+      "6681f493-c996-424a-9bdb-c671912ea9db": {
+        "window": {
+          "start_sample": 7144200,
+          "num_samples": 1323000,
+          "start_seconds": 162.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": false
+        },
+        "lead_backing": "both"
+      },
+      "6b168ae6-9d8a-4dc2-9d27-898e6871bf8b": {
+        "window": {
+          "start_sample": 7100100,
+          "num_samples": 1323000,
+          "start_seconds": 161.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": true,
+          "other": true
+        },
+        "lead_backing": "both"
+      },
+      "6b48c9de-fa34-4635-9718-04e01a03a0fe": {
+        "window": {
+          "start_sample": 6394500,
+          "num_samples": 1323000,
+          "start_seconds": 145.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": false
+        },
+        "lead_backing": "both"
+      },
+      "6e50565e-8179-4913-af54-a2a7f0dcab2f": {
+        "window": {
+          "start_sample": 5336100,
+          "num_samples": 1323000,
+          "start_seconds": 121.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": true
+        }
+      },
+      "704f1de9-1d02-4c2b-af05-107a7700a51d": {
+        "window": {
+          "start_sample": 7717500,
+          "num_samples": 1323000,
+          "start_seconds": 175.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": false,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": false
+        },
+        "lead_backing": "neither"
+      },
+      "7180bffa-dd48-49b9-bc02-f6e3f7f165b0": {
+        "window": {
+          "start_sample": 6615000,
+          "num_samples": 1323000,
+          "start_seconds": 150.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": false,
+          "drums": true,
+          "bass": true,
+          "guitar": false,
+          "piano": false,
+          "other": true
+        },
+        "lead_backing": "neither"
+      },
+      "73efd911-79c3-4235-a4ae-45b41d6997b9": {
+        "window": {
+          "start_sample": 5159700,
+          "num_samples": 1323000,
+          "start_seconds": 117.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": false
+        }
+      },
+      "747d5c98-665b-4470-a696-7a6cf6968ef1": {
+        "window": {
+          "start_sample": 6218100,
+          "num_samples": 1323000,
+          "start_seconds": 141.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": false
+        },
+        "lead_backing": "both"
+      },
+      "75be2864-8b5f-45a1-ae09-6ba10f070f33": {
+        "window": {
+          "start_sample": 4895100,
+          "num_samples": 1323000,
+          "start_seconds": 111.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": false
+        }
+      },
+      "78ef22ce-472f-4f82-8656-16df73b9465f": {
+        "window": {
+          "start_sample": 6129900,
+          "num_samples": 1323000,
+          "start_seconds": 139.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": true
+        }
+      },
+      "7dd515b0-e218-425d-b8bf-a75056237d6a": {
+        "window": {
+          "start_sample": 3087000,
+          "num_samples": 1323000,
+          "start_seconds": 70.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": false,
+          "bass": false,
+          "guitar": false,
+          "piano": true,
+          "other": false
+        }
+      },
+      "7e74ce11-1603-440b-8794-b6e665b917e1": {
+        "window": {
+          "start_sample": 11421900,
+          "num_samples": 1323000,
+          "start_seconds": 259.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": true,
+          "other": false
+        },
+        "lead_backing": "backing only"
+      },
+      "810d7318-4c9e-4160-b147-bbdb65d41861": {
+        "window": {
+          "start_sample": 10319400,
+          "num_samples": 1323000,
+          "start_seconds": 234.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": false,
+          "piano": false,
+          "other": true
+        }
+      },
+      "8804c154-6294-481a-ad63-bc61162cae2f": {
+        "window": {
+          "start_sample": 7497000,
+          "num_samples": 1323000,
+          "start_seconds": 170.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": true,
+          "other": false
+        }
+      },
+      "93dda0e8-dd76-49e4-b08f-54a82387cdf6": {
+        "window": {
+          "start_sample": 6703200,
+          "num_samples": 1323000,
+          "start_seconds": 152.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": false,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": true,
+          "other": true
+        }
+      },
+      "9ce23a79-20eb-431a-80d2-eda3260ef503": {
+        "window": {
+          "start_sample": 2513700,
+          "num_samples": 1323000,
+          "start_seconds": 57.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": false
+        },
+        "lead_backing": "both"
+      },
+      "9eb8bc50-cffb-4c19-be0e-d27423e3e102": {
+        "window": {
+          "start_sample": 10231200,
+          "num_samples": 1323000,
+          "start_seconds": 232.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": false
+        },
+        "lead_backing": "both"
+      },
+      "aa600069-0a98-45e6-94fa-4000bfe46c25": {
+        "window": {
+          "start_sample": 5071500,
+          "num_samples": 1323000,
+          "start_seconds": 115.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": false
+        }
+      },
+      "ad9bbefc-8762-46c9-b847-da14b10802b6": {
+        "window": {
+          "start_sample": 4586400,
+          "num_samples": 1323000,
+          "start_seconds": 104.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": true
+        }
+      },
+      "bdd109ec-d5dd-4d91-92ad-66b679518026": {
+        "window": {
+          "start_sample": 8555400,
+          "num_samples": 1323000,
+          "start_seconds": 194.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": false,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": true
+        },
+        "lead_backing": "neither"
+      },
+      "c70471f9-9c4a-41c9-b8f8-20ac38847a8e": {
+        "window": {
+          "start_sample": 5424300,
+          "num_samples": 1323000,
+          "start_seconds": 123.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": true
+        }
+      },
+      "c8752696-4ae5-4e47-b2ad-622496966fa9": {
+        "window": {
+          "start_sample": 5159700,
+          "num_samples": 1323000,
+          "start_seconds": 117.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": false
+        }
+      },
+      "ca080447-fe99-4f6d-98c9-c69b68dacba3": {
+        "window": {
+          "start_sample": 8687700,
+          "num_samples": 1323000,
+          "start_seconds": 197.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": false
+        },
+        "lead_backing": "both"
+      },
+      "dfb0e076-cb6b-4dcc-9934-c60070ff04d7": {
+        "window": {
+          "start_sample": 7232400,
+          "num_samples": 1323000,
+          "start_seconds": 164.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": true,
+          "other": false
+        }
+      },
+      "e4de8632-6f69-4c63-8081-f4c2b77b40df": {
+        "window": {
+          "start_sample": 2381400,
+          "num_samples": 1323000,
+          "start_seconds": 54.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": true,
+          "other": true
+        }
+      },
+      "ed7576a1-2fed-4736-8368-74ac347a0718": {
+        "window": {
+          "start_sample": 4674600,
+          "num_samples": 1323000,
+          "start_seconds": 106.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": false
+        },
+        "lead_backing": "both"
+      },
+      "ee082817-dbda-4fbf-b5aa-8dce2320ae35": {
+        "window": {
+          "start_sample": 9657900,
+          "num_samples": 1323000,
+          "start_seconds": 219.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": false,
+          "guitar": true,
+          "piano": true,
+          "other": true
+        },
+        "lead_backing": "both"
+      },
+      "f4b735de-14b1-4091-a9ba-c8b30c0740a7": {
+        "window": {
+          "start_sample": 10539900,
+          "num_samples": 1323000,
+          "start_seconds": 239.0,
+          "seconds": 30.0
+        },
+        "present": {
+          "vocals": true,
+          "drums": true,
+          "bass": true,
+          "guitar": true,
+          "piano": false,
+          "other": false
+        },
+        "lead_backing": "both"
+      }
+    },
+    "lead_backing": [
+      "028c6f6a-f4f6-4795-84f2-a81222b38e7e",
+      "07c17c22-a321-4a98-a486-ef7ee1bae50e",
+      "0f5fb60c-51d4-4618-871d-650c9e927b79",
+      "1ee489e8-55ad-4d4a-8277-24051b85c02d",
+      "24f8a652-0168-4702-8725-42f9924e6729",
+      "35a19148-49bf-451d-9a0e-5ab8e914c367",
+      "3e389000-8fdc-4b63-b8b8-ab044273790d",
+      "4a896cde-57c6-4646-b610-1b0b654d0349",
+      "5640831d-7853-4d06-8166-988e2844b652",
+      "6681f493-c996-424a-9bdb-c671912ea9db",
+      "6b168ae6-9d8a-4dc2-9d27-898e6871bf8b",
+      "6b48c9de-fa34-4635-9718-04e01a03a0fe",
+      "704f1de9-1d02-4c2b-af05-107a7700a51d",
+      "7180bffa-dd48-49b9-bc02-f6e3f7f165b0",
+      "747d5c98-665b-4470-a696-7a6cf6968ef1",
+      "7e74ce11-1603-440b-8794-b6e665b917e1",
+      "9ce23a79-20eb-431a-80d2-eda3260ef503",
+      "9eb8bc50-cffb-4c19-be0e-d27423e3e102",
+      "bdd109ec-d5dd-4d91-92ad-66b679518026",
+      "ca080447-fe99-4f6d-98c9-c69b68dacba3",
+      "ed7576a1-2fed-4736-8368-74ac347a0718",
+      "ee082817-dbda-4fbf-b5aa-8dce2320ae35",
+      "f4b735de-14b1-4091-a9ba-c8b30c0740a7"
+    ],
+    "part_b": [
+      {
+        "track_id": "c8752696-4ae5-4e47-b2ad-622496966fa9",
+        "target": "vocals",
+        "contaminant": "guitar"
+      },
+      {
+        "track_id": "3e389000-8fdc-4b63-b8b8-ab044273790d",
+        "target": "vocals",
+        "contaminant": "guitar"
+      },
+      {
+        "track_id": "6e50565e-8179-4913-af54-a2a7f0dcab2f",
+        "target": "vocals",
+        "contaminant": "bass"
+      },
+      {
+        "track_id": "dfb0e076-cb6b-4dcc-9934-c60070ff04d7",
+        "target": "vocals",
+        "contaminant": "guitar"
+      },
+      {
+        "track_id": "75be2864-8b5f-45a1-ae09-6ba10f070f33",
+        "target": "vocals",
+        "contaminant": "drums"
+      },
+      {
+        "track_id": "028c6f6a-f4f6-4795-84f2-a81222b38e7e",
+        "target": "drums",
+        "contaminant": "vocals"
+      },
+      {
+        "track_id": "6b48c9de-fa34-4635-9718-04e01a03a0fe",
+        "target": "drums",
+        "contaminant": "vocals"
+      },
+      {
+        "track_id": "73efd911-79c3-4235-a4ae-45b41d6997b9",
+        "target": "drums",
+        "contaminant": "vocals"
+      },
+      {
+        "track_id": "ca080447-fe99-4f6d-98c9-c69b68dacba3",
+        "target": "drums",
+        "contaminant": "guitar"
+      },
+      {
+        "track_id": "0f5fb60c-51d4-4618-871d-650c9e927b79",
+        "target": "drums",
+        "contaminant": "bass"
+      },
+      {
+        "track_id": "46bc5393-7753-44ae-913b-bd5fa8f33e98",
+        "target": "bass",
+        "contaminant": "guitar"
+      },
+      {
+        "track_id": "1ee489e8-55ad-4d4a-8277-24051b85c02d",
+        "target": "bass",
+        "contaminant": "other"
+      },
+      {
+        "track_id": "1e957e76-d7a2-4b84-bc4a-afa87979ff57",
+        "target": "bass",
+        "contaminant": "piano"
+      },
+      {
+        "track_id": "24f8a652-0168-4702-8725-42f9924e6729",
+        "target": "bass",
+        "contaminant": "vocals"
+      },
+      {
+        "track_id": "3f5233cb-57fa-4772-b389-f295a6f416ae",
+        "target": "bass",
+        "contaminant": "vocals"
+      },
+      {
+        "track_id": "1921a83e-0373-4bf7-8dc9-6cc9401c9309",
+        "target": "guitar",
+        "contaminant": "drums"
+      },
+      {
+        "track_id": "7e74ce11-1603-440b-8794-b6e665b917e1",
+        "target": "piano",
+        "contaminant": "vocals"
+      },
+      {
+        "track_id": "3e7985e5-408f-4cf8-92b9-b9f62f738dd3",
+        "target": "guitar",
+        "contaminant": "vocals"
+      },
+      {
+        "track_id": "93dda0e8-dd76-49e4-b08f-54a82387cdf6",
+        "target": "piano",
+        "contaminant": "guitar"
+      },
+      {
+        "track_id": "aa600069-0a98-45e6-94fa-4000bfe46c25",
+        "target": "guitar",
+        "contaminant": "vocals"
+      }
+    ],
+    "reverb": [
+      {
+        "track_id": "c8752696-4ae5-4e47-b2ad-622496966fa9",
+        "target": "vocals",
+        "seed": 2307
+      },
+      {
+        "track_id": "3e389000-8fdc-4b63-b8b8-ab044273790d",
+        "target": "vocals",
+        "seed": 2308
+      },
+      {
+        "track_id": "6e50565e-8179-4913-af54-a2a7f0dcab2f",
+        "target": "vocals",
+        "seed": 2309
+      },
+      {
+        "track_id": "dfb0e076-cb6b-4dcc-9934-c60070ff04d7",
+        "target": "vocals",
+        "seed": 2310
+      },
+      {
+        "track_id": "75be2864-8b5f-45a1-ae09-6ba10f070f33",
+        "target": "vocals",
+        "seed": 2311
+      }
+    ]
+  }
+}
