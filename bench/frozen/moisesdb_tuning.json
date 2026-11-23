@@ -1,0 +1,612 @@
+{
+  "dataset": "moisesdb_tuning",
+  "protocol_version": 1,
+  "sample_rate": 44100,
+  "selection": {
+    "seed": 2307,
+    "size": 30,
+    "excludes": "moisesdb_subset"
+  },
+  "tracks": [
+    {
+      "id": "02ee37da-eea3-42b4-83bf-ab7f243afa13",
+      "provider": "moisesdb_v0.1",
+      "genre": "singer_songwriter",
+      "strata": [],
+      "files": {
+        "data.json": "2f5aa62a33e456d7922563ca73ce923369521d341d4acb039914b0d34ce0ee1b",
+        "bass/6ffbc14a-572b-43d7-bbbb-1b5e7fc62889.wav": "2c3b39876eab55488e204f59f09f0121be70f7dbe3e7b070066091d7e5a45623",
+        "bowed_strings/df7686dc-c383-4727-bf1d-1bf1e09dec18.wav": "61862f24f506571b145e78a93eca1e55508f9d2100293540204c47ad361cf94e",
+        "drums/01eb58f6-a186-4d5e-adb3-f47189f4a5e9.wav": "1763e2cdb27ce08d4b17b86fdeb889a11e20430255602062eae33f250623ff46",
+        "drums/18d5c271-0d2a-4d94-b069-6cb6b8e80e80.wav": "fc73117124307b3ee1b1fcdb2e248a7fdb9bfb01d9a0e53a97c1dd0eb3b96814",
+        "drums/3c8c6f15-9418-4352-acfa-53b29a494dad.wav": "f5fb5e11c0f8a539dee50e8dac176569f8ddb3182fc91041450bc2814845486d",
+        "drums/91f922b7-3fae-4f87-9da7-837c5537b5dc.wav": "77b9f2694e7f321d679ce07d94f125d500ad3eb8cd89c80e9cc8754ed3755762",
+        "drums/c2f6171e-c52f-49fd-8d7b-ff00dad82820.wav": "062cbbfc9969de0fd59a67a8e2f38353b2d08afd4b08fae29c94c1378e21508e",
+        "guitar/43896fa4-9f20-4603-9254-074347e76631.wav": "c3a404ebc0a130c1cd5849070d9f5cd1c5c02b6f993cffd20b060eb5b1666e32",
+        "guitar/c08b4e56-1010-4f3e-85f4-dcfc2bde216f.wav": "831126aa81ec21c4eeb2cf04187f024073f0ee2c273fdce65cbd526e73dfe1df",
+        "percussion/55b0cc6d-8e71-4291-8c6e-d3fffc1e06a3.wav": "38805db87a7962d796dff10f34c9763a64ed41476d922ceecddc13b8e32d859f",
+        "piano/5df8b123-d37b-4ff7-8abe-721084b9ea12.wav": "a63b0188b4ccce34fceb9a538a181c8d9f30bd543cd309ba3df80be00e2abf2d",
+        "piano/a1f763a8-4ee4-496d-a2fa-3f94fe605755.wav": "2815db531da91d304a5620a0af5019e93c9d909a38ee77c30fd5885cfc331a73",
+        "vocals/7c555f5b-2ef6-44af-acc3-9484d12412b0.wav": "69e57bb4c3facf7e0e38d91a6869be3da909a4279a758a691f0ac30a258be5ed"
+      }
+    },
+    {
+      "id": "04798708-6915-4dbc-842e-d394d545d4eb",
+      "provider": "moisesdb_v0.1",
+      "genre": "rock",
+      "strata": [],
+      "files": {
+        "data.json": "aded365ea5c1917a124f01d58d6ada3125a2c20ec352f5ddc74c8ea2202d1ab2",
+        "bass/daa4f718-04a0-4fa4-895c-63d5c393d459.wav": "e7057e1a88a13e06e025b6efa592905acb6608e8ba75f295b542b5bf90af6f42",
+        "drums/2d1d1e4b-983d-4d19-886b-64e343639532.wav": "6e96340de27ec935bfac6d0ade359cfee9e723e114a55ff7e0682075fcca8dcb",
+        "drums/565bc8dc-2115-4740-af0a-a5fae52542c5.wav": "a02f15eafe1f682e348d63b9acba74839d1d4432a9a86264f7ffcabc5812723c",
+        "drums/d9e73db4-ba15-4672-b9c7-425ef1d57f82.wav": "a53ffdf8e05bde15d27ac83b7e102dd9aa9b51dcf982da10b14819290ea2a4d9",
+        "guitar/6ef40a3c-2d98-4ad4-adac-f61832e728c2.wav": "e3b526caea4cbe35cc0815470165237b305102c7fd51fbfcdfd9c0108aa7e596",
+        "guitar/7d65d554-6890-4cfa-bc9a-f35bf427dc83.wav": "1a65720d46e5c12c705e28a8b1cf9b7a2ed5690652c49cd0b8a9c7cedb6569cb",
+        "other_keys/57f2c1b8-0ebf-46e4-8768-1f99e1c82d58.wav": "e3874f6a90e70017cb5700c55a098ce4616deb3b065505adf18a8184232da4e8",
+        "vocals/33940b2b-41e8-472c-8e1e-2d470339179e.wav": "2f102f4485d9ac13093bb62ce8c2a421e3cd895fbc748956a0aeef9a0ddb901a"
+      }
+    },
+    {
+      "id": "125fc63d-9b69-4170-a46a-42c91bc28446",
+      "provider": "moisesdb_v0.1",
+      "genre": "rock",
+      "strata": [],
+      "files": {
+        "data.json": "10be8a9fc82927072d6a2a935949b5f3f53c6a6a1ce154ed160c7d36c5dfed6c",
+        "bass/d04f72d9-44a2-4ec4-958a-bc128b0cc63b.wav": "6792ae4a44847e1516763b8c2e52f4f20943ffc6af0849e44b2548332edd8592",
+        "drums/764166fe-3578-4628-b30d-c2012ca3559f.wav": "c05a35a49ff86d812aa978cd683d720c7031754121af21f049c532b565a35e00",
+        "drums/a2a52bd7-bc7b-4270-93dd-5513bc80c75a.wav": "256ecf17f28419c955e6bdfa778ca3321eeeb8e2ba96e5a3731f13cf45c8e8ce",
+        "drums/c98b4663-495c-4587-b774-0984e0ce2d90.wav": "79cbd4f8fffa1b08bdd24f116696d66072bff190136e02221fc216d29b874c02",
+        "guitar/1e9793b7-d817-47a3-81da-33883b3849da.wav": "d6b0de42eb575e7f18ab69ddde4944193b691cac07391e290847f906d9976a13",
+        "vocals/4307181a-6cde-4879-a4c1-cd49b163d1d2.wav": "af81aabecb4a74bd4d2a3e5e626bffbe5a763b71ae79ec797467d2414c9c6f79",
+        "wind/23ffbbf0-8fc1-44e7-841b-aa483eb144b2.wav": "804c1933ce81b37c80432d11dcd5970bcfbb98abf969e05cba410e43e151be16"
+      }
+    },
+    {
+      "id": "22ea41a3-1766-4a76-8071-380b27f1869a",
+      "provider": "moisesdb_v0.1",
+      "genre": "pop",
+      "strata": [],
+      "files": {
+        "data.json": "aeebae2bb46eca9d4819bf1dc7d5bf8a310f6e3ca17f990c1900e42e0bb00e43",
+        "bass/6f0561c1-b2e6-4aeb-a5b1-db68eef7087d.wav": "d5af00cfb839bdccea795a33210e00c38b65add29d833a2b914f565a15077a05",
+        "drums/5cf77b8c-3231-41cd-a727-808fa913b700.wav": "c93f8088ccec00a50565f65138eeff320ec2c5ec1468dca3c0af26fb5f73663e",
+        "drums/6289c768-f3c3-4102-8094-5a7ecfaca7e8.wav": "80f33db8813188bceac496032282472c36c418d22e5f0bd02f5fda7df13097e4",
+        "drums/bec1fda9-a487-4b40-8dca-1b4914e3c552.wav": "58e01a4529759234dfc5fb23153742dc046d4ebe5cb38ca5a057c2acb4bcf662",
+        "drums/cad2c519-56ff-4e99-a09d-689b621a99d3.wav": "b8e9fe90228376998a32f1af08f08db99cb3470f526656550d0be7c812a6019e",
+        "guitar/14dc5c52-f5d7-47f1-8091-6e689cedd4b1.wav": "900129ee147580b00a44df359d875da9ee012dfae3c4aea726f1a0631bd6ce09",
+        "other_keys/a3795d7b-cd76-4bb1-a385-98c634aa6aef.wav": "63ff63af55d030dfec64378cecb001c106b26598961b8c9e440c708599041656",
+        "percussion/7182aa39-9140-4750-b5cc-f3be36404eef.wav": "50294903e3baac6d7675c614da2499053c238846cf2a981f1eacc27f86ad700a",
+        "vocals/cd6011a5-563d-40ef-8b6b-3729ef69721c.wav": "86731c51b4db9de3457a4aab573c43cf26eb63c121eef0a70f0300d789215f22"
+      }
+    },
+    {
+      "id": "25789239-1075-43b9-bfc9-51dff4a29590",
+      "provider": "moisesdb_v0.1",
+      "genre": "rock",
+      "strata": [],
+      "files": {
+        "data.json": "87d67c15468d6d0958d834e70619b1465ac21068682cf0b8822586d47d6511a1",
+        "bass/d2279fee-2f38-48ab-9adc-9ed16ad55e9b.wav": "5e49317658a9be488a293e9686bb35a22fc52971e4d699ff1cbcd2fe842244fe",
+        "drums/1ceb53e7-a57b-4b77-858d-ffddd846fcaf.wav": "7434bb4f32b721cd0c9e4bd3d095608e4e55bcc94203456d78267f2e5417ede9",
+        "drums/511c0f78-739c-4819-8501-fa88c4de72d3.wav": "885d5b497efb1b845fb4f6ca023d1a6264a0160265dc71be50756fd631966928",
+        "drums/5490959d-a7c9-49a7-a7de-2d97442d3f0d.wav": "de158eac9c9354af5fb4015264e610befeedbe9007cf8469e5334fe1c02a8dc1",
+        "drums/be316848-ed58-4178-9953-5df1dd497689.wav": "6d7ed05433b3daa53e6584ed81255f9931129e2420a19a8739e4a8161354b61a",
+        "guitar/57c8cb32-bbdc-4381-adca-8d07104e88eb.wav": "42a0f141ec13cec3d04cdae40c3b462539020f86d452b0860466fe8c79e30538",
+        "other_keys/369aed96-50b2-4f3d-aa91-92fac9fa00ee.wav": "91747eda93f919ec69f6f7853e467b615b09c778cb5237a7cdbb32902e068c47",
+        "vocals/8edb11c8-edd1-4d1d-9125-ed422d8b558a.wav": "0e7d18357ed202a6aa84bb5e67171f8938ca4d7e14df95e54fefee8ab488761e",
+        "vocals/9579cdc5-6a6e-4daa-9d66-eb687a9f7b81.wav": "0dfb1671bd7ee6f43a31e399c72e96e276cab26c7fed6a087603321fdf736ad1"
+      }
+    },
+    {
+      "id": "260c431b-72d4-4ac6-bae5-ee49ce5c0fe4",
+      "provider": "moisesdb_v0.1",
+      "genre": "rock",
+      "strata": [],
+      "files": {
+        "data.json": "e3986de230e48af26cf22094536cb2cd5b97f8349c4e856eb10d407e4bc4cb63",
+        "bass/d60bb0ce-c406-4069-b464-325f5b09fbc8.wav": "4ea39a76c431601147413c952145d9a7f07d9c9c37237a7761c1571a3e89845c",
+        "drums/2b3c29bd-ab41-4342-94b3-7acb84daeedb.wav": "5474999a6edf437eaa682c4798bdcb9fe82282d368b276aedcec171f8a1f17b3",
+        "drums/3fb7b6d6-1d01-47e6-9c4f-98850f8c905a.wav": "518a95034bc682376becb7f2514c29b9b470cc238f05ab00ed2ccc1ae1983e5e",
+        "drums/d2aaa046-03b5-4da7-a37d-685e8124ff36.wav": "72ab7aa2ca443b0b580559d199495c4f3a048b76b7a734447df45477e64187a5",
+        "drums/dcae6b36-9afb-4f06-94bd-3cbe3fb8900a.wav": "da9e6a430253ec0197f6ba3dffef1d4e0b8aa6717596aa465f15557738cb4e58",
+        "guitar/89c996bd-902b-474a-9d4a-65908d54aa39.wav": "7fdf5a380856ffb549ec4d024a8f6b3fa86fb34d432480da0ff5742e6a48e8c6",
+        "other_keys/d9d918c1-8b3f-479b-aa89-102200cee092.wav": "d1f608ec28a01336e2f0f74a28ac04819dc7fdb7c8e9e9ead9e135c5d92a3baf",
+        "vocals/10103c5c-1bbd-4c42-8f4f-6dd59307f1f6.wav": "f4bab77010f8de15d52fe4a976bd3bc55eb7ce3439cc2b88251efb198ad4281b",
+        "vocals/e813fa79-0e65-4d5d-b8da-e1c7771d0970.wav": "47051d012ee977e64115b0394c48db8352d53de0fb58c606d02b14c606f295d4"
+      }
+    },
+    {
+      "id": "30cfc60a-5a57-4000-a05e-65006c8f6f74",
+      "provider": "moisesdb_v0.1",
+      "genre": "singer_songwriter",
+      "strata": [],
+      "files": {
+        "data.json": "5425fa686f75d28f90f4795ac9a7f251012811493842dcd0aae71d64de79b826",
+        "bass/9f164e41-1ec0-4e0a-bf3e-cb71e0c41de6.wav": "9eba748e338d292de43718e0100ab407f06cb92f348a26086bbd54832e88721a",
+        "drums/12a0b217-7783-417b-9501-3c6b40139072.wav": "617c5034af427c87ec545a800f06f1bddd2cc5b483d6a81e1f38a0d6b7ff81b4",
+        "drums/5e6b3f7c-b1f3-4b39-8ebc-b596af1121d9.wav": "c9b6af067d5daf6c01fe81a91125e354ee7a8d576930ed554f5ace902d1d08d3",
+        "drums/858cb357-7729-4510-8edb-aefc3925cf6d.wav": "65d2b6c350b1f7f5c1190c878a3537f4b2ba02e44d497ddb2948f49f7eca9579",
+        "drums/b3e52c52-f67a-472d-be84-9e586d339ce6.wav": "b431010c2deba4eb50e726b81f57471a0aa937f1cb7556eb11219780e806b507",
+        "guitar/20418a04-7a65-4cab-b462-5e8ab42f2d01.wav": "a91812c980d52d170eec7845923b228c43f279e4ace57ed455985652751dbf75",
+        "guitar/6d0237ef-1175-4abc-8b19-e78c23c886ad.wav": "c8aba0367b9784da597d74f1d527d9a657109663d9642dffa82c4dbb64600537",
+        "percussion/c929dc0c-317f-4abb-814c-949221a17b0f.wav": "317603cc8e2564aaaa089d20be59a793038d6ed0f69449153db273e9ad687856",
+        "piano/26e37451-1f53-47fe-8d5e-2fd8159660ae.wav": "c54a08ac8bafd93a6985b20ed4cf8ad815b2cacdaaed423150f0cafe30285050",
+        "piano/e3d2c584-7d7f-4d43-95b9-abc5175b0799.wav": "62328520edeea4a7386a75a01192f24fd1549a1ece5e10939aae38f8d3ea174c",
+        "vocals/6f6a70c4-5e3d-48d7-b420-23fb8ebe2464.wav": "a13bc11f98da9542e5fb42d8c1d1dda655557a6ff4495ac27fdaad0293e8887d"
+      }
+    },
+    {
+      "id": "378742ba-5ba8-44c2-9cfd-8a609decca57",
+      "provider": "moisesdb_v0.1",
+      "genre": "pop",
+      "strata": [],
+      "files": {
+        "data.json": "ee767624f881f7df4a3a0bce9594b183fea9ecd9caacc0864d3d876faae7109d",
+        "bass/883f287c-1191-4f7a-b2e5-cb409edd8fb9.wav": "05f67a1800b416763c51bcbe68e1884c756585846f908553f0ce6b87f0d16fba",
+        "drums/50bdc755-052f-4ec3-87c6-de17ddb9a54d.wav": "270e8642d1cd00be8897aba5795842a0715febcfa9f64ea100fb4bbb27eb05bf",
+        "drums/c0d8eca5-1887-4ae2-b471-179497487f09.wav": "80e52246110e02c060770b8ea051ecd289b079d0cd310bf2191356eb4aff0733",
+        "drums/f97afe56-c6a1-4e0a-ba45-d602fa4b72f1.wav": "1247266a52e03afe9be73458c860963872053894fb496ca184f36d8a097fab34",
+        "drums/fba9ac26-6c07-4fa2-85e9-23e8cb902729.wav": "52ab2c508546879df15845e4c13627636d9fd3ea655c921e07e68eed37272e64",
+        "guitar/9ec83544-bca8-4033-9e64-b3dcdbe16817.wav": "30fd6858da0a744349561dcfbd5f3a97f87ce81ab69f798e5401b43bd1ad6d83",
+        "other_keys/21926626-8712-47a8-84c2-2c6f5def1ab4.wav": "c3c20485b26b7107f199c61a9d11f97e8dffc15daf5fba682287e7575188197b",
+        "other_keys/d74a7ead-c6b0-4145-b634-7cac0a54695d.wav": "971cde1369ffcd4736ec76ee4369260bb91fd5e80e6c2cb43fcb9f39083635b7",
+        "percussion/f4e8b200-8080-4fea-b3bd-453006d3bb1b.wav": "dbd0eb5093c6abd1b616cfad27c4c09243c021dd875883c79916075b923b6f73",
+        "vocals/634e0d77-9f72-45e9-a03f-d3275b7b441c.wav": "56277a1990acd34fb8b1397f239bb78848142fe71a3f6b5a3156aef73de17d13"
+      }
+    },
+    {
+      "id": "5f04798d-c7be-4b8a-90bd-1fcd9946e875",
+      "provider": "moisesdb_v0.1",
+      "genre": "singer_songwriter",
+      "strata": [],
+      "files": {
+        "data.json": "c273f884dec5a7ec46995e0e88b35678ee1b6a4293d7cbd3ed593bebd3353dff",
+        "bass/12f13917-7498-4c32-9cbb-764f73bd53f9.wav": "2a8370eb7a8a620a6a68be883235529c07bca8f96efe6907b9bbc5be22243e2f",
+        "bowed_strings/b06e1b87-14f1-4685-949f-30dbf5ded845.wav": "27d63949f393b1cceffdc1e6d45aa090e978af69f54d50cf8153ce38c345b4b7",
+        "drums/77ab2a4b-a4e6-400b-8a7d-9ed92fe9d6dd.wav": "1db34aaa551932e343b8db011e926d1f63083d6ce3dda460e1974380998eaac7",
+        "drums/849a9061-ae1e-4142-8f46-08fa0948a1d1.wav": "b8cb5e254644ca99f92e7d977d8c8a4f5fc22951ab49ed5cb4420ac3dc31ecd5",
+        "drums/b6ddabea-bb6b-45c6-a10f-0667f4d6204e.wav": "a5ec8006a647fbe3e1d58ea6ce6e84eddb8c06d4399769e5650d4c3daa09a332",
+        "drums/bfe93595-a2d7-44d6-bac3-e8bc4009517e.wav": "19db62e7b96381ec0e585fac0a2861328c708c7fd56761b07cd6fd764c6633ba",
+        "drums/d874016e-bded-4001-8d5d-198e1d29410b.wav": "8cb66eae90462c3e487012628e55f699b8bd796fa916fbea404e6e1e92108b39",
+        "guitar/1e25106d-cd81-4bb0-8063-818bf6b29471.wav": "05c183f7e688a8be500a1a5840c059b455ebd17b43bcf886b224017d46e6b0dc",
+        "guitar/e69f0495-632a-408a-b9c8-a4c1bce0e464.wav": "1930bcee439e5926f7735be08ce56aa94c48ea71e6036a143753ebc37bd08d95",
+        "other/b95976d8-9d19-474d-8ba0-8400b589e979.wav": "8dc55aa328ce7c03a2fca6f2e6917438e3ba998206a3f7894960e877e77f03e0",
+        "other_plucked/948b37ba-6165-4167-bdb0-9ca34bd899c7.wav": "d2c3617f88def50e63dad9e15b0f32c305eef3ac78b2f5c7511b61d614fe6168",
+        "percussion/e833859b-c34e-4eef-b6fa-b5bb7cf607da.wav": "d9cef982f50c8141d5d8317be9bfcd7d1ed240afb29aeef4c1bb138a612d4da4",
+        "piano/116e6398-0de0-4992-936a-ce1dcbf0ef18.wav": "0e67620130d9b8ba005b03916450f9b0da61d83ae3a661fa849435f7eea92e88",
+        "vocals/00463707-2445-40b5-aa67-55a89411a8a0.wav": "acbf99c2fd507d71a8b77287b8007da44b2592dacf3f755604e543110d05a198",
+        "vocals/1a5fd179-fb40-4a3c-8f06-ae86ff1a2e61.wav": "706acd4aacefa228b9e6ce5ecba9cd0f703001281ce858254b3663d724af28fd",
+        "vocals/9e8c53a1-2543-46f8-926f-f5e292044ec5.wav": "706acd4aacefa228b9e6ce5ecba9cd0f703001281ce858254b3663d724af28fd",
+        "vocals/f3f10f19-b4e7-4886-b524-1b796b78334b.wav": "acbf99c2fd507d71a8b77287b8007da44b2592dacf3f755604e543110d05a198"
+      }
+    },
+    {
+      "id": "6c70d5e0-5972-444a-86f8-a558dbb92d92",
+      "provider": "moisesdb_v0.1",
+      "genre": "singer_songwriter",
+      "strata": [],
+      "files": {
+        "data.json": "f5fce2d364ae4537dd1477d58c65986414c68b94209d8a85f107b0c33d260682",
+        "bass/8c9f1ff2-6334-44c8-a830-1143f8069cc3.wav": "0b2ea8e2f6034ece02d6e53cd2c87f14864989e5555e6670720ddcce167dcec1",
+        "drums/26fa8859-d041-47ee-9f0e-85f7117ebc27.wav": "d9f5361d64cd9ef4dd8c09bb0905019ebed206314a54886fdcc3f3b9db7fa4fa",
+        "drums/5be29687-5e9e-4386-a39d-40690a91ecd9.wav": "9f73c1b968502a2aac95ef26bafc8be6274b1e46985ba07f6471318d1e353f29",
+        "drums/6a1814f5-7934-4596-b26b-7a9a913db2f8.wav": "14a9989457adbb29028833eefa6ea9746208dfd3ab35e78c197e153aba406a5a",
+        "drums/88458b0e-4f7e-48e6-97d2-3f1c1e0666ae.wav": "c12e811e1479a856ee972c77c6183140e9b342556be28683dcdddd8564f60dc3",
+        "drums/c92307ff-fdf5-4a6d-8137-2b41cce1706e.wav": "4978b1ba55ad6295be7987843fdb8d319623deefcfe7b7e2c65a50d52955fdc3",
+        "guitar/7bb5015c-5ecd-47e0-98d7-e965d619b99f.wav": "bda93b3b647f275f7bd57bffa5153c85c12a958b7f97d7c920de9d8226eefa18",
+        "other_keys/4672b4ed-94d9-4ef0-9b7a-e93e374a6ba2.wav": "3142d460b23fc038436542e9b87951d14d15f566dff38dce0c0211d4d1b269a5",
+        "piano/f529c77f-5346-4a5b-99aa-a2a03a13a70c.wav": "a0d8fb91cde283fed0b43a079bb3be87011fca540df816d32f7d34cc95e0ba54",
+        "vocals/061ddb84-8986-402e-adc4-1cbad8ff2d0a.wav": "2c518e742054afcd833a52ef962cdfe4b3aa2c48863a35902facf36eb1724f91",
+        "vocals/0ff4cf06-83dd-4042-be72-2be250ff119e.wav": "6cccd9aba111b8ca6261c896070e769b48dbb686c7c8dd0b77d4fe2e9a385970",
+        "vocals/a96e6aed-f030-4d1f-8386-93704f07015d.wav": "4f03cc30358363076c9d929444430fcce68f1098bf850b9e9a1dfdddd48b5ac7"
+      }
+    },
+    {
+      "id": "6cd44645-ed19-4ecc-a57c-58d400005b29",
+      "provider": "moisesdb_v0.1",
+      "genre": "rock",
+      "strata": [],
+      "files": {
+        "data.json": "7467756d1b0c98091394301762e0aa2d5145ec00f689f72935163ffa5d4b09c4",
+        "bass/32bd78fc-e542-4346-ad3f-b88a2e81c027.wav": "1adeaec03ea7f10c26a25386bec74d147493d602ac006d7abe854bdd01f74059",
+        "drums/20aecb7b-f449-4cf7-86c2-5e8c1809ea70.wav": "f68b0b3aa6b54f9bf2076737d2e59b0f9aea29cbbfe9242f00287319a9896d08",
+        "drums/5b29acfd-0f6e-4006-b034-6f20a5aeeaf8.wav": "5f2d2a1dc08879481bcefa67514a04a59f77e194a41e3b844c5b08b72aefa01e",
+        "drums/8709bb94-31b5-490b-bb96-04626d7186a5.wav": "497ae23fff87f031b326e5385d759dfea46597b51270a944007b99ad9219947a",
+        "drums/f3a49f43-f13f-470c-944a-dfda510e3357.wav": "a5930f8562c31aef67e7e6b173f24bd0f210488d14d2844c9bf7033e3c06a502",
+        "guitar/8be70397-5d41-4ab5-99ee-f7e256366d05.wav": "6efe8e0e8c83c7d7d5403fa5ca52917669f7e0b8851e8fc234d4db9da983730a",
+        "other_keys/c706540f-1e3c-44e4-b7da-cff5edbb8615.wav": "ca8846f90a271be96eb533834d3e92aa7ed8708a81a5432651a0e5f41fb1fe85",
+        "percussion/78b2ec90-aa70-4892-ac33-d9d1739af9c1.wav": "b489eb69e44144a6daa4f7e25f99f395183bf9a44903d2717d881dee257997e2",
+        "percussion/79e6f361-47be-4e94-a4e7-ee568f47b24a.wav": "2a6d50ef3405fc4dca6a110fc3f05505e85bdc179a9364f446b3ecc42cd95507",
+        "piano/96bccd0f-680e-4ecb-92ed-bdbae09466b2.wav": "b79ea8db1add5cc9841d75bdd79374e324190c7589f03370511347ebd475b9ce",
+        "vocals/3a8a1ff8-8e6b-4ee7-9d11-095030d23088.wav": "76583376434cc3b630b021098e6ed7cb08693cf326dc0a8d04a2d8859f44f1db",
+        "vocals/683274e2-9855-4bda-8882-81fa64aeafdd.wav": "1438f558559438a1bf58c2ad9599de52c1531f4821f3cbe80db58e24c0fab943"
+      }
+    },
+    {
+      "id": "765d5131-afd9-4ad7-8786-8bef5705c1c2",
+      "provider": "moisesdb_v0.1",
+      "genre": "rap",
+      "strata": [],
+      "files": {
+        "data.json": "45ecaddd405b885904df5f6e41a3d26ae08e4706443a3478ed026be283d694d5",
+        "bass/67c51006-c1ff-4042-b062-b717520ca504.wav": "fea5ab49d2d501df4b37d6656313a1aa9eece6c55436401f30d44c3f19c12741",
+        "bowed_strings/0f69b2b3-c183-4e7c-9f84-d10353a084c6.wav": "b38b8b4bd2c043e7e894c7647e5071a51cf4547eef362152cb8ac34be36bbfd2",
+        "drums/05584fa2-cdaa-440b-9a63-07c3dd9614a2.wav": "6de551b4be8efe774385827c406f92aa3f2d193dd6ac37bbe352305f2f04dd3a",
+        "drums/50f3a278-c034-4b92-b81d-2f4b934329aa.wav": "f86b256a7a8a207c413698cf6ddf1929f6e7f62bc361fd481583e840929d33e1",
+        "drums/66ad342d-d51f-4672-b6c9-b63ef29f471b.wav": "245393180715d4d7b32d71ce67abba3048bf1312bfbb9ef71e94ac617f4f47ad",
+        "drums/e7533fb9-393e-4193-b8fa-4953730befe2.wav": "56c3bada5e469d7ffcbd10adf4aa5fd91f3d5e28fdd434aef4d5c0cc7ada2e6c",
+        "guitar/34c5ad0c-ea07-4be7-8e3c-2c2532404b78.wav": "b27ce4aaab36ddbbbcf8cc33ba4ece2faa43ce9513cbb07b8aee79cb1b23a4ca",
+        "guitar/de586091-b70d-4414-92f7-a560c50e4ced.wav": "4e7f41ea1ca97f1e727411176a0fdd9287412df016536ed98f5c0977ba4f0912",
+        "guitar/faf80610-07b5-4bb9-8dba-a5b6c3887a9a.wav": "0c6762fcf1f0080e67ed97546849089f955d9bf0a17f87a6778ae48050750ccf",
+        "other/d19fa931-6fb5-4302-8bdb-b82b31cf20c8.wav": "fe9044423eb3e9ce24b480fd63d93f64570ff590cd4412ef4b31fe0972f30b26",
+        "other_keys/4e4b6d7f-7453-4927-bd30-fb15e4f28659.wav": "fa0ad839e55e5946f392d149f9a6e0a3b1baf2354ebf63c5a754b1de60976876",
+        "other_keys/f9e34873-0834-4ba9-ad4d-69de559cc49a.wav": "7acc64f7c467e144b8f4b20392b82fc69e003627aea1bdcf7304c3c06f2042f2",
+        "vocals/2af8866f-9615-4e5b-b598-8feaf7192693.wav": "d8e40ea24946fe68517ff30d7f6b0bae1bbed6e91e50c5aeb2dc7c1a670fdcb2",
+        "vocals/48da5dd9-6e23-46ab-b401-b35426fb8ccb.wav": "a7c47914b8c62425aa12f2033cbefffd129d436c98cd238801021ad435c6a2f2"
+      }
+    },
+    {
+      "id": "87a5da23-f17b-44da-accf-c04832f81a14",
+      "provider": "moisesdb_v0.1",
+      "genre": "pop",
+      "strata": [],
+      "files": {
+        "data.json": "cf4015822e3065a6e357033efa3a7fb1a8d9eecf9e2cfa9af268d626963c7beb",
+        "bass/9300c369-21bb-4477-98aa-8fcdee6d78d6.wav": "06f570d2426919923ee64aaa308bec17e30cc6333e00ba897238634b8e059ff4",
+        "drums/3a1f7562-5856-4876-911c-4551d821db84.wav": "66cf42f088a72c4a19da5b74a73e6e36f20e7c6bd701c523134c9e1cd1f34b67",
+        "drums/40f799ec-3e6f-4c26-bd83-2a738f93a0f0.wav": "b895599bb48e79c87b015aee1b8cba4ab5627d5e935faeeb9d5277b82bd41f88",
+        "drums/4ef826e7-9dfd-4468-b7fd-4a6223bdaf21.wav": "7c5345ed2264092a3ba89380de31a5aa5240037b20f066c7c1ca202d38a8510a",
+        "drums/626194cc-bcb6-4d37-8fdd-d8913ef00dd4.wav": "6150654c345316f98890bbe0d5da2cac0c99cec4903b875a40f921b69466395d",
+        "drums/671b3b26-0516-47d1-89e8-38e8b9f20c3f.wav": "b8cdc43338dfac55fdaf39815a412c6367224dddd5f9882e2c7faa0dc43f403c",
+        "guitar/c4152609-a94b-429f-97ed-bd8d2f10ea32.wav": "1c2c98309c44b381e75058e04d8154e7c31212ce9e315979a8e8c4528834905e",
+        "guitar/fcacf12c-3968-463f-94bc-7e148629f8e1.wav": "0b2d9e70b7b2cfca5c75194f5ec3bbd89bbadd1e6fb3adb844d29e13eeff61fa",
+        "other_keys/cd4aa495-bbf8-45f7-a154-9de74f6bb8fc.wav": "8d6fea109018cbd51bead08fe5b0f722e3cfe85aa14543c33ee40bc33dc9ed9e",
+        "percussion/8f11141e-96d8-4860-901b-4ffd23e5981d.wav": "f574d7e5a37260d98e108f75186700461d31a3a6b796499172b38b87fac944ce",
+        "percussion/97100691-bc02-41db-bdad-c8070a27d9ec.wav": "c4a6821eb00b81797153c1252d5f8e4d295e7b000d313d376d06e0fb8e10262b",
+        "piano/c1a99924-885e-4172-aae5-3600078ad897.wav": "5c160adaa74f2445281f74dfbe5945f13e83681852aa423daeca4295924085a7",
+        "vocals/1c1ef902-0896-479e-b1ca-72ee955e2f18.wav": "52fceee53cffc15962da0aa2da348d2ce958d92fc0ba052254f0a073d196c298"
+      }
+    },
+    {
+      "id": "8e2d0c5c-6764-4d74-a740-391d7931ffd7",
+      "provider": "moisesdb_v0.1",
+      "genre": "pop",
+      "strata": [],
+      "files": {
+        "data.json": "5500a5d77f6918c777a2d4a4d7f3f228f5904a9693187310b993eaab7503f079",
+        "bass/bfd04371-73bf-4ad8-8b6a-bf4301150dff.wav": "99a01be43ed7f5e11949978528d30ffbda6a83218f7b5b81bd12a09016c2004a",
+        "bass/e76abd51-62ba-4bfc-aead-d35bcb8950e5.wav": "d357461019f84bf547105039bd9800d2c8b771e68c93864e94de0d310a1b707f",
+        "drums/021046bd-3b4d-4d5b-bed3-f61571b60c21.wav": "b18009bf94135b5a01a7425dc1e101bbe432f83d97bcaf7150334f2ed14b9ec0",
+        "drums/22185f87-7fe0-444c-9978-d2f0dc18b49b.wav": "7a5c6fb0da14b23725334077b6b03bb7adeba5dcef2148aa7dd98eb5b376e265",
+        "drums/3e87186b-c67f-44e6-b66d-ed91302bfda0.wav": "5780cb05b9af766a863ad675669e7ac16530b2f7ef325cc42ecd641a5b402fd1",
+        "drums/60829e1f-de4e-40b8-ac08-8b9315f2fd5a.wav": "b1858f391274e88427674630db8e0cb4a89e248b86e812d2a825eee500ad7355",
+        "drums/cda48e68-5f50-467d-bbc2-361a25ce21d0.wav": "17c6e75095aaefbfc7ba4e72d3d1a15930c5baa5487325dde5e0cec6826457d4",
+        "guitar/15dc99b7-cad3-4c88-ba3a-4150fb836f3d.wav": "297b5c573b07004011af8e60e31773e2734e5dffbae2df8a924e5466c416ee61",
+        "other/01767006-71b2-465e-92fa-dcd68146cbfd.wav": "78218bf1b3e3c08b4b283a5002c6e810166e27d0e3d68afa674bd9f0adb7947b",
+        "other_keys/08c0dca0-b31e-4194-bc97-9a852db4a14a.wav": "da3a9e7051716cccd3b9fa3d30d0daf3ec7345ca33765f69fcabb612a5425329",
+        "other_keys/d7288687-8b50-47d1-8760-69303aabfb83.wav": "fb24a161b2d9fac74e7368784191b2189aa57fc6e0a83b92e9e439f2045a9e36",
+        "percussion/8cb5d278-6cd4-4f9b-9785-e5ee37c908cf.wav": "91f0dd39793cc3f191b6fa892f2a644504205199c0d9e6e74a6b60997e38d543",
+        "percussion/e3157384-0ad6-400a-b5a4-f6175074f722.wav": "f120d6ab5b788b47722e3c1c82320349d30f5ce99aace70f559fa214a79c80c0",
+        "piano/1919fe1e-c407-403c-b6e9-37a418fedef1.wav": "82e073dd8691af2331ddea441bca3d50261efcd75e7c5e0696821cd924722e63",
+        "vocals/9048fb6f-bc03-4e25-b8d4-3bc28c3b4e01.wav": "e2f93f5e68126479c80493b31b9e4062f62251591e816357d377a7c80dac4f5f",
+        "vocals/b09c1dbb-fd2c-4982-9820-74ab5488ba4c.wav": "acb0c0702659633b06a3023a094677e89ac9e979702081936a42f94c35ad74f8",
+        "wind/94cf478e-df17-4447-8e0f-3867e18e3cfe.wav": "087b1eed9970502f94a262171ad93ab4e44339b28cbeb3582a9d2b5254f03b75"
+      }
+    },
+    {
+      "id": "9653a690-c28c-4e8f-962e-ff7ed18b8ee9",
+      "provider": "moisesdb_v0.1",
+      "genre": "rock",
+      "strata": [],
+      "files": {
+        "data.json": "4b87ed9a7539128bd22a3e3f97c28d9ff022e4379ab5e1fc449679550f04a778",
+        "bass/523b6b55-1291-46cb-a840-27304518b03b.wav": "a3e8708756b5e432705ec225f7c0cf576a7feb9ace63e0d9f7e96a3339f66a52",
+        "drums/0d461632-aec7-44eb-8aab-1aee3608cba5.wav": "80072ffd597f826f1b2a83dd40c7310b28b53457791df2b838f87efcf2041c47",
+        "drums/2f650009-a195-4c54-a75c-382eb7ef848c.wav": "0b9f1d8d01ae69501a4ff4bddb65f5115cd68989d818909828b9a738f94f6c4a",
+        "drums/321f4eac-13ba-47a2-9f11-e0c6b3e1aa51.wav": "22e8a35824d1585effed6a56647c7ad044f84573bc5e07e6eaac456c8f4294bd",
+        "drums/34cd659b-3871-49d9-b4f5-d43f5e76c597.wav": "5277faa4a6bfffdfec9fce7e052a1b271c64996c7ff4d7ec6403833d04cfc64a",
+        "drums/8eafe20c-ba56-416e-b032-a4aa7ed7c3e6.wav": "64336a6b9760e47c33555fd5500c884123e34af0f46f537fb2bcb475c2206830",
+        "drums/9eb0e462-9706-4dc1-a599-8b0fd7f894d6.wav": "cf62c2e043bffd709446306ce96d32b40d91ad52e4c424c026cf298b3fbb58b9",
+        "guitar/0348bf4c-6b45-4480-826f-62cc6663e46a.wav": "3ad12f4191dd81516114abecc0d34981b1e51e4677b52c7a12cf5827695f390d",
+        "guitar/1d835071-b5bc-41e4-ba73-c5f737441b2c.wav": "3719e5da0b78aab98414e194e3d519d25f1eb69a6bb5ceac29c70868b9c4fe76",
+        "guitar/2cec450a-1dca-409f-8dc9-efca2a289bce.wav": "97a600e7433af11f68aedc6afe3b64a03a29c35879897c5023c2eadbe63e3491",
+        "other/f50ab7f1-4a8a-4c5c-9365-453a50549b84.wav": "616960a017e3664a26c86e2fcbb7cc0b0017f718924c038b57814663524179cd",
+        "other_keys/7acf3dc5-170c-4ae8-a898-6c736aa49c7c.wav": "00ffbef0995c3c8041bbe759304e22ca2c89bb1853dae0c4c8e0a029377a3c38",
+        "other_keys/923d261a-5b18-4b4a-bfc3-5f9516cc6b94.wav": "79a8086571e95a99acc06c31d753999bbb7152b3a3002cc83faea5ffe610113a",
+        "vocals/6042a07c-5628-4fc1-b223-73b722096672.wav": "19ac0497a9db5997d301d9159c794ff590744ec8f46a92a530eb964371e5fa27",
+        "vocals/fc7e6b49-a274-4b67-8663-319e79a3b234.wav": "2c6398e8e1cc0b0774ce8d44fe4f8800b56b41e603d2b318be13fc9df7a92031"
+      }
+    },
+    {
+      "id": "97b07e0e-274e-4212-a66b-44210a48724d",
+      "provider": "moisesdb_v0.1",
+      "genre": "rock",
+      "strata": [],
+      "files": {
+        "data.json": "0bc48c6e063ba5613aa56ec8f537442e7a840e1b9ac86ef44a9fe51a53d653db",
+        "bass/4f6175ad-ea48-40da-aafc-ba44c5437378.wav": "39491fd54d0b55f1d0cd0f518df7b3f33a4a66e28e6cc526962474c94a2b2884",
+        "drums/f7c24d42-b56e-4c73-9f71-00a31c5cb6ca.wav": "2e9c0e4f0f6f2072d0f91cc8f9cacdc868da78f199d044505b916479d0db3656",
+        "guitar/161aef7b-e2e5-4d7d-b382-0e37d9024828.wav": "13b420e4342a53a4ce541abee2b587d94d28df67c3bd503e711a459c87d16ad0",
+        "guitar/261c792f-dd9e-4cf5-a0f4-21422b905ed7.wav": "f19ebcabe534a7437787fe038432c666a2167b00b0cad87a44f97e5ce66f9dec",
+        "guitar/4813fe4b-67bb-44a6-b126-fe7ffbe1f73f.wav": "dbaf1dc540aa51d5213f3f9951383506b3553fcc4c3dd9d622a697ca2ea14331",
+        "guitar/ee58cac1-e33d-442a-a219-557423d6915e.wav": "8bdc0adbb69c0bf8c1666ccb0ca848e1de1edec3bb4f5d9cc0a990d03ec8f5ca",
+        "other_keys/11486fef-69e1-41cc-b108-87367e931de6.wav": "1b228e49ca603e11aba2b25859e3ad1a37c52b2d165ea0ed77167759d030b3dc",
+        "other_keys/317939bb-32d6-4c70-9f62-2847f3365e62.wav": "79521dd9f14240c7cf9ef3e7f71ac30d388859ac7e9d504ea0148e379bafd906",
+        "other_keys/4b73c0e1-71be-4568-bca7-0ded6268887d.wav": "a8f0b3b42a5237273aac6c1ff4539accef58a26e15a86a39902a0f89aae2f9b4",
+        "other_keys/74350303-4dd7-4ef3-9f0b-6c82f52d4605.wav": "2683d9f20be0d54f1a0675b2eca81b771cee58df024c500d1286e3ba6c2ebe37",
+        "other_keys/7c4568ea-5c37-455b-a355-9383b55b1da2.wav": "3b9952471ab213ba546dd749cb46b0838fb29d42e2441bf38ffd0d5158fbca4a",
+        "other_keys/9f3f7a6f-80b8-4b67-afbf-4fea81520b31.wav": "2fc6bb29ebb160878fa6c39dd7deb9634a572140ed4c7cb22ffc3b951fb5e6da",
+        "other_keys/b247e678-9228-4a19-9bb3-bc80cb1e81c3.wav": "9f3848815e44abb0db74bf1b524fb49f602e3a8adedd0021e8a3e820215bc4fb",
+        "percussion/21b814fe-9d61-4d5f-9289-d14e9f377349.wav": "cb0bbfaa9a2633034c526b63bbcbb2089bf0987679966ed07534d5e99ac5799f",
+        "piano/2f70b3c5-c13a-4274-b48b-8b62d9648bb9.wav": "a2a4d0a8e56bb21ac4077567ea5cbe010cd8a7bf804384baedec70ff26efc6e0",
+        "piano/e58981c2-3c62-433e-b5ff-a79eeb88997e.wav": "8878f6c155f64fcfa9c093d5c42b0dc76542e99f18c81d5d8ad17edd2a64b53e",
+        "vocals/934d4fc8-cfe3-4c19-aedd-01a16255ea66.wav": "f811df36713df07cc63e9fad30e8383b58560cefe4526c70bd5393b032d349cb"
+      }
+    },
+    {
+      "id": "9c8a5c66-f6d8-4425-8671-6b7aa6a2663b",
+      "provider": "moisesdb_v0.1",
+      "genre": "rock",
+      "strata": [],
+      "files": {
+        "data.json": "9b6778e0af48ed376af918e212b719287d2d6388e66b1e57cc4c696d7b33930e",
+        "bass/e1d80714-f157-416b-8e5f-adc5ce2900db.wav": "e94563a1613c506fc00cdeb167656a7f8295a08997803aa3856a8dee3ce735ab",
+        "drums/3b9da5b2-42fd-423e-a8fb-a1ee420de833.wav": "af287dc1954ebbe928dbdc8225c9eff9e4517d8be24cdf915c18ead93ddc3fb0",
+        "drums/790dd4be-05f5-427d-91fd-2387e8eaee9c.wav": "f13a2e1dd875a1218ffaf8a8c5da741b8ea66abb666b0d69ec5ccc1711e230f4",
+        "drums/a4469665-a97c-43d5-af4c-d8aa8d8f1209.wav": "f8b5e84bd6a5b0e629b295ce84bf937ca2ee1a7aa47aaec2deadd2ac1156fddb",
+        "drums/dca0a668-31bc-4653-abf4-713a8d227701.wav": "e870bc4f5a0bd8a9b16c0a11b539ae26c3c812a0ba62f9dd08ecbe0a4aec38c1",
+        "guitar/e4b686d0-0e4b-490c-b931-cc20ec545d53.wav": "6c7e3400d71e1d0c6fb4bbfeec1418c77cebac59eb65e6531a558dd5f7c3f0e5",
+        "other_keys/edea47fc-3c59-4853-8181-87a8b8c0648b.wav": "ecf7c90e9296cc5c815807d4ef81edf0a5b3b492d6b13e6a676ee9561d993f27",
+        "percussion/bf82e37c-51af-464f-89b0-1c4f4c31ef84.wav": "b225af7e1732a294dc2909208859f7a4dd3ff9d7d7dd7c3062a9959e38ef62da",
+        "percussion/c23c735b-b005-4fe1-bfda-d61b5481e361.wav": "8d0b9c11b38b074a82d9a29ada72b37570eaa92774667e1755f740e7fa0e40a6",
+        "vocals/b600fe52-2afa-4e0a-ab40-2786ed14ed77.wav": "767bf40bc1b4b7c7e1ec8d547f7fc8ff2cf091de98fad867088ef034f32494fc",
+        "vocals/d861fbb7-597b-4eba-a7ab-2f5d7dfe00a1.wav": "255420aacdaa29a26abe82de1a768b61869109a204dafa9eceebcb91e8d54ff8"
+      }
+    },
+    {
+      "id": "a199697c-3cdc-47c7-a9c7-c1b07dd6c9dd",
+      "provider": "moisesdb_v0.1",
+      "genre": "rap",
+      "strata": [],
+      "files": {
+        "data.json": "b56c9e83943ec0eb4eea3b34a07bd66b10af952db7fc02e9f9baa9f24e440d8f",
+        "bass/6de76146-f1b0-4f8e-bc85-7597c2532a24.wav": "5a8baa55c5232b3dfe7d37ceb67ae45deaba9dbbac31e0549a49799da7632478",
+        "bowed_strings/6897baaa-b548-4ee3-9035-43b3ba7c3b52.wav": "aa3cef9d30287a39d28ebeb5b8f0020538a4c6cd9e2e3e9afd90c87e99dcc989",
+        "drums/07048947-83ef-4885-afcb-7a6f1f0abc3b.wav": "12cc36d2869415fb826a3bd78abc9fafc8f41d291f974dc591ce19669d640da2",
+        "drums/2e61c6fa-1d11-4f29-b19c-65e7a3e34a7a.wav": "ace3884264bc63d93bcd7a011861df2de1309f6fec8fd386a8eb7a39c7b4987f",
+        "drums/47c2bcb2-3f45-49c9-aeec-c0a8975f5ae0.wav": "cfabb67d770653188c4b4fdf31723329e0a76450fcd9c60eecda466ee6138fe0",
+        "drums/cfb5079c-481c-4ccd-8004-cde142809656.wav": "a7bd0edf71e6d9e75c4933568d03279da6863e9fd2f9706741efd0fd1ea89935",
+        "drums/d32b0d65-2b78-4491-a96c-cc1eae8965ce.wav": "48ac4f05fffedbe73c74be82671c2f810d40358b85ed59f27b4e866103767087",
+        "guitar/1ae686be-b783-4150-a0a3-b0cb7b0ed9a9.wav": "553dcb17ed7a66fc974a1af9ac0f760bdc3595b5a2453aaa3528580c8bfead77",
+        "guitar/aebf409b-bdca-4af9-92e1-468cfb0eab35.wav": "1d08fea298b508a5522e7a5d10f3099d67ce5e8fc0ebc34dc456c9b284dfdad7",
+        "other/94f18417-97c7-4699-83b6-6f78e683f28f.wav": "99d1c68d55d3d90d7b22a0ab92a1fdd124bd8235adea7c306a985996119845db",
+        "piano/e4ef2dcf-45d9-4f35-b248-ff143c1b962a.wav": "aab10ffde590302681a4375f0b11ddd0bffd08b4de54fbe7536ae25cefdb3f6c",
+        "vocals/082097eb-c142-419d-a3a6-f502c3872c1d.wav": "8413c25716c33bada6658b97a1163e27c3d511f24d2839d23565310700fa9c30",
+        "vocals/8c6aede4-fa86-4b7b-b670-caea96238bba.wav": "884e8b63807960ad16757396b893fa5819167094c16c21073bc17fea5d68dded"
+      }
+    },
+    {
+      "id": "aefc1609-976b-423e-8516-f7d588d64ff7",
+      "provider": "moisesdb_v0.1",
+      "genre": "singer_songwriter",
+      "strata": [],
+      "files": {
+        "data.json": "77febe0d82f53168e183954839f74199b12906a5ae8144afd67060c65731a69b",
+        "bass/a289e345-93f7-42aa-b3f9-10e90b79422d.wav": "2e040e39b0b0603b998bdd9cb46c925fb7925fd46d3238273c5adb2aaf834404",
+        "drums/3301bf93-ce01-492d-b0a0-3496ad926b05.wav": "3b278b7f7aaecf1ae2cec28f6ceb655ed1ed1d82a2cf9b7d19854e369c48e6d7",
+        "drums/71c74290-4f1e-4f31-a62b-380358656313.wav": "5442ebe253536aa8c0dc9e9e3fdda8818d4143308de1511f45b2f4894b9418a6",
+        "drums/947963b0-ae9e-433f-b5c8-77f789a78e08.wav": "e5c4ba505df753a963e924a1b799f75e4f22abc19bd69c363ad048776759fed3",
+        "drums/b89af83d-cbb1-4add-ab8d-f4b633a6d443.wav": "bba4ae651bd60cae369e53a65b0987eea772d52a42eb1f0ac1f4b2bd3ee0cd1b",
+        "drums/fbc6ab3f-32fd-48f5-93d4-e9a73a56d080.wav": "db87512d901e7ce90176b4224b2e6878a0c8fde013a85463aa2d9ddf94d3c6bf",
+        "guitar/37f71774-61c7-4778-9b25-58fc951986ec.wav": "2333e37124cb9bedc2d928bbef8d0918fec58da8b31a07f116316d37c2af6cef",
+        "guitar/670a3af0-6cbe-475b-bd88-e24247b49e94.wav": "357870930e3e3ea723cac548163748bcc89a3c697e7401857cdcbd2786da9688",
+        "guitar/9693161e-e130-4e25-bc9f-904ffadcb7fe.wav": "46e641195989983e44814391bb4ba3bb8e7cf7935f31741b836b127bcf0a8ae4",
+        "piano/18261b3a-764e-492a-a9c6-395d5d4d856b.wav": "20959347c0ff696dbc39a50b085071c7aa0691540e8a0922158e3066a5b0bbf1",
+        "vocals/db020d04-48d1-46f7-b0ae-e21f631edd77.wav": "b7ee0968a7d75136149f34b341f5d6c358c9f5b811176b1c7be76973e99e3786"
+      }
+    },
+    {
+      "id": "afca84b2-0277-4b1b-8696-5f14543f338c",
+      "provider": "moisesdb_v0.1",
+      "genre": "rock",
+      "strata": [],
+      "files": {
+        "data.json": "0f6fe06af46e18050b78705a4a26a119a6c8addfff0b1af447a459f952eb9c18",
+        "bass/5b2cc6d2-c2eb-4e9e-9c90-fd9511310fc2.wav": "cc48da0c694799ec62df04a31be2bbb846f770a8b69331392fae388f1616a769",
+        "drums/36ce3eb0-87f4-4953-b4d2-66b3613dbcbd.wav": "f81d8a7dcece27e3f45bb3b1c2a3ae8d5b626b9911a934d1faeec77978e73345",
+        "drums/53254175-7fd8-4a93-ba94-823d3defe09b.wav": "d660bcd93045e67d6f5d200737d3b1bdf103057c13206a08bca7f6ee362d9980",
+        "drums/86b81640-4fb2-48f9-becc-7cea0f4f7e5f.wav": "7091150013d1d6913b7400c7641fc1a2b524bb01a27131f7470828df9f9a52aa",
+        "drums/eada4486-0514-4c0d-8bb7-6e10a2d3f436.wav": "a6d02b3b08bf8155fe4afcd9047c83c14c74e020ed8ec664957b6b499a7cdfcc",
+        "guitar/f33a2a0a-5156-4011-bf91-0fffda5f9878.wav": "ddf61a2aa0bb6b5f93ba22e8db364c6da666ba666cf6349ba5bf421e3b340af6",
+        "guitar/f3862933-1931-4cf2-ae42-991191c8d7af.wav": "4247c68f093bb0b40ca44181dfe411d96bf8bc77ca62db45ca059667503a42c7",
+        "guitar/f7c3da37-82af-466e-a57c-50ba702a5d8d.wav": "29fb050889311d0858956f867267d980cf9762c64b9e4032df21d21b5ae03b62",
+        "percussion/fc8e7646-974b-4745-ad4b-4fb7b04d9220.wav": "823ecfe4a7b519ff908fd70ba48021dc35bc36932a14bd040f4427df93d0db24",
+        "vocals/5701644d-9e41-4b7c-84b6-aabc8ba1ea58.wav": "f02945c97b4fdbc4e0612bca4927287938868777801c216a662c2010a742bf74",
+        "vocals/cd5fae08-0ad9-4798-923c-7fba4e3ae2e9.wav": "d8b34b1c54a3805d249341898a48360cac363ea1ce2f77500c6ee699a331f361"
+      }
+    },
+    {
+      "id": "b207da3d-4baf-485a-98e1-657602479b3a",
+      "provider": "moisesdb_v0.1",
+      "genre": "electronic",
+      "strata": [],
+      "files": {
+        "data.json": "941fb7b6335862b1e49e45f9f0f247f927e8b4d369502dae0c5bd44030cdc8b3",
+        "bass/8c7f6e2e-74ad-4c62-8044-734ee7acab1a.wav": "770e5c78788802872e034b7b36f43a680e0ceea7940ac7241f5cf789d3b3c0cb",
+        "drums/18b60b74-7b8f-4c80-97f2-b7ba64d258c6.wav": "b01e468d0d065cdd918019f103a314638e189644c8b67a7c158c1023e7d9f271",
+        "drums/31b799e9-4299-4128-8801-ebcd4cf6261d.wav": "10a4a2cc0c36f01ea2f39e462e9cbd7d4177771f146617783e79207b08d88a7b",
+        "drums/6fd1ebb9-6e24-422a-a3b5-5b711eea967b.wav": "c0492e64e6f25e8e72dff46925c74c82b7c4a75324e3505b34fbc027785bcb19",
+        "drums/8a41ae34-a873-446b-b0e4-3cf2df9b57f3.wav": "321aa373ea8eb8f5aa6b8acf62ae75d88f38017b187575eba488b58629667c2c",
+        "drums/aa35720b-5e4b-4e5d-ad7d-9b22624c5161.wav": "4b457180ef7aaeb9cd3c70394a1e0e459b504d5408acc8fd5c1af00dc27ae26a",
+        "other/6b8f57d7-2ed9-41dd-80fe-e8fae30bc78a.wav": "895c717c40397cb047b2bc919aba5f7ee6e6896b02c196d4a077e09b30ef17a9",
+        "other_keys/0fb496c9-e534-4bdf-b2b5-b792b153e785.wav": "b51ade9e4960bf706aea5dac528fda92095d499f523f738c12078abe999b36bd",
+        "other_keys/12bb03f7-aa23-4a46-8795-d793c9810a7c.wav": "22fc6c4d7cc624b99358f840685c64f1800ac6efae71637ff58daee7dba250c4",
+        "other_keys/fa500ebd-9a9a-4fb8-b0c9-440f62f02b81.wav": "503dcbb95944e329caf1558d5433449d8bac936f2ade949945b6f6ef3409516b",
+        "percussion/1b76d669-5240-4126-9e29-854a1597f4f6.wav": "ec87973309a3f43e6c88b115c27c35d18ebb8bb3bc29f52537fc70015ebe0fad",
+        "piano/ff8219a7-3c1c-43c7-a1a5-e57a3ef3dd63.wav": "227ca135fddd22b1a64aa379ddc97dc02d5f88e74f81dda987e02188e6dcba95",
+        "vocals/264d18bb-f273-4fc0-8b72-a4ecf959e54a.wav": "3ada4c6a59443f5790ff3bdd295f49697e082c46a9486b7c3d267c2892b9548f"
+      }
+    },
+    {
+      "id": "b8d6f3eb-f2d6-4342-af90-6d09f5257b6b",
+      "provider": "moisesdb_v0.1",
+      "genre": "rock",
+      "strata": [],
+      "files": {
+        "data.json": "dfe35e04b0261a5e396aeee07207ed624b119ba86e5c09c0b7267cac1d3281a4",
+        "bass/32df91d8-881a-47eb-8255-d198f6cba5fb.wav": "79d6fca1a0dd923f96c3c90490a4d7549c7a8002c86df363ba4aa33c0deeee20",
+        "drums/8e989d68-56e0-425f-900f-75176ddb33b4.wav": "f7d76544a380dbe3083ba39195aee7068d7bdf5f70448b47158a7bc2e7f87f72",
+        "drums/c2d22fa1-26f1-4a4c-848b-339a84dd548e.wav": "a212d2971371a937f349513e8354aa4d681f45370f63d6c3a45e0a8d4a7f7d4a",
+        "drums/c9ed7e8c-b4bd-4db8-a22c-d50ad4b8ff3b.wav": "abc5febf83595b6d4fe2dc7ce0d94eb0218c61bc1a1a49e63dfc87bac62dcabe",
+        "drums/e0b38cd3-e8a4-4ae0-8dea-1f11fbb24113.wav": "2f6d7fc9659d465dc1d28fc03bbc07cb6c587191c580e02960e1330a9a4937e9",
+        "guitar/928f762a-a7ca-44b8-918b-715eb7504a41.wav": "fc1a588251e64c0dc44b5404579e1a6c596655e6e8b284d5dd4bf912962dfb77",
+        "vocals/24e443b6-ed8d-46f7-a736-fd642650d84e.wav": "c7ec08eefbe0747cf5812f78c20e0c41a330df1e1ffd0e11e0275a2098e84c34"
+      }
+    },
+    {
+      "id": "bdcc429e-ed95-40d3-a1af-bad268d66b25",
+      "provider": "moisesdb_v0.1",
+      "genre": "pop",
+      "strata": [],
+      "files": {
+        "data.json": "d9f99b28254f625008287d95496a88f8f4c0bf4335f5c48a209bf072f4899c17",
+        "bass/686d609e-7074-48a3-a4bc-b2135e2f878b.wav": "082a4a170a10873257425d0fdeb42c5bbc9d67098c18e12d341e39e1e71043e0",
+        "drums/11dca2bb-ee96-4edf-b7ba-7ddfb3941853.wav": "ad39e4583a787763a78b1670929b791bc4bb5893ed8d051d5b001015d4f690a3",
+        "drums/31ebfc95-ae8f-4cf1-96dc-a0ad57fa6d4d.wav": "93725ee2093a7205ece84ee775cda410441f1d0e9e28e2858e6f292ecd216d74",
+        "drums/78259614-d68c-4bbf-bcc5-e5082b2a7a56.wav": "ffd7c3ce273d5e7af03f31c016eeed3669d428824d0c3bd06add2d213af0365e",
+        "drums/8c28ac20-a07e-4de4-a56a-0ec19d84b591.wav": "e94bd36448a8710db689e677fe2ef80c5b54530023ed91bf4ce10b15fae4a509",
+        "guitar/17939f2c-a09a-48e0-a201-21b29bebb37f.wav": "64a2df1d93820ff484ab2eae94d094ca8b1fc43707182241aefe7ef2d561b86f",
+        "guitar/660aba6d-d231-4012-a306-214382ec65c4.wav": "0343de29cfd9636e45087fc4da0594e2bfbbb97c7ff774967a153a6b6a07c622",
+        "other/d284ce36-c103-45f1-b0ea-bfc8549a6a70.wav": "90d01e4fe38b24db537f3a4bb02236afa3f5e4073082dca1c837412f01430d87",
+        "other_keys/06bf8008-abe4-4cbc-87e0-c3896849da5b.wav": "2aace25badcaa0d9563585d7a7d5c766ae0c704bc4b40903e7ef3399ba07b30f",
+        "percussion/7e22ba20-be28-441f-9101-731bd16a8288.wav": "c200ef09dc51c422d7a50c4c1e8c8fc54902187d22c0e3281d04354c038b984a",
+        "percussion/93b5d932-d2e7-4284-b834-3dbaeb9cef81.wav": "056cfc26486125dc3d09c7d307e82e0e00cff345c8f8613dd616bd4b0f29ce95",
+        "piano/8372594d-a00e-4b86-9e1d-2c6122c0f0d5.wav": "ff4b6df82b9af04d97176527b412b3e8bdbc982a28e34b6db62ddf3c0166e2e6",
+        "vocals/04d67c17-91d1-482d-bc82-34fbfca043da.wav": "0e299c84aec9a8302fcf7b0f0f8b03b8e4b2409647f34cc379b43c0991199245",
+        "vocals/8a11934b-ca6a-4c56-8e26-57b5e4443ad5.wav": "1b8300dfad767f1697cf46966b3b8a109c6d9f9eed2a7909d40bd6f79419faa4",
+        "vocals/b5942fa3-5ea2-490a-b35e-16574e07d1c3.wav": "72ab1e73091090b93bac0e6924445e88f0a3042f7287b358207d8183b6fe8e24"
+      }
+    },
+    {
+      "id": "c228818e-eabe-434b-9d60-2fb84a6c5b2a",
+      "provider": "moisesdb_v0.1",
+      "genre": "singer_songwriter",
+      "strata": [],
+      "files": {
+        "data.json": "02071f2d2520d7f30f8d3903ed6f7367051e2c70ec49bc889658efb3f9538648",
+        "bass/2076193a-918c-4232-a2eb-cd4da770767e.wav": "02c620d2ab654fe796708a57ba831624c50dc622b6c1b37c06ed433d6a481fca",
+        "bowed_strings/657f5b07-b664-402c-8cb6-72e32b5931e8.wav": "316e512b306204322d5902d49a6efec47a3aa46749d8449dfe0f57d0576de79d",
+        "drums/54254d90-84fa-461a-8833-eefbf1970c92.wav": "6fd92be3ebfdb3eb133ad496bb435010144aca6c391a0769b5484ede1f0d63d3",
+        "drums/55b06eb4-0e13-4c5f-b30f-9d107a7e5b31.wav": "af9ecf5a41400c222691cf59e7a83dc188cf55c695e89071057b1af736bc38c8",
+        "drums/8d807815-04ef-4d38-a734-7dd1a908a920.wav": "fd15705251a44ebcca9fdfef5da3140c746ac6e612ca90ded3972c68f2bd9014",
+        "drums/9a8a0ce6-0f16-43ba-999d-9c97ebc53f5b.wav": "e1e39f010939e9586a8fa4d0872719e617be4ddb6ba7319457dca3e01a48f227",
+        "drums/bbdee3c8-c85d-454a-861a-323f78de7998.wav": "0e9af9929f62d18c706b8431f0f178e08f25b9dc8fbbc0582d014b313787729f",
+        "guitar/168c2993-3090-496e-9265-056c4d7ef910.wav": "471d4bc3bfa19afada7033f3c7beae69aaea842d8e3411e689d561e1945cd86b",
+        "guitar/29e8aba7-1968-40be-90ac-9dee16ef6d00.wav": "4c5d236ee2db0d72aaea70311b30562bbbc78c6d2e00df4f89f035d2e59a3cd8",
+        "guitar/a2df0bab-09f2-4281-92ef-fc9093460d67.wav": "527623dc3b385710cf4a27c270779a80d1c5009d94bd2c47cbfe3d89534f347f",
+        "other_keys/d80ccd61-7d82-457c-8bac-33cb3df699ae.wav": "901b0b8275fb6f2ed7368644a519b634e20da8de4d42d5bb55197e0395fb39a9",
+        "percussion/d5215852-1645-41ed-9652-a2a963f6b511.wav": "7031e249af1859ef681022058982397eab94aa6920a69f7b66b489193cfc5a0b",
+        "piano/e0e946eb-4173-410e-99f0-f926af58f4c8.wav": "1fc88be162283fc09684e7c2a16c577b8eb82c4fd1880bebbc353f107cbc4ccf",
+        "vocals/e2780a37-7d19-43ec-bd79-8921820a7da2.wav": "8786330540fbc6543a8a49cb4c3731673775b947fb6cda33fc65d1879f820925"
+      }
+    },
+    {
+      "id": "d4262245-3143-4c05-8423-6cbdc6253042",
+      "provider": "moisesdb_v0.1",
+      "genre": "electronic",
+      "strata": [],
+      "files": {
+        "data.json": "e8d4bcc7e73feeeeb8b8fdf2e39b63db3223826dbc0b358f4bc302760b4a65dd",
+        "bass/09e43194-df09-453f-b62a-3dce14dd0499.wav": "829f75bbe100724152f74c1de8c3032e44e12ae8c1d1a9f42bce50d9c668409f",
+        "bass/9fe46761-8a19-4546-a82d-1a35af3943ec.wav": "cabf45f36dbc7f1d003f256f6fe979f57cbe75661b5c93cd9475c17ec7524a8f",
+        "drums/2acee60b-4b60-4f82-9923-6ae67efc74ab.wav": "ff8698e510952755da38b97a5e7b2112c83270a5bd19bb8a58fb0d71ae9c38ff",
+        "drums/528605b1-7666-4d72-82f9-f1c63de3b803.wav": "f2fc54656b3d344341852e515f31576805a1b7a0507a19a75f2bf450b5678982",
+        "drums/60ab8357-2f2d-4edc-ac39-a92ba59390d0.wav": "a97d2aa9254bbac605a461bec69a066f1c57fe5eeac28565016f831741b00ebe",
+        "drums/a66ace4d-7275-44e6-8331-9096a79e436b.wav": "62c0db408faf5b08ec5f2f4754ea63a3b9350feca1cf05bc84832b979d2b9f99",
+        "other_keys/9cdb8805-cb30-4824-a03c-0d9592eb5122.wav": "c3e0db6e0ed9df7472a25057a51fc20666d2b5f6b0c24af0d86f40d8d822504b",
+        "other_keys/a771dc0a-0d18-4dc7-b46a-09058282e3a5.wav": "4f39cb364b2a9386c5cdb1a117782edd73ff71a0746cd0293174b5f4cdd485e5",
+        "other_keys/e069902a-bdc9-47ef-b871-c59311285fe2.wav": "279c609ceaba891ae24a46e3e3dae60499b90c08da2db98258978999a91f38ec",
+        "vocals/4ccfe1fc-e7b5-4e1d-848a-434c93363451.wav": "8d9986907f99cd8e0d7206a6e51df206339d692322006d6eaabc47fa3d8ce6c1",
+        "vocals/f63312e7-b6d8-4923-9561-879d46a74a4c.wav": "67191dd747050dde7124405205bdff73f21296f37f082ef4c90b18e7163efcd4"
+      }
+    },
+    {
+      "id": "dda2c057-6d73-43fa-a130-d7d6562c09ca",
+      "provider": "moisesdb_v0.1",
+      "genre": "rock",
+      "strata": [],
+      "files": {
+        "data.json": "5563556320d4087add753d41b51c99cea92cce67c5d3ca94a3556beead1d0701",
+        "bass/aef88f56-6092-43bb-9cd4-1c309a22d34d.wav": "f5142ab72be48007c5e6218b13c35593193aff1e8db15bf887c9a3c1f7b65771",
+        "drums/2b7f685b-42ef-434d-9bf1-620259451125.wav": "8d9700f5102d2bc548387650a790c76041c9156484144ffb83e6a4362fb1cd33",
+        "drums/31b69cd1-1b53-4f72-89a3-9815a7f3181a.wav": "d0b0958f3ee372ab5aa9095c0ba54bf17d7c8ce5fbab65f0f4fefb3fefe2b199",
+        "drums/9c03aa9c-fbe5-4e76-a213-b878d4f5e803.wav": "7d289bb16a44c2caade0886c1924b0c25fee47029e3046fdc7003e96f616a823",
+        "guitar/af72ecda-2978-4d4d-89dc-a8ce8b2a9ac3.wav": "5a67482c54313ccc463525e222b2c40220f03b16e367db6f4791b65f0105681d",
+        "vocals/1d722cb1-451e-4f1a-8a27-22c6206356d2.wav": "20789183378b9635a37bed0e1c8c29b737edaf6c5ed924c97e2e5b90f4ed478c"
+      }
+    },
+    {
+      "id": "de22c812-b5c3-4c7d-92aa-f62faf8b63f7",
+      "provider": "moisesdb_v0.1",
+      "genre": "blues",
+      "strata": [],
+      "files": {
+        "data.json": "da5007bf9c4700792cffef489585f384bb55f6615ff3e21c8192110ca83d099b",
+        "bass/c1686e8d-2503-4b79-af7a-1a97f9797ed3.wav": "da576cab3d0e71654c33354cd5fcd9cf7f896a757efa283611518262c7b08ddd",
+        "drums/97d286e8-9c21-4cfd-8f15-debdbfec3c83.wav": "cc91885bb6bade777e8be04f53ab5f6febb95def407a0704328c2bb863dc2855",
+        "other_keys/d437a2ed-412f-438c-86de-cdee2e3cecbf.wav": "ecdad10a4da9519829c4f3e00ae48a44e632aaf66e64e362e22acbe8834faa8b",
+        "piano/6fb4e26c-471b-45f3-826f-86a36ac45107.wav": "7b44f8291c86078e6c4faff057c1beefa390eb3e049b522d3b221bba568d0ad8",
+        "vocals/0abaca14-53b3-4b64-9811-37ea584e29f3.wav": "ec230e4fccd89e0531188920c292cca41b533c2fbec4403140c83954c487042f",
+        "vocals/1424641d-7133-4b52-9e68-a5b7ff0af4e7.wav": "988faccd4a346664129f0259066746caf9a7afd485b8c505c3f4f7ab9582e680"
+      }
+    },
+    {
+      "id": "f0c565c5-fc73-4da1-b979-0fac0167f671",
+      "provider": "moisesdb_v0.1",
+      "genre": "pop",
+      "strata": [],
+      "files": {
+        "data.json": "857bd735934eff123b4bbfd96401bac44db157978d63159cbfb46bbb0e6ae651",
+        "bass/101b72c5-2984-4be2-9642-e692015c5c0c.wav": "1d1e5868b999650b3d8c27b7249e4306875c5c4772f0eec2ab556af3c35c3e38",
+        "drums/1f31394c-0334-4d67-b972-563fae3a2602.wav": "002ae3cbc295677b2ff29ab63ca1c5b78ff42c92f376ab156d4f016a8c05b9b4",
+        "drums/b6a810c8-21f2-44c1-85cd-fd5f0092234d.wav": "2c44ef04fd3cca5f097748844f503d88dbcba57f4208a49ecd36bd3afc0a3f55",
+        "drums/f2e01ec8-8ff6-4ae5-a1a2-ad9d488d12e5.wav": "f4b1db5ec0a25fef67dd9d6ebaf27bcf4782a386b17bf42a55e4a9c58d479027",
+        "drums/fb0c2713-47dd-4530-ac38-0a58e91e216c.wav": "bf3b5e9615194de29bffd353ff8d27c9f6a67ce92fb702e5bc1015e9b48e8c06",
+        "guitar/bc6b609c-5e11-4757-99e0-01e30aee823d.wav": "13191a942e5594340cccc82cf3b648dbecd3b1202dfaf5fa3a1883537c96e950",
+        "percussion/2452461a-a379-40da-bba1-bac7a6d1439e.wav": "6fbbf6f42b9ea5d5439761450d3f7f1f6a08d1c18f28b4ba15ea83c65cd1890a",
+        "vocals/ae9ea42d-66df-4f45-9410-6e27167476c0.wav": "2a64fae3829c197ed621310739d37c0cdd9d2502f4ae7036fb6ade6269f644dd"
+      }
+    },
+    {
+      "id": "f4d79498-4ba0-4813-9b9e-986374242573",
+      "provider": "moisesdb_v0.1",
+      "genre": "singer_songwriter",
+      "strata": [],
+      "files": {
+        "data.json": "d62d5b37c157daeab4ffe18a3e36e0725e0a2c3a94ca8a780d2ee13fcf3c5446",
+        "bass/ab2d66a4-0d72-4f7d-9405-4f22e00016e6.wav": "802583acc82c2a9afdf34f082392a238a8f8200b8fcb3e70a026265ae64b733e",
+        "drums/0d17a54c-d34f-4476-8b76-4787205e6988.wav": "f51c55868e7b2904d30080882b3975e56b537bb8187caa54991cc924d50c09f4",
+        "guitar/92e87ae1-bd79-4a44-a5fc-9dee97c32bd7.wav": "ba9d30160fe9d9ce427a947e15c66b49c8e5cab2c9e1ef103a7b9232ae53d934",
+        "other_keys/31a4d627-c79f-481c-8a66-40efc0714433.wav": "392b99e89d458813dccfb463b67e7afceab9efb177ee19a298ce4740da54c426",
+        "piano/5fffd717-35ea-4fc8-a479-8e69ecef4205.wav": "734093f0467e3b47250f94240482b6e4a7a7b4d350a1af2f4fbeb5d774b6d1d1",
+        "vocals/8cd55d5e-04e2-4215-a396-593c6b71b66c.wav": "2eeb54754eea2ead6c9716bbccd020f785262cd3e6de932d4df2014543a1ed35"
+      }
+    },
+    {
+      "id": "faad432d-6ad0-492d-96f1-321eeb9685b5",
+      "provider": "moisesdb_v0.1",
+      "genre": "electronic",
+      "strata": [],
+      "files": {
+        "data.json": "c0007193f3ab1affa93f0c667f8e9875b006a2337a900c56285327761cb1b024",
+        "bass/be295244-fb84-4839-8879-5a899ff470d9.wav": "b621e419d20cc1847de81a707197bc6c93ad63c4f4c3e17398fd7d8a2b5ecf85",
+        "drums/e03d91de-5f09-4d79-9393-83c3b33968cf.wav": "4dd6aee7b1ff95a4a34201a393dd04d4f60f712d826446ffa1f349ad204d92e6",
+        "guitar/edb44925-8131-4b9c-b8bc-2e236a081dc8.wav": "23836120ce0339857bfa48f60f5abae9bd8ece59b8cb9696f06e5a3f0e223fdc",
+        "other_keys/a68c43ae-e40b-48ff-9abc-4f41f207f64c.wav": "77f1a0f8b968a9c46eec94a0df2fb5cc0d7642b346ac02a174a876fcbfa72d62",
+        "vocals/c7f6e7d0-fa8a-4893-b78f-3012b30fdd16.wav": "432c0d544ec660c9439e07f7ff4c9ec8891b961f47d671145f22f957162eb1bc"
+      }
+    }
+  ]
+}
