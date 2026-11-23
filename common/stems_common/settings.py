@@ -63,6 +63,8 @@ class RetentionSettings(_Strict):
 class DecisionSettings(_Strict):
     jev_model: str = Field(pattern=r"^jev-\d+\.\d+\.\d+$")  # a pinned version, never an alias
     min_confidence: float = Field(ge=0, le=1)
+    # A stem is wanted when Jev's probability that the request asks for it is at least this.
+    wanted_threshold: float = Field(ge=0.5, le=1)
     request_timeout_seconds: float = Field(gt=0)
     max_attempts: int = Field(ge=1)
     # Wait before the first retry; it doubles each time. A reply's retry-after replaces it.

@@ -1,0 +1,398 @@
+{
+ "about": "Hand-written answers in Jev's wire format, for tests of how answers are mapped to a ParsedStemRequest. They are not recordings of Jev and say nothing about what Jev would answer; real recordings come with P4.9. The request body is built by the test from the current question wording.",
+ "origin": "handwritten",
+ "cases": {
+  "vocals_drums_flac": {
+   "text": "Can I get just the vocals and the drums, as FLAC?",
+   "answers": {
+    "stem.vocals": {
+     "type": "noul",
+     "noul": 0.97
+    },
+    "stem.drums": {
+     "type": "noul",
+     "noul": 0.96
+    },
+    "stem.bass": {
+     "type": "noul",
+     "noul": 0.02
+    },
+    "stem.guitar": {
+     "type": "noul",
+     "noul": 0.04
+    },
+    "stem.piano": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "stem.other": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "format": {
+     "type": "choice",
+     "choice": "flac",
+     "confidence": 0.93,
+     "probabilities": {
+      "wav": 0.0175,
+      "flac": 0.93,
+      "mp3_320": 0.0175,
+      "mp3_192": 0.0175,
+      "unspecified": 0.0175
+     }
+    },
+    "quality": {
+     "type": "choice",
+     "choice": "unspecified",
+     "confidence": 0.9,
+     "probabilities": {
+      "best_quality": 0.0333,
+      "balanced": 0.0333,
+      "fastest": 0.0333,
+      "unspecified": 0.9
+     }
+    },
+    "vocal_split": {
+     "type": "noul",
+     "noul": 0.03
+    }
+   }
+  },
+  "everything_best": {
+   "text": "Split everything out at the best quality you can",
+   "answers": {
+    "stem.vocals": {
+     "type": "noul",
+     "noul": 0.95
+    },
+    "stem.drums": {
+     "type": "noul",
+     "noul": 0.95
+    },
+    "stem.bass": {
+     "type": "noul",
+     "noul": 0.95
+    },
+    "stem.guitar": {
+     "type": "noul",
+     "noul": 0.95
+    },
+    "stem.piano": {
+     "type": "noul",
+     "noul": 0.95
+    },
+    "stem.other": {
+     "type": "noul",
+     "noul": 0.95
+    },
+    "format": {
+     "type": "choice",
+     "choice": "unspecified",
+     "confidence": 0.97,
+     "probabilities": {
+      "wav": 0.0075,
+      "flac": 0.0075,
+      "mp3_320": 0.0075,
+      "mp3_192": 0.0075,
+      "unspecified": 0.97
+     }
+    },
+    "quality": {
+     "type": "choice",
+     "choice": "best_quality",
+     "confidence": 0.92,
+     "probabilities": {
+      "best_quality": 0.92,
+      "balanced": 0.0267,
+      "fastest": 0.0267,
+      "unspecified": 0.0267
+     }
+    },
+    "vocal_split": {
+     "type": "noul",
+     "noul": 0.1
+    }
+   }
+  },
+  "lead_backing": {
+   "text": "I need the lead vocal and the backing vocals separately",
+   "answers": {
+    "stem.vocals": {
+     "type": "noul",
+     "noul": 0.98
+    },
+    "stem.drums": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "stem.bass": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "stem.guitar": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "stem.piano": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "stem.other": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "format": {
+     "type": "choice",
+     "choice": "unspecified",
+     "confidence": 0.95,
+     "probabilities": {
+      "wav": 0.0125,
+      "flac": 0.0125,
+      "mp3_320": 0.0125,
+      "mp3_192": 0.0125,
+      "unspecified": 0.95
+     }
+    },
+    "quality": {
+     "type": "choice",
+     "choice": "unspecified",
+     "confidence": 0.91,
+     "probabilities": {
+      "best_quality": 0.03,
+      "balanced": 0.03,
+      "fastest": 0.03,
+      "unspecified": 0.91
+     }
+    },
+    "vocal_split": {
+     "type": "noul",
+     "noul": 0.94
+    }
+   }
+  },
+  "unsure_rhythm": {
+   "text": "vocals and maybe some of the rhythm section?",
+   "answers": {
+    "stem.vocals": {
+     "type": "noul",
+     "noul": 0.95
+    },
+    "stem.drums": {
+     "type": "noul",
+     "noul": 0.55
+    },
+    "stem.bass": {
+     "type": "noul",
+     "noul": 0.5
+    },
+    "stem.guitar": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "stem.piano": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "stem.other": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "format": {
+     "type": "choice",
+     "choice": "unspecified",
+     "confidence": 0.96,
+     "probabilities": {
+      "wav": 0.01,
+      "flac": 0.01,
+      "mp3_320": 0.01,
+      "mp3_192": 0.01,
+      "unspecified": 0.96
+     }
+    },
+    "quality": {
+     "type": "choice",
+     "choice": "unspecified",
+     "confidence": 0.9,
+     "probabilities": {
+      "best_quality": 0.0333,
+      "balanced": 0.0333,
+      "fastest": 0.0333,
+      "unspecified": 0.9
+     }
+    },
+    "vocal_split": {
+     "type": "noul",
+     "noul": 0.05
+    }
+   }
+  },
+  "no_stem": {
+   "text": "Make it sound better",
+   "answers": {
+    "stem.vocals": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "stem.drums": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "stem.bass": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "stem.guitar": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "stem.piano": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "stem.other": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "format": {
+     "type": "choice",
+     "choice": "unspecified",
+     "confidence": 0.94,
+     "probabilities": {
+      "wav": 0.015,
+      "flac": 0.015,
+      "mp3_320": 0.015,
+      "mp3_192": 0.015,
+      "unspecified": 0.94
+     }
+    },
+    "quality": {
+     "type": "choice",
+     "choice": "best_quality",
+     "confidence": 0.6,
+     "probabilities": {
+      "best_quality": 0.6,
+      "balanced": 0.1333,
+      "fastest": 0.1333,
+      "unspecified": 0.1333
+     }
+    },
+    "vocal_split": {
+     "type": "noul",
+     "noul": 0.02
+    }
+   }
+  },
+  "unsure_format": {
+   "text": "drums, compressed is fine",
+   "answers": {
+    "stem.vocals": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "stem.drums": {
+     "type": "noul",
+     "noul": 0.97
+    },
+    "stem.bass": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "stem.guitar": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "stem.piano": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "stem.other": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "format": {
+     "type": "choice",
+     "choice": "mp3_320",
+     "confidence": 0.55,
+     "probabilities": {
+      "wav": 0.1125,
+      "flac": 0.1125,
+      "mp3_320": 0.55,
+      "mp3_192": 0.1125,
+      "unspecified": 0.1125
+     }
+    },
+    "quality": {
+     "type": "choice",
+     "choice": "unspecified",
+     "confidence": 0.88,
+     "probabilities": {
+      "best_quality": 0.04,
+      "balanced": 0.04,
+      "fastest": 0.04,
+      "unspecified": 0.88
+     }
+    },
+    "vocal_split": {
+     "type": "noul",
+     "noul": 0.01
+    }
+   }
+  },
+  "threshold_edge": {
+   "text": "the bass, and I guess the guitar too",
+   "answers": {
+    "stem.vocals": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "stem.drums": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "stem.bass": {
+     "type": "noul",
+     "noul": 0.99
+    },
+    "stem.guitar": {
+     "type": "noul",
+     "noul": 0.81
+    },
+    "stem.piano": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "stem.other": {
+     "type": "noul",
+     "noul": 0.03
+    },
+    "format": {
+     "type": "choice",
+     "choice": "unspecified",
+     "confidence": 0.9,
+     "probabilities": {
+      "wav": 0.025,
+      "flac": 0.025,
+      "mp3_320": 0.025,
+      "mp3_192": 0.025,
+      "unspecified": 0.9
+     }
+    },
+    "quality": {
+     "type": "choice",
+     "choice": "unspecified",
+     "confidence": 0.9,
+     "probabilities": {
+      "best_quality": 0.0333,
+      "balanced": 0.0333,
+      "fastest": 0.0333,
+      "unspecified": 0.9
+     }
+    },
+    "vocal_split": {
+     "type": "noul",
+     "noul": 0.02
+    }
+   }
+  }
+ }
+}

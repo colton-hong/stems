@@ -37,6 +37,9 @@ decision:
   jev_model: jev-1.14.0
   # Below this confidence a Jev answer is ignored and the rule-based fallback is used.
   min_confidence: 0.8
+  # Request parsing: a stem counts as asked for from this probability up (schema (a)'s
+  # default). Uncalibrated.
+  wanted_threshold: 0.7
   request_timeout_seconds: 10
   # Attempts per call in all. 429, 5xx, timeouts and network errors are retried.
   max_attempts: 3
