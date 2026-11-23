@@ -377,9 +377,11 @@ def test_uncalibrated_or_unchecked_stems_are_warned_about_not_retried() -> None:
     )
     assert heard_bleed.value["assessment"]["confidence"] == GATE.rules.uncalibrated_confidence
     assert heard_bleed.value["verdict"]["action"] == "deliver_with_warning"
+    # The suspicion is logged, but the user is not told something the gate does not trust.
+    assert heard_bleed.value["assessment"]["reason_code"] == "bleed"
     assert (
         heard_bleed.value["verdict"]["user_message"]
-        == "Other instruments may be audible in this stem."
+        == "This stem could not be quality-checked automatically."
     )
     assert "the tagger's thresholds are uncalibrated" in heard_bleed.record["notes"]
 

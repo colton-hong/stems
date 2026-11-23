@@ -54,10 +54,11 @@ def passes(assessment: Mapping[str, Any], settings: GateSettings) -> bool:
 
 def warning(assessment: Mapping[str, Any], settings: GateSettings) -> str:
     """What the user is told about a stem that is delivered without having passed."""
-    reason = assessment.get("reason_code", "none")
-    if assessment["confidence"] < settings.confidence_min and reason in ("none", "clean"):
+    if assessment["confidence"] < settings.confidence_min:
+        # The gate does not trust this assessment enough to act on it, so the user is not
+        # told what it suspects either. The suspicion stays in the log as reason_code.
         return _WARNINGS["low_confidence"]
-    return _WARNINGS.get(reason, _GENERIC)
+    return _WARNINGS.get(assessment.get("reason_code", "none"), _GENERIC)
 
 
 def verdict(

@@ -210,11 +210,13 @@ def test_an_unverifiable_stem_is_warned_about_without_a_retry() -> None:
     assert step.action == "deliver_with_warning"
     assert len(m.attempts) == 1
     assert m.warning == "This stem could not be quality-checked automatically."
-    # Low confidence about a suspected problem: the problem is named, still no retry.
+    # Low confidence about a suspected problem: no retry, and the user is not told a
+    # suspicion the gate itself does not trust. It stays in the log as reason_code.
     unsure = machine()
     (step,) = drive(unsure, [(0.0, 0.0, 0.5, "retry_fallback_model", "bleed")])
     assert (step.action, len(unsure.attempts)) == ("deliver_with_warning", 1)
-    assert unsure.warning == "Other instruments may be audible in this stem."
+    assert unsure.warning == "This stem could not be quality-checked automatically."
+    assert unsure.delivered.assessment["assessment"]["reason_code"] == "bleed"
 
 
 def test_flag_for_human_review_ends_in_a_warning() -> None:
