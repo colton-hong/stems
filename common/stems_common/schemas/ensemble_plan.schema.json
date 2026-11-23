@@ -1,0 +1,563 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/ensemble-plan/v1",
+  "title": "EnsemblePlan",
+  "description": "Schema (b) of research report section 4. The report's placeholder model enums are replaced by registry ids: per stem, 'none' or any loadable candidate for that stem. GENERATED from models/registry.yaml by `python -m stems_models.plan_schema --write`; do not edit the model lists by hand. track_features is the same as track_features.schema.json.",
+  "type": "object",
+  "required": [
+    "job_id",
+    "track_features",
+    "plan",
+    "estimated_seconds",
+    "confidence",
+    "needs_review"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "job_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "track_features": {
+      "type": "object",
+      "required": [
+        "duration_seconds",
+        "sample_rate_hz",
+        "channels",
+        "vocal_presence",
+        "detected_instruments",
+        "genre_hint"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "duration_seconds": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 3600
+        },
+        "sample_rate_hz": {
+          "type": "integer",
+          "enum": [
+            8000,
+            16000,
+            22050,
+            32000,
+            44100,
+            48000,
+            96000
+          ]
+        },
+        "channels": {
+          "type": "integer",
+          "enum": [
+            1,
+            2
+          ]
+        },
+        "vocal_presence": {
+          "type": "string",
+          "enum": [
+            "lead_vocals",
+            "backing_only",
+            "none",
+            "unknown"
+          ]
+        },
+        "detected_instruments": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "vocals",
+              "drums",
+              "bass",
+              "guitar",
+              "piano",
+              "strings",
+              "synth",
+              "brass",
+              "other"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "genre_hint": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 100
+        },
+        "reverb_estimate": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "dry",
+            "moderate",
+            "wet",
+            null
+          ]
+        },
+        "loudness_lufs": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": -70,
+          "maximum": 0
+        }
+      }
+    },
+    "quality_target": {
+      "type": "string",
+      "enum": [
+        "best_quality",
+        "balanced",
+        "fastest"
+      ],
+      "default": "balanced"
+    },
+    "plan": {
+      "type": "object",
+      "required": [
+        "vocals",
+        "drums",
+        "bass",
+        "guitar",
+        "piano",
+        "other"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "vocals": {
+          "$ref": "#/$defs/stemPlan_vocals"
+        },
+        "drums": {
+          "$ref": "#/$defs/stemPlan_drums"
+        },
+        "bass": {
+          "$ref": "#/$defs/stemPlan_bass"
+        },
+        "guitar": {
+          "$ref": "#/$defs/stemPlan_guitar"
+        },
+        "piano": {
+          "$ref": "#/$defs/stemPlan_piano"
+        },
+        "other": {
+          "$ref": "#/$defs/stemPlan_other"
+        }
+      }
+    },
+    "dereverb": {
+      "type": "object",
+      "required": [
+        "apply",
+        "model"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "apply": {
+          "type": "boolean"
+        },
+        "model": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "mel_roformer_dereverb_anvuew",
+            "mel_roformer_dereverb_echo_sucial",
+            "uvr_vr_deecho_dereverb",
+            "uvr_vr_deecho_normal",
+            "uvr_vr_deecho_aggressive",
+            null
+          ]
+        }
+      }
+    },
+    "ensemble_mode": {
+      "type": "string",
+      "enum": [
+        "single_best",
+        "two_model_blend",
+        "full_ensemble"
+      ]
+    },
+    "estimated_seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "needs_review": {
+      "type": "boolean",
+      "description": "True if confidence < 0.8 or a requested stem has no eligible model. If true, use the per-stem fallback and log for review."
+    }
+  },
+  "$defs": {
+    "stemPlan_vocals": {
+      "type": "object",
+      "required": [
+        "primary_model",
+        "fallback_model",
+        "requested"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "requested": {
+          "type": "boolean"
+        },
+        "primary_model": {
+          "type": "string",
+          "enum": [
+            "none",
+            "mel_roformer_kim_vocals",
+            "bs_roformer_viperx_vocals",
+            "bs_polarformer_vocals",
+            "mel_roformer_viperx_vocals",
+            "mdx23c_vocals_zfturbo",
+            "uvr_mdx23c_instvoc_hq",
+            "uvr_mdxnet_voc_ft",
+            "uvr_mdxnet_main",
+            "uvr_mdxnet_inst_hq_1",
+            "uvr_mdxnet_inst_hq_2",
+            "uvr_mdxnet_inst_hq_3",
+            "uvr_mdxnet_inst_hq_4",
+            "uvr_mdxnet_inst_hq_5",
+            "scnet_xl_ihf",
+            "scnet_xl",
+            "scnet_masked_xl_ihf",
+            "scnet_large",
+            "scnet_large_zfturbo",
+            "scnet_small",
+            "htdemucs",
+            "htdemucs_ft",
+            "bs_roformer_zfturbo_4stem",
+            "mdx23c_zfturbo_4stem",
+            "mdxnet_kuielab_a",
+            "mdxnet_kuielab_b",
+            "bs_roformer_sw_6stem"
+          ]
+        },
+        "fallback_model": {
+          "type": "string",
+          "enum": [
+            "none",
+            "mel_roformer_kim_vocals",
+            "bs_roformer_viperx_vocals",
+            "bs_polarformer_vocals",
+            "mel_roformer_viperx_vocals",
+            "mdx23c_vocals_zfturbo",
+            "uvr_mdx23c_instvoc_hq",
+            "uvr_mdxnet_voc_ft",
+            "uvr_mdxnet_main",
+            "uvr_mdxnet_inst_hq_1",
+            "uvr_mdxnet_inst_hq_2",
+            "uvr_mdxnet_inst_hq_3",
+            "uvr_mdxnet_inst_hq_4",
+            "uvr_mdxnet_inst_hq_5",
+            "scnet_xl_ihf",
+            "scnet_xl",
+            "scnet_masked_xl_ihf",
+            "scnet_large",
+            "scnet_large_zfturbo",
+            "scnet_small",
+            "htdemucs",
+            "htdemucs_ft",
+            "bs_roformer_zfturbo_4stem",
+            "mdx23c_zfturbo_4stem",
+            "mdxnet_kuielab_a",
+            "mdxnet_kuielab_b",
+            "bs_roformer_sw_6stem"
+          ]
+        },
+        "probability": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "stemPlan_drums": {
+      "type": "object",
+      "required": [
+        "primary_model",
+        "fallback_model",
+        "requested"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "requested": {
+          "type": "boolean"
+        },
+        "primary_model": {
+          "type": "string",
+          "enum": [
+            "none",
+            "scnet_xl_ihf",
+            "scnet_xl",
+            "scnet_masked_xl_ihf",
+            "scnet_large",
+            "scnet_large_zfturbo",
+            "scnet_small",
+            "htdemucs",
+            "htdemucs_ft",
+            "bs_roformer_zfturbo_4stem",
+            "mdx23c_zfturbo_4stem",
+            "mdxnet_kuielab_a",
+            "mdxnet_kuielab_b",
+            "bs_roformer_sw_6stem"
+          ]
+        },
+        "fallback_model": {
+          "type": "string",
+          "enum": [
+            "none",
+            "scnet_xl_ihf",
+            "scnet_xl",
+            "scnet_masked_xl_ihf",
+            "scnet_large",
+            "scnet_large_zfturbo",
+            "scnet_small",
+            "htdemucs",
+            "htdemucs_ft",
+            "bs_roformer_zfturbo_4stem",
+            "mdx23c_zfturbo_4stem",
+            "mdxnet_kuielab_a",
+            "mdxnet_kuielab_b",
+            "bs_roformer_sw_6stem"
+          ]
+        },
+        "probability": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "stemPlan_bass": {
+      "type": "object",
+      "required": [
+        "primary_model",
+        "fallback_model",
+        "requested"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "requested": {
+          "type": "boolean"
+        },
+        "primary_model": {
+          "type": "string",
+          "enum": [
+            "none",
+            "scnet_xl_ihf",
+            "scnet_xl",
+            "scnet_masked_xl_ihf",
+            "scnet_large",
+            "scnet_large_zfturbo",
+            "scnet_small",
+            "htdemucs",
+            "htdemucs_ft",
+            "bs_roformer_zfturbo_4stem",
+            "mdx23c_zfturbo_4stem",
+            "mdxnet_kuielab_a",
+            "mdxnet_kuielab_b",
+            "bs_roformer_sw_6stem"
+          ]
+        },
+        "fallback_model": {
+          "type": "string",
+          "enum": [
+            "none",
+            "scnet_xl_ihf",
+            "scnet_xl",
+            "scnet_masked_xl_ihf",
+            "scnet_large",
+            "scnet_large_zfturbo",
+            "scnet_small",
+            "htdemucs",
+            "htdemucs_ft",
+            "bs_roformer_zfturbo_4stem",
+            "mdx23c_zfturbo_4stem",
+            "mdxnet_kuielab_a",
+            "mdxnet_kuielab_b",
+            "bs_roformer_sw_6stem"
+          ]
+        },
+        "probability": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "stemPlan_guitar": {
+      "type": "object",
+      "required": [
+        "primary_model",
+        "fallback_model",
+        "requested"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "requested": {
+          "type": "boolean"
+        },
+        "primary_model": {
+          "type": "string",
+          "enum": [
+            "none",
+            "bs_roformer_sw_6stem",
+            "htdemucs_6s",
+            "mel_roformer_guitar_becruily"
+          ]
+        },
+        "fallback_model": {
+          "type": "string",
+          "enum": [
+            "none",
+            "bs_roformer_sw_6stem",
+            "htdemucs_6s",
+            "mel_roformer_guitar_becruily"
+          ]
+        },
+        "probability": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "stemPlan_piano": {
+      "type": "object",
+      "required": [
+        "primary_model",
+        "fallback_model",
+        "requested"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "requested": {
+          "type": "boolean"
+        },
+        "primary_model": {
+          "type": "string",
+          "enum": [
+            "none",
+            "bs_roformer_sw_6stem",
+            "htdemucs_6s"
+          ]
+        },
+        "fallback_model": {
+          "type": "string",
+          "enum": [
+            "none",
+            "bs_roformer_sw_6stem",
+            "htdemucs_6s"
+          ]
+        },
+        "probability": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "stemPlan_other": {
+      "type": "object",
+      "required": [
+        "primary_model",
+        "fallback_model",
+        "requested"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "requested": {
+          "type": "boolean"
+        },
+        "primary_model": {
+          "type": "string",
+          "enum": [
+            "none",
+            "scnet_xl_ihf",
+            "scnet_xl",
+            "scnet_masked_xl_ihf",
+            "scnet_large",
+            "scnet_large_zfturbo",
+            "scnet_small",
+            "htdemucs",
+            "htdemucs_ft",
+            "bs_roformer_zfturbo_4stem",
+            "mdx23c_zfturbo_4stem",
+            "mdxnet_kuielab_a",
+            "mdxnet_kuielab_b",
+            "bs_roformer_viperx_other",
+            "bs_roformer_sw_6stem"
+          ]
+        },
+        "fallback_model": {
+          "type": "string",
+          "enum": [
+            "none",
+            "scnet_xl_ihf",
+            "scnet_xl",
+            "scnet_masked_xl_ihf",
+            "scnet_large",
+            "scnet_large_zfturbo",
+            "scnet_small",
+            "htdemucs",
+            "htdemucs_ft",
+            "bs_roformer_zfturbo_4stem",
+            "mdx23c_zfturbo_4stem",
+            "mdxnet_kuielab_a",
+            "mdxnet_kuielab_b",
+            "bs_roformer_viperx_other",
+            "bs_roformer_sw_6stem"
+          ]
+        },
+        "probability": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    }
+  }
+}

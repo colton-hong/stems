@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/stem-request/v1",
+  "title": "ParsedStemRequest",
+  "description": "Backend-validated result of parsing a user's natural-language stem-separation request. Assembled in code from Jev noul/choice answers; Jev never emits this JSON directly. Schema (a) of research report section 4, transcribed unchanged.",
+  "type": "object",
+  "required": ["request_id", "raw_text", "stems", "output_format", "quality_mode", "confidence", "needs_review"],
+  "additionalProperties": false,
+  "properties": {
+    "request_id": { "type": "string", "format": "uuid" },
+    "raw_text": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "stems": {
+      "type": "object",
+      "required": ["vocals", "drums", "bass", "guitar", "piano", "other"],
+      "additionalProperties": false,
+      "properties": {
+        "vocals": { "$ref": "#/$defs/stemChoice" },
+        "drums": { "$ref": "#/$defs/stemChoice" },
+        "bass": { "$ref": "#/$defs/stemChoice" },
+        "guitar": { "$ref": "#/$defs/stemChoice" },
+        "piano": { "$ref": "#/$defs/stemChoice" },
+        "other": { "$ref": "#/$defs/stemChoice" }
+      }
+    },
+    "vocal_split": { "type": "string", "enum": ["single_vocals", "lead_and_backing", "unspecified"], "default": "unspecified" },
+    "output_format": { "type": "string", "enum": ["wav", "flac", "mp3_320", "mp3_192", "unspecified"], "default": "unspecified" },
+    "quality_mode": { "type": "string", "enum": ["best_quality", "balanced", "fastest", "unspecified"], "default": "unspecified" },
+    "wanted_threshold": { "type": "number", "minimum": 0.5, "maximum": 1, "default": 0.7 },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1, "description": "Lowest confidence across the Jev questions used; drives needs_review." },
+    "needs_review": { "type": "boolean", "description": "True if confidence < 0.8, or no stem met the threshold, or the request is ambiguous/contradictory. If true, show parsed stems to the user for confirmation instead of starting separation." },
+    "review_reason": { "type": "string", "maxLength": 500 }
+  },
+  "$defs": {
+    "stemChoice": {
+      "type": "object",
+      "required": ["wanted", "probability"],
+      "additionalProperties": false,
+      "properties": {
+        "wanted": { "type": "boolean" },
+        "probability": { "type": "number", "minimum": 0, "maximum": 1 },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    }
+  }
+}

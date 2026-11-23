@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/stem-quality/v1",
+  "title": "StemQualityAssessment",
+  "description": "Schema (c) of research report section 4, transcribed unchanged. Its metrics object is the same as stem_metrics.schema.json (tests/test_decision_schemas.py checks that).",
+  "type": "object",
+  "required": ["job_id", "stem", "model_used", "metrics", "assessment", "verdict"],
+  "additionalProperties": false,
+  "properties": {
+    "job_id": { "type": "string", "format": "uuid" },
+    "stem": { "type": "string", "enum": ["vocals", "drums", "bass", "guitar", "piano", "other"] },
+    "model_used": { "type": "string", "minLength": 1 },
+    "metrics": {
+      "type": "object",
+      "required": ["duration_seconds", "rms_dbfs", "peak_dbfs", "silence_fraction"],
+      "additionalProperties": false,
+      "properties": {
+        "sdr_db": { "type": ["number", "null"], "description": "Null when no reference stem exists (normal for user uploads)." },
+        "sir_db": { "type": ["number", "null"] },
+        "sar_db": { "type": ["number", "null"] },
+        "duration_seconds": { "type": "number", "exclusiveMinimum": 0 },
+        "rms_dbfs": { "type": "number", "maximum": 0 },
+        "peak_dbfs": { "type": "number", "maximum": 0 },
+        "silence_fraction": { "type": "number", "minimum": 0, "maximum": 1, "description": "Fraction below -60 dBFS. Near 1.0 on a stem that should be present suggests failed separation." },
+        "bleed_estimate": {
+          "type": ["object", "null"],
+          "required": ["suspected_source", "level"],
+          "additionalProperties": false,
+          "properties": {
+            "suspected_source": { "type": "string", "enum": ["vocals", "drums", "bass", "guitar", "piano", "other", "none"] },
+            "level": { "type": "string", "enum": ["none", "slight", "moderate", "severe"] }
+          }
+        },
+        "tagger_notes": { "type": "string", "maxLength": 1000 }
+      }
+    },
+    "assessment": {
+      "type": "object",
+      "required": ["score", "score_label", "pass_probability", "confidence"],
+      "additionalProperties": false,
+      "properties": {
+        "score": { "type": "number", "minimum": 0, "maximum": 4 },
+        "score_label": { "type": "string", "enum": ["unusable", "poor", "acceptable", "good", "excellent"], "description": "0 unusable, 1 poor, 2 acceptable, 3 good, 4 excellent — these five strings are the Jev score criteria, in order." },
+        "pass_probability": { "type": "number", "minimum": 0, "maximum": 1 },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "reason_code": { "type": "string", "enum": ["clean", "bleed", "artifacts", "muffled_or_dull", "mostly_silent", "wrong_content", "low_confidence", "none"] }
+      }
+    },
+    "verdict": {
+      "type": "object",
+      "required": ["action", "deliver"],
+      "additionalProperties": false,
+      "properties": {
+        "deliver": { "type": "boolean", "description": "True only if pass_probability >= 0.8 AND score >= 2 AND confidence >= 0.7. Otherwise false." },
+        "action": { "type": "string", "enum": ["deliver", "retry_fallback_model", "retry_other_ensemble", "retry_with_dereverb", "flag_for_human_review", "deliver_with_warning"] },
+        "retry_model": { "type": ["string", "null"] },
+        "max_retries": { "type": "integer", "minimum": 0, "maximum": 2, "default": 1, "description": "Hard cap: never retry the same stem more than twice; after that, flag_for_human_review." },
+        "user_message": { "type": "string", "maxLength": 300 }
+      }
+    }
+  }
+}

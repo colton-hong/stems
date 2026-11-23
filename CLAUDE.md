@@ -64,6 +64,7 @@ make bench-device-spread   # repeat runs per device, then docs/benchmarks/device
 python -m stems_bench.clef.prereg   # show the committed Clef-omni pre-registration (.venv/bin/python)
 python -m stems_bench.clef.run      # run the Clef-omni test; --report FILE writes its report
 make registry           # validate models/registry.yaml and print it
+make schemas            # regenerate the EnsemblePlan schema's model lists after a registry edit
 make registry-sources   # HEAD every model URL and refresh sizes (network)
 make models-status      # which model files are downloaded or in progress
 make node-setup         # project-local Node.js into .tools/node (once per clone)
