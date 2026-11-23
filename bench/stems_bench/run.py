@@ -28,6 +28,7 @@ import os
 import subprocess
 import time
 from collections.abc import Callable, Sequence
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from importlib import metadata
@@ -338,22 +339,37 @@ def score_estimates(
 ) -> tuple[dict[str, Any], dict[str, str]]:
     """Score each estimate against its target. Returns (scored, reasons for the rest)."""
     mix = track.inputs[input_name]
-    scored: dict[str, Any] = {}
     unscored: dict[str, str] = {}
+    todo: list[tuple[str, str, np.ndarray, np.ndarray]] = []
     for name, estimate in estimates.items():
         target = targets[name]
         reference = track.references.get(target)
         if reference is None:
             unscored[name] = f"no {target!r} reference in this dataset"
-            continue
-        scored[name] = {
+        else:
+            todo.append((name, target, reference, estimate))
+
+    def score(item: tuple[str, str, np.ndarray, np.ndarray]) -> dict[str, Any]:
+        name, target, reference, estimate = item
+        return {
             "target": target,
             "derived": name in derived,
             "reference_present": bool(reference.any()),
             "bss": bss_eval_stem(reference, estimate, mix, track.sample_rate).as_dict(),
             "signal": compare(estimate, reference, track.sample_rate),
         }
+
+    # museval spends most of its time in FFTs and linear solves, which release the
+    # interpreter lock, so a few threads roughly halve the wait. The results are the same.
+    with ThreadPoolExecutor(max_workers=score_threads()) as pool:
+        results = list(pool.map(score, todo))
+    scored = {item[0]: result for item, result in zip(todo, results, strict=True)}
     return scored, unscored
+
+
+def score_threads() -> int:
+    """How many outputs are scored at once. Each costs a few GB on a full-length track."""
+    return max(1, int(os.environ.get("STEMS_BENCH_SCORE_THREADS", "3")))
 
 
 def score_outputs(
