@@ -19,6 +19,8 @@ All checks below were made on 2026-11-22 from this machine.
 | C9 | §6: Modal GPU functions are preemptible "with no non-preemptible opt-out". | The pricing page lists "Non-preemptible execution: 3x base prices". Whether that option covers GPU functions was not confirmed. | https://modal.com/pricing | The Modal worker must tolerate preemption regardless (idempotent, resumable jobs). |
 | C10 | §5: self-hosted Clef-omni is "~64 GB BF16". | The weight files on Hugging Face total about 70.7 GB (65.9 GiB): 15 shards plus a 218 MB decision head. | https://huggingface.co/api/models/Cloudflare/clef-omni/tree/main | None. We never download them. |
 | C11 | §4: Python SDK version 0.7.5 is "secondary, unverified". | `typesafe-sdk` 0.7.5 is the current release on PyPI. | `pip index versions typesafe-sdk` | None yet. Phase 4 decides between the SDK and plain HTTP. |
+| C12 | Brief and §9: MUSDB18-HQ needs an access request. | The Zenodo record is open: `musdb18hq.zip`, 22,656,664,047 bytes, MD5 `12d4f2ecd55245a4688754dd76363103`, downloads without an account. Its licence is still "educational purposes only", no commercial use. | https://zenodo.org/records/3338373, read 2026-11-22 |
+| C13 | §9: MoisesDB download size "not verified"; access by request. | `moisesdb.zip` is 88,822,120,667 bytes. The form at music.ai/research (name, e-mail, organization, justification) returns a download link at once, valid for 7 days; no approval step was seen. The dataset's README gives SHA-256 `4cde33ce416ac7c868cffcb60eb31f5c741ab7ae5601cbb9d99ed498b72c48c1`. | Form submitted for the owner on 2026-11-22; size from the storage server's `Content-Range`; hash from github.com/moises-ai/moises-db README at commit 1fbc5c78 |
 
 ## Report items that are still unverified
 

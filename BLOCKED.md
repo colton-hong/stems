@@ -1,7 +1,9 @@
 # BLOCKED
 
 Things only you can provide, in the order the build will need them. **B2 and B3 (the two
-datasets) are what Phase 2 is now waiting for**: everything else in it is done. When you resolve an item, delete it or mark it done, and the next loop iteration
+datasets) are being downloaded** (started 2026-11-22 at the owner's request, into
+`~/Datasets/`): MUSDB18-HQ is open on Zenodo after all, and MoisesDB's form returned a link
+at once. When both are unpacked and verified the rows below are removed. When you resolve an item, delete it or mark it done, and the next loop iteration
 picks up the tasks it unblocks.
 
 Rule for loop iterations: if a task needs something on this list, skip it and take the next

@@ -29,7 +29,10 @@ was wrong. Where the report and `PLAN.md` disagree, `PLAN.md` wins.
 - Do not sign up for, buy or submit anything. Accounts, keys, dataset access and quota
   requests are the owner's. Read keys from environment variables. Never commit secrets or
   print them in logs.
-- Do not try to obtain MUSDB18-HQ or MoisesDB. Read them from the paths in `.env`.
+- Datasets are read from the paths in `.env`. On 2026-11-22 the owner asked for MUSDB18-HQ
+  and MoisesDB to be downloaded for them, and confirmed what went on MoisesDB's request
+  form. They live in `~/Datasets/`, outside the repo. That covers those two only: do not
+  obtain any other dataset or request any other access without being asked.
 - Never commit model weights, dataset audio or any real music. Tests and examples use the
   synthetic fixture only.
 - The Jev model is always the pinned `jev-1.14.0`, never an alias. Every Jev-driven
