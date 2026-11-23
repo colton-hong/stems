@@ -83,11 +83,41 @@ class DecisionSettings(_Strict):
         return self
 
 
+BleedLevel = Literal["none", "slight", "moderate", "severe"]
+
+
+class GateRules(_Strict):
+    """The rule-based scorer that assesses a stem when Jev does not. Uncalibrated (P7.1)."""
+
+    # A stem at least this silent is "mostly_silent" and scores 0.
+    silent_fraction_min: float = Field(ge=0, le=1)
+    # Score on the 0-4 rubric for each bleed level the tagger estimated.
+    bleed_scores: dict[BleedLevel, float]
+    # Ceiling on the score when the stem's own source is not heard in it.
+    not_heard_score: float = Field(ge=0, le=4)
+    # Score when nothing listened to the stem, and ceiling when the tagger could not tell
+    # whether the stem's own source is there.
+    unchecked_score: float = Field(ge=0, le=4)
+    # Confidence of a verdict that rests on tagger thresholds not yet calibrated.
+    uncalibrated_confidence: float = Field(ge=0, le=1)
+
+    @model_validator(mode="after")
+    def _check(self) -> GateRules:
+        levels = ("none", "slight", "moderate", "severe")
+        if set(self.bleed_scores) != set(levels):
+            raise ValueError(f"bleed_scores needs exactly {list(levels)}")
+        scores = [self.bleed_scores[level] for level in levels]
+        if scores != sorted(scores, reverse=True) or not 0 <= scores[-1] <= scores[0] <= 4:
+            raise ValueError("bleed_scores must fall from none to severe, within 0 to 4")
+        return self
+
+
 class GateSettings(_Strict):
     pass_probability_min: float = Field(ge=0, le=1)
     score_min: float = Field(ge=0, le=4)
     confidence_min: float = Field(ge=0, le=1)
     max_retries_per_stem: int = Field(ge=0, le=2)
+    rules: GateRules
 
 
 class PresenceSettings(_Strict):

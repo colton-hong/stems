@@ -61,6 +61,24 @@ gate:
   score_min: 2
   confidence_min: 0.7
   max_retries_per_stem: 2
+  # The rule-based scorer, which assesses a stem when Jev is absent, failing or unsure.
+  # UNCALIBRATED first guesses, like the listening thresholds they sit on (P7.1).
+  rules:
+    # A stem at least this silent is "mostly_silent" and scores 0. This one is a level
+    # measurement, so it is acted on whether or not the tagger is calibrated.
+    silent_fraction_min: 0.98
+    # Score on the 0-4 rubric for each bleed level the tagger estimated on the stem.
+    bleed_scores: {none: 3, slight: 2, moderate: 1, severe: 0}
+    # Ceiling on the score when the stem's own instrument is not heard in it.
+    not_heard_score: 1
+    # Score when nothing listened to the stem (no tagger), and ceiling when the tagger
+    # could not tell whether the stem's own instrument is there.
+    unchecked_score: 2
+    # Confidence given to a verdict that rests on tagger thresholds while
+    # listening.calibrated is false. It is below confidence_min on purpose: until the
+    # thresholds are measured the gate does not act on them, and the stem is delivered
+    # with a warning instead of being retried.
+    uncalibrated_confidence: 0.5
 
 # How tagger outputs (AudioSet class probabilities per 10-second window) become
 # track_features and per-stem signals. UNCALIBRATED: these values are first guesses, not
