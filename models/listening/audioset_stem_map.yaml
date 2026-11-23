@@ -1,0 +1,122 @@
+# Which AudioSet classes count as evidence for which stem.
+#
+# A tagger that outputs AudioSet's 527 class probabilities (BEATs) is turned into six
+# presence scores with this table: a stem's score is the largest probability among its
+# classes. Classes are named exactly as in audioset_class_labels.csv, which is AudioSet's
+# own class_labels_indices.csv (storage.googleapis.com/us_audioset/youtube_corpus/v1/csv/,
+# fetched 2026-11-22; the ontology is CC BY 4.0).
+#
+# Basis: research report section 5 ("Singing/Speech -> vocals; Drum/Drum kit -> drums;
+# Bass guitar -> bass; Electric/Acoustic guitar -> guitar; Piano -> piano; Other = max over
+# remaining pitched-instrument classes"), widened to the neighbouring classes of each.
+# "other" also takes unpitched percussion that is not a drum kit, which is where MoisesDB's
+# own six-stem grouping puts it.
+#
+# This file is part of the Clef-omni test's pre-registration: it is fixed before any
+# request is made, and its hash goes into the test's log. Bump `version` on any change.
+version: 1
+labels_file: audioset_class_labels.csv
+labels_sha256: cdd1049833c4b86127c2773ac0d14a2754b6a6d0d1798002ed5c66e699708429
+combine: max
+stems:
+  vocals:
+    - Speech
+    - Male speech, man speaking
+    - Female speech, woman speaking
+    - Singing
+    - Male singing
+    - Female singing
+    - Child singing
+    - Synthetic singing
+    - Choir
+    - Rapping
+    - Humming
+    - Yodeling
+    - Chant
+  drums:
+    - Drum kit
+    - Drum
+    - Drum machine
+    - Snare drum
+    - Bass drum
+    - Rimshot
+    - Drum roll
+    - Cymbal
+    - Hi-hat
+  bass:
+    - Bass guitar
+    - Double bass
+  guitar:
+    - Guitar
+    - Electric guitar
+    - Acoustic guitar
+    - Steel guitar, slide guitar
+    - Tapping (guitar technique)
+    - Strum
+  piano:
+    - Piano
+    - Electric piano
+  other:
+    - Banjo
+    - Sitar
+    - Mandolin
+    - Zither
+    - Ukulele
+    - Organ
+    - Electronic organ
+    - Hammond organ
+    - Synthesizer
+    - Sampler
+    - Harpsichord
+    - Timpani
+    - Tabla
+    - Wood block
+    - Tambourine
+    - Rattle (instrument)
+    - Maraca
+    - Gong
+    - Tubular bells
+    - Mallet percussion
+    - Marimba, xylophone
+    - Glockenspiel
+    - Vibraphone
+    - Steelpan
+    - Orchestra
+    - Brass instrument
+    - French horn
+    - Trumpet
+    - Trombone
+    - Bowed string instrument
+    - String section
+    - Violin, fiddle
+    - Pizzicato
+    - Cello
+    - Wind instrument, woodwind instrument
+    - Flute
+    - Saxophone
+    - Clarinet
+    - Harp
+    - Harmonica
+    - Accordion
+    - Bagpipes
+    - Didgeridoo
+    - Theremin
+    - Singing bowl
+    - Scratching (performance technique)
+# Instrument-family classes deliberately left out, with the reason. Every class from
+# "Music" to "Scratching" in the label list is either mapped above or listed here.
+unmapped:
+  Music: says only that there is music
+  Musical instrument: any instrument at all
+  Plucked string instrument: guitar, bass or something else
+  Keyboard (musical): piano, organ or synthesizer
+  Percussion: drum kit or hand percussion
+  Bell: not a band instrument
+  Church bell: not a band instrument
+  Jingle bell: not a band instrument
+  Bicycle bell: not a band instrument
+  Tuning fork: not a band instrument
+  Chime: not a band instrument
+  Wind chime: not a band instrument
+  Change ringing (campanology): not a band instrument
+  Shofar: not a band instrument
