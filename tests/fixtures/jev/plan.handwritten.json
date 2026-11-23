@@ -1,0 +1,405 @@
+{
+ "about": "Hand-written answers in Jev's wire format, for tests of how answers are mapped to an EnsemblePlan. They are not recordings of Jev and say nothing about which model Jev would pick; real recordings come with P4.9. The request body is built by the test from the current registry and question wording. Regenerate after a registry change that adds or removes a candidate (the probabilities must cover every option).",
+ "origin": "handwritten",
+ "track_features": {
+  "duration_seconds": 200.0,
+  "sample_rate_hz": 44100,
+  "channels": 2,
+  "vocal_presence": "lead_vocals",
+  "detected_instruments": [
+   "vocals",
+   "drums",
+   "bass"
+  ],
+  "genre_hint": "Rock music",
+  "reverb_estimate": null,
+  "loudness_lufs": -9.5
+ },
+ "cases": {
+  "confident": {
+   "stems": [
+    "vocals",
+    "drums"
+   ],
+   "quality_mode": "unspecified",
+   "dereverb": false,
+   "answers": {
+    "model.vocals": {
+     "type": "choice",
+     "choice": "bs_roformer_viperx_vocals",
+     "confidence": 0.86,
+     "probabilities": {
+      "mel_roformer_kim_vocals": 0.105,
+      "bs_roformer_viperx_vocals": 0.86,
+      "bs_polarformer_vocals": 0.001458,
+      "mel_roformer_viperx_vocals": 0.001458,
+      "mdx23c_vocals_zfturbo": 0.001458,
+      "uvr_mdx23c_instvoc_hq": 0.001458,
+      "uvr_mdxnet_voc_ft": 0.001458,
+      "uvr_mdxnet_main": 0.001458,
+      "uvr_mdxnet_inst_hq_1": 0.001458,
+      "uvr_mdxnet_inst_hq_2": 0.001458,
+      "uvr_mdxnet_inst_hq_3": 0.001458,
+      "uvr_mdxnet_inst_hq_4": 0.001458,
+      "uvr_mdxnet_inst_hq_5": 0.001458,
+      "scnet_xl_ihf": 0.001458,
+      "scnet_xl": 0.001458,
+      "scnet_masked_xl_ihf": 0.001458,
+      "scnet_large": 0.001458,
+      "scnet_large_zfturbo": 0.001458,
+      "scnet_small": 0.001458,
+      "htdemucs": 0.001458,
+      "htdemucs_ft": 0.001458,
+      "bs_roformer_zfturbo_4stem": 0.001458,
+      "mdx23c_zfturbo_4stem": 0.001458,
+      "mdxnet_kuielab_a": 0.001458,
+      "mdxnet_kuielab_b": 0.001458,
+      "bs_roformer_sw_6stem": 0.001458
+     }
+    },
+    "model.drums": {
+     "type": "choice",
+     "choice": "htdemucs_ft",
+     "confidence": 0.82,
+     "probabilities": {
+      "scnet_xl_ihf": 0.135,
+      "scnet_xl": 0.004091,
+      "scnet_masked_xl_ihf": 0.004091,
+      "scnet_large": 0.004091,
+      "scnet_large_zfturbo": 0.004091,
+      "scnet_small": 0.004091,
+      "htdemucs": 0.004091,
+      "htdemucs_ft": 0.82,
+      "bs_roformer_zfturbo_4stem": 0.004091,
+      "mdx23c_zfturbo_4stem": 0.004091,
+      "mdxnet_kuielab_a": 0.004091,
+      "mdxnet_kuielab_b": 0.004091,
+      "bs_roformer_sw_6stem": 0.004091
+     }
+    },
+    "ensemble": {
+     "type": "noul",
+     "noul": 0.08
+    }
+   }
+  },
+  "unsure_drums": {
+   "stems": [
+    "vocals",
+    "drums"
+   ],
+   "quality_mode": "best_quality",
+   "dereverb": false,
+   "answers": {
+    "model.vocals": {
+     "type": "choice",
+     "choice": "mel_roformer_kim_vocals",
+     "confidence": 0.9,
+     "probabilities": {
+      "mel_roformer_kim_vocals": 0.9,
+      "bs_roformer_viperx_vocals": 0.075,
+      "bs_polarformer_vocals": 0.001042,
+      "mel_roformer_viperx_vocals": 0.001042,
+      "mdx23c_vocals_zfturbo": 0.001042,
+      "uvr_mdx23c_instvoc_hq": 0.001042,
+      "uvr_mdxnet_voc_ft": 0.001042,
+      "uvr_mdxnet_main": 0.001042,
+      "uvr_mdxnet_inst_hq_1": 0.001042,
+      "uvr_mdxnet_inst_hq_2": 0.001042,
+      "uvr_mdxnet_inst_hq_3": 0.001042,
+      "uvr_mdxnet_inst_hq_4": 0.001042,
+      "uvr_mdxnet_inst_hq_5": 0.001042,
+      "scnet_xl_ihf": 0.001042,
+      "scnet_xl": 0.001042,
+      "scnet_masked_xl_ihf": 0.001042,
+      "scnet_large": 0.001042,
+      "scnet_large_zfturbo": 0.001042,
+      "scnet_small": 0.001042,
+      "htdemucs": 0.001042,
+      "htdemucs_ft": 0.001042,
+      "bs_roformer_zfturbo_4stem": 0.001042,
+      "mdx23c_zfturbo_4stem": 0.001042,
+      "mdxnet_kuielab_a": 0.001042,
+      "mdxnet_kuielab_b": 0.001042,
+      "bs_roformer_sw_6stem": 0.001042
+     }
+    },
+    "model.drums": {
+     "type": "choice",
+     "choice": "htdemucs_ft",
+     "confidence": 0.41,
+     "probabilities": {
+      "scnet_xl_ihf": 0.4125,
+      "scnet_xl": 0.0125,
+      "scnet_masked_xl_ihf": 0.0125,
+      "scnet_large": 0.0125,
+      "scnet_large_zfturbo": 0.0125,
+      "scnet_small": 0.0125,
+      "htdemucs": 0.0125,
+      "htdemucs_ft": 0.45,
+      "bs_roformer_zfturbo_4stem": 0.0125,
+      "mdx23c_zfturbo_4stem": 0.0125,
+      "mdxnet_kuielab_a": 0.0125,
+      "mdxnet_kuielab_b": 0.0125,
+      "bs_roformer_sw_6stem": 0.0125
+     }
+    },
+    "ensemble": {
+     "type": "noul",
+     "noul": 0.12
+    }
+   }
+  },
+  "all_unsure": {
+   "stems": [
+    "bass"
+   ],
+   "quality_mode": "balanced",
+   "dereverb": false,
+   "answers": {
+    "model.bass": {
+     "type": "choice",
+     "choice": "scnet_xl",
+     "confidence": 0.35,
+     "probabilities": {
+      "scnet_xl_ihf": 0.013636,
+      "scnet_xl": 0.4,
+      "scnet_masked_xl_ihf": 0.013636,
+      "scnet_large": 0.013636,
+      "scnet_large_zfturbo": 0.013636,
+      "scnet_small": 0.013636,
+      "htdemucs": 0.013636,
+      "htdemucs_ft": 0.45,
+      "bs_roformer_zfturbo_4stem": 0.013636,
+      "mdx23c_zfturbo_4stem": 0.013636,
+      "mdxnet_kuielab_a": 0.013636,
+      "mdxnet_kuielab_b": 0.013636,
+      "bs_roformer_sw_6stem": 0.013636
+     }
+    },
+    "ensemble": {
+     "type": "noul",
+     "noul": 0.55
+    }
+   }
+  },
+  "best_quality_blend": {
+   "stems": [
+    "vocals",
+    "drums",
+    "bass",
+    "guitar",
+    "piano",
+    "other"
+   ],
+   "quality_mode": "best_quality",
+   "dereverb": false,
+   "answers": {
+    "model.vocals": {
+     "type": "choice",
+     "choice": "mel_roformer_kim_vocals",
+     "confidence": 0.91,
+     "probabilities": {
+      "mel_roformer_kim_vocals": 0.91,
+      "bs_roformer_viperx_vocals": 0.0675,
+      "bs_polarformer_vocals": 0.000937,
+      "mel_roformer_viperx_vocals": 0.000937,
+      "mdx23c_vocals_zfturbo": 0.000937,
+      "uvr_mdx23c_instvoc_hq": 0.000937,
+      "uvr_mdxnet_voc_ft": 0.000937,
+      "uvr_mdxnet_main": 0.000937,
+      "uvr_mdxnet_inst_hq_1": 0.000937,
+      "uvr_mdxnet_inst_hq_2": 0.000937,
+      "uvr_mdxnet_inst_hq_3": 0.000937,
+      "uvr_mdxnet_inst_hq_4": 0.000937,
+      "uvr_mdxnet_inst_hq_5": 0.000937,
+      "scnet_xl_ihf": 0.000937,
+      "scnet_xl": 0.000937,
+      "scnet_masked_xl_ihf": 0.000937,
+      "scnet_large": 0.000937,
+      "scnet_large_zfturbo": 0.000937,
+      "scnet_small": 0.000937,
+      "htdemucs": 0.000937,
+      "htdemucs_ft": 0.000937,
+      "bs_roformer_zfturbo_4stem": 0.000937,
+      "mdx23c_zfturbo_4stem": 0.000937,
+      "mdxnet_kuielab_a": 0.000937,
+      "mdxnet_kuielab_b": 0.000937,
+      "bs_roformer_sw_6stem": 0.000937
+     }
+    },
+    "model.drums": {
+     "type": "choice",
+     "choice": "scnet_xl_ihf",
+     "confidence": 0.88,
+     "probabilities": {
+      "scnet_xl_ihf": 0.88,
+      "scnet_xl": 0.002727,
+      "scnet_masked_xl_ihf": 0.002727,
+      "scnet_large": 0.002727,
+      "scnet_large_zfturbo": 0.002727,
+      "scnet_small": 0.002727,
+      "htdemucs": 0.002727,
+      "htdemucs_ft": 0.09,
+      "bs_roformer_zfturbo_4stem": 0.002727,
+      "mdx23c_zfturbo_4stem": 0.002727,
+      "mdxnet_kuielab_a": 0.002727,
+      "mdxnet_kuielab_b": 0.002727,
+      "bs_roformer_sw_6stem": 0.002727
+     }
+    },
+    "model.bass": {
+     "type": "choice",
+     "choice": "htdemucs_ft",
+     "confidence": 0.85,
+     "probabilities": {
+      "scnet_xl_ihf": 0.003409,
+      "scnet_xl": 0.003409,
+      "scnet_masked_xl_ihf": 0.003409,
+      "scnet_large": 0.003409,
+      "scnet_large_zfturbo": 0.003409,
+      "scnet_small": 0.003409,
+      "htdemucs": 0.003409,
+      "htdemucs_ft": 0.85,
+      "bs_roformer_zfturbo_4stem": 0.003409,
+      "mdx23c_zfturbo_4stem": 0.003409,
+      "mdxnet_kuielab_a": 0.003409,
+      "mdxnet_kuielab_b": 0.003409,
+      "bs_roformer_sw_6stem": 0.1125
+     }
+    },
+    "model.guitar": {
+     "type": "choice",
+     "choice": "bs_roformer_sw_6stem",
+     "confidence": 0.9,
+     "probabilities": {
+      "bs_roformer_sw_6stem": 0.9,
+      "htdemucs_6s": 0.025,
+      "mel_roformer_guitar_becruily": 0.075
+     }
+    },
+    "model.piano": {
+     "type": "choice",
+     "choice": "bs_roformer_sw_6stem",
+     "confidence": 0.93,
+     "probabilities": {
+      "bs_roformer_sw_6stem": 0.93,
+      "htdemucs_6s": 0.0525
+     }
+    },
+    "model.other": {
+     "type": "choice",
+     "choice": "scnet_xl_ihf",
+     "confidence": 0.84,
+     "probabilities": {
+      "scnet_xl_ihf": 0.84,
+      "scnet_xl": 0.003333,
+      "scnet_masked_xl_ihf": 0.003333,
+      "scnet_large": 0.12,
+      "scnet_large_zfturbo": 0.003333,
+      "scnet_small": 0.003333,
+      "htdemucs": 0.003333,
+      "htdemucs_ft": 0.003333,
+      "bs_roformer_zfturbo_4stem": 0.003333,
+      "mdx23c_zfturbo_4stem": 0.003333,
+      "mdxnet_kuielab_a": 0.003333,
+      "mdxnet_kuielab_b": 0.003333,
+      "bs_roformer_viperx_other": 0.003333,
+      "bs_roformer_sw_6stem": 0.003333
+     }
+    },
+    "ensemble": {
+     "type": "noul",
+     "noul": 0.93
+    }
+   }
+  },
+  "balanced_blend": {
+   "stems": [
+    "drums"
+   ],
+   "quality_mode": "balanced",
+   "dereverb": false,
+   "answers": {
+    "model.drums": {
+     "type": "choice",
+     "choice": "scnet_xl_ihf",
+     "confidence": 0.9,
+     "probabilities": {
+      "scnet_xl_ihf": 0.9,
+      "scnet_xl": 0.002273,
+      "scnet_masked_xl_ihf": 0.002273,
+      "scnet_large": 0.002273,
+      "scnet_large_zfturbo": 0.002273,
+      "scnet_small": 0.002273,
+      "htdemucs": 0.002273,
+      "htdemucs_ft": 0.075,
+      "bs_roformer_zfturbo_4stem": 0.002273,
+      "mdx23c_zfturbo_4stem": 0.002273,
+      "mdxnet_kuielab_a": 0.002273,
+      "mdxnet_kuielab_b": 0.002273,
+      "bs_roformer_sw_6stem": 0.002273
+     }
+    },
+    "ensemble": {
+     "type": "noul",
+     "noul": 0.9
+    }
+   }
+  },
+  "dereverb": {
+   "stems": [
+    "vocals"
+   ],
+   "quality_mode": "fastest",
+   "dereverb": true,
+   "answers": {
+    "model.vocals": {
+     "type": "choice",
+     "choice": "mel_roformer_kim_vocals",
+     "confidence": 0.95,
+     "probabilities": {
+      "mel_roformer_kim_vocals": 0.95,
+      "bs_roformer_viperx_vocals": 0.0375,
+      "bs_polarformer_vocals": 0.000521,
+      "mel_roformer_viperx_vocals": 0.000521,
+      "mdx23c_vocals_zfturbo": 0.000521,
+      "uvr_mdx23c_instvoc_hq": 0.000521,
+      "uvr_mdxnet_voc_ft": 0.000521,
+      "uvr_mdxnet_main": 0.000521,
+      "uvr_mdxnet_inst_hq_1": 0.000521,
+      "uvr_mdxnet_inst_hq_2": 0.000521,
+      "uvr_mdxnet_inst_hq_3": 0.000521,
+      "uvr_mdxnet_inst_hq_4": 0.000521,
+      "uvr_mdxnet_inst_hq_5": 0.000521,
+      "scnet_xl_ihf": 0.000521,
+      "scnet_xl": 0.000521,
+      "scnet_masked_xl_ihf": 0.000521,
+      "scnet_large": 0.000521,
+      "scnet_large_zfturbo": 0.000521,
+      "scnet_small": 0.000521,
+      "htdemucs": 0.000521,
+      "htdemucs_ft": 0.000521,
+      "bs_roformer_zfturbo_4stem": 0.000521,
+      "mdx23c_zfturbo_4stem": 0.000521,
+      "mdxnet_kuielab_a": 0.000521,
+      "mdxnet_kuielab_b": 0.000521,
+      "bs_roformer_sw_6stem": 0.000521
+     }
+    },
+    "dereverb": {
+     "type": "choice",
+     "choice": "mel_roformer_dereverb_echo_sucial",
+     "confidence": 0.9,
+     "probabilities": {
+      "mel_roformer_dereverb_anvuew": 0.075,
+      "mel_roformer_dereverb_echo_sucial": 0.9,
+      "uvr_vr_deecho_dereverb": 0.008333,
+      "uvr_vr_deecho_normal": 0.008333,
+      "uvr_vr_deecho_aggressive": 0.008333
+     }
+    }
+   }
+  }
+ }
+}

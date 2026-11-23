@@ -18,6 +18,8 @@ EnsembleMode = Literal["single_best", "two_model_blend", "full_ensemble"]
 # How the members of a blend are combined (stems_worker.ensemble).
 BlendMethod = Literal["waveform", "stft_magnitude", "stft_min", "stft_max"]
 OutputFormat = Literal["wav", "flac", "mp3_320", "mp3_192"]
+QualityTarget = Literal["fastest", "balanced", "best_quality"]
+QUALITY_TARGETS: tuple[str, ...] = ("fastest", "balanced", "best_quality")
 
 ENSEMBLE_SLOTS: tuple[str, ...] = (
     "vocals",
@@ -71,6 +73,14 @@ class DecisionSettings(_Strict):
     backoff_seconds: float = Field(gt=0)
     # A retry-after longer than this ends the call and the fallback answers instead.
     max_retry_wait_seconds: float = Field(gt=0)
+    # The ensemble mode planned for each quality target when Jev does not decide it.
+    mode_for_quality: dict[QualityTarget, EnsembleMode]
+
+    @model_validator(mode="after")
+    def _check(self) -> DecisionSettings:
+        if set(self.mode_for_quality) != set(QUALITY_TARGETS):
+            raise ValueError(f"mode_for_quality needs exactly {sorted(QUALITY_TARGETS)}")
+        return self
 
 
 class GateSettings(_Strict):

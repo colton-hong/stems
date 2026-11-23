@@ -47,6 +47,13 @@ decision:
   backoff_seconds: 0.5
   # A retry-after longer than this is not waited out: the rule-based fallback answers.
   max_retry_wait_seconds: 30
+  # Planning without Jev: the ensemble mode for each quality target. "balanced" (also
+  # used when the request names no quality) should follow the benchmark's recommendation
+  # once P2.13 has one; until then it is a single model, like ensembles.default_mode.
+  mode_for_quality:
+    fastest: single_best
+    balanced: single_best
+    best_quality: full_ensemble
 
 # Quality gate (project decision 8). Uncalibrated: tuned on benchmark data in Phase 7.
 gate:
