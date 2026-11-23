@@ -115,6 +115,35 @@ BLEED_SCORE_QUESTION = (
 LEAD_BACKING_QUESTION = "Which vocals are audible in this clip?"
 REVERB_QUESTION = "Is there audible reverberation on {target} in this clip?"
 
+# How the questions are put to Clef-omni. One clip per request, so no question has to say
+# which clip it is about.
+REQUEST: dict[str, Any] = {
+    "state": "The attached audio clip is an excerpt of a music recording. "
+    "Answer from what is audible in the clip.",
+    "clips_per_request": 1,
+    "A": {
+        "clip": "the mix excerpt",
+        "question_ids": {stem: f"present.{stem}" for stem in PRODUCT_STEMS},
+    },
+    "lead_backing": {"clip": "the isolated vocals excerpt", "question_ids": ["lead_backing"]},
+    "B": {
+        "clip": "each clean and each bleed clip, on its own",
+        "question_ids": ["bleed.any", "bleed.score"],
+    },
+    "reverb": {
+        "clip": "each reverb clip, and separately the clean clip it was made from",
+        "question_ids": ["reverb"],
+    },
+}
+AMENDMENTS = [
+    {
+        "date": "2026-11-23",
+        "what": "Added clef_omni.request: the state text, one clip per request, and the "
+        "question ids. Nothing else changed.",
+        "before_any_request": True,
+    }
+]
+
 
 class PreregError(RuntimeError):
     pass
@@ -214,6 +243,7 @@ def build(
             },
             "reverb": {"type": "noul", "text": REVERB_QUESTION},
             "target_names": TARGET_NAMES,
+            "request": REQUEST,
         },
         "beats": {
             "windows": "three consecutive 10-second windows of the excerpt; class "
@@ -242,6 +272,7 @@ def build(
             "differences of a point or two between the models: 300 decisions give about "
             "4 points of precision on A1, hence the 5-point margin in C",
         ],
+        "amendments": AMENDMENTS,
         "plan": plan,
     }
 

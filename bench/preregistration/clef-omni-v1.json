@@ -83,6 +83,40 @@
       "guitar": "the guitar",
       "piano": "the piano",
       "other": "the named instrument"
+    },
+    "request": {
+      "state": "The attached audio clip is an excerpt of a music recording. Answer from what is audible in the clip.",
+      "clips_per_request": 1,
+      "A": {
+        "clip": "the mix excerpt",
+        "question_ids": {
+          "vocals": "present.vocals",
+          "drums": "present.drums",
+          "bass": "present.bass",
+          "guitar": "present.guitar",
+          "piano": "present.piano",
+          "other": "present.other"
+        }
+      },
+      "lead_backing": {
+        "clip": "the isolated vocals excerpt",
+        "question_ids": [
+          "lead_backing"
+        ]
+      },
+      "B": {
+        "clip": "each clean and each bleed clip, on its own",
+        "question_ids": [
+          "bleed.any",
+          "bleed.score"
+        ]
+      },
+      "reverb": {
+        "clip": "each reverb clip, and separately the clean clip it was made from",
+        "question_ids": [
+          "reverb"
+        ]
+      }
     }
   },
   "beats": {
@@ -188,6 +222,13 @@
     "anything above 8 kHz: both models hear 16 kHz audio",
     "stereo bleed: the clips are mono",
     "differences of a point or two between the models: 300 decisions give about 4 points of precision on A1, hence the 5-point margin in C"
+  ],
+  "amendments": [
+    {
+      "date": "2026-11-23",
+      "what": "Added clef_omni.request: the state text, one clip per request, and the question ids. Nothing else changed.",
+      "before_any_request": true
+    }
   ],
   "plan": {
     "dataset": "moisesdb_subset",

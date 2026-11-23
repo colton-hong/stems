@@ -74,6 +74,10 @@ def test_the_built_file_is_plain_reproducible_data(built):
         "+6 dB SIR": 4,
     }
     assert built["clef_omni"]["lead_backing"]["options"] == list(c.LEAD_BACKING_ANSWERS)
+    request = built["clef_omni"]["request"]
+    assert request["clips_per_request"] == 1
+    assert request["A"]["question_ids"]["piano"] == "present.piano"
+    assert list(built)[-1] == "plan"
 
 
 def test_counts_describe_the_plan(built):
@@ -124,6 +128,9 @@ def test_the_committed_file_matches_the_code_and_the_frozen_inputs():
     assert data["decision_rule"] == prereg.DECISION_RULE
     assert data["clef_omni"]["presence_questions"]["per_stem"] == prereg.PRESENCE_QUESTIONS
     assert data["clef_omni"]["bleed_score"]["legend"] == list(prereg.BLEED_LEGEND)
+    assert data["clef_omni"]["request"] == prereg.REQUEST
+    assert data["amendments"] == prereg.AMENDMENTS
+    assert all(a["before_any_request"] for a in data["amendments"])
     stem_map = default_stem_map()
     assert data["class_to_stem"]["sha256"] == stem_map.sha256
     assert data["class_to_stem"]["labels_sha256"] == stem_map.labels.sha256
