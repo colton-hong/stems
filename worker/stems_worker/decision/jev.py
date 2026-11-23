@@ -313,7 +313,8 @@ class JevResult:
     request_sha256: str
 
 
-def _retryable(status: int) -> bool:
+def is_retryable(status: int) -> bool:
+    """Whether a reply with this status is asked again: 408, 429 and any 5xx."""
     return status in (408, 429) or 500 <= status <= 599
 
 
@@ -421,7 +422,7 @@ class JevClient:
                         error = e
                     break
                 error = JevError(f"HTTP {reply.status}: {str(reply.payload)[:300]}")
-                if not _retryable(reply.status):
+                if not is_retryable(reply.status):
                     break
                 wait = retry_after_seconds(reply.headers)
                 if wait is not None:
