@@ -38,7 +38,12 @@ decision:
   # Below this confidence a Jev answer is ignored and the rule-based fallback is used.
   min_confidence: 0.8
   request_timeout_seconds: 10
+  # Attempts per call in all. 429, 5xx, timeouts and network errors are retried.
   max_attempts: 3
+  # Wait before the first retry, doubling each time, unless the reply carries retry-after.
+  backoff_seconds: 0.5
+  # A retry-after longer than this is not waited out: the rule-based fallback answers.
+  max_retry_wait_seconds: 30
 
 # Quality gate (project decision 8). Uncalibrated: tuned on benchmark data in Phase 7.
 gate:

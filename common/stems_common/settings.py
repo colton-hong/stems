@@ -65,6 +65,10 @@ class DecisionSettings(_Strict):
     min_confidence: float = Field(ge=0, le=1)
     request_timeout_seconds: float = Field(gt=0)
     max_attempts: int = Field(ge=1)
+    # Wait before the first retry; it doubles each time. A reply's retry-after replaces it.
+    backoff_seconds: float = Field(gt=0)
+    # A retry-after longer than this ends the call and the fallback answers instead.
+    max_retry_wait_seconds: float = Field(gt=0)
 
 
 class GateSettings(_Strict):
