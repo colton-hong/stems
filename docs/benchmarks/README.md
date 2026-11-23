@@ -8,10 +8,10 @@ anywhere: other people's numbers were measured under other protocols and are not
 |---|---|---|
 | `synthetic.md` | Every separator and every blend on the synthetic set | `make bench-synthetic` |
 | `device-spread-synthetic.md` | The same models run twice per device, and across devices | `make bench-device-spread` |
-| `musdb18hq.md` | MUSDB18-HQ test | **Not run.** Needs the dataset (BLOCKED.md B2) |
-| `moisesdb.md` | The frozen MoisesDB subset | **Not run.** Needs the dataset (BLOCKED.md B3) |
+| `musdb18hq.md` | MUSDB18-HQ test, 50 tracks. So far the 14 models named in `config/defaults.yaml` and the blends of them, on MPS (run `musdb18hq-v1`, finished 2026-11-23). The other separators are added by a later stage of `tools/run_real_benchmarks.sh`, which rewrites the file | `bench run --dataset musdb18hq_test --run-id musdb18hq-v1 --ensembles`, then `bench report` |
+| `moisesdb.md` | The frozen MoisesDB subset | **Running** (run `moisesdb-v1`, stage 2 of `tools/run_real_benchmarks.sh`, started 2026-11-23) |
 | `tuning-synthetic.md` | The blend tuner run once with real models on the synthetic tuning list. It shows the tool works; its choices are meaningless for music and are not applied | `bench tune --dataset synthetic_tuning` |
-| `tuning-musdb18hq.md`, `tuning-moisesdb.md` | Blend method and weights per slot, chosen on tuning tracks | **Not run.** Needs the datasets |
+| `tuning-musdb18hq.md`, `tuning-moisesdb.md` | Blend method and weights per slot, chosen on tuning tracks | **Not run yet.** Queued as stages 3 and 4 of the same script |
 | `recommendation.md` | Default model or blend per stem | **Not written.** Needs both of the above |
 
 Each `.md` has a `.json` beside it with the same figures and the SHA-256 of every result file
