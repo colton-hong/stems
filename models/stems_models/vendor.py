@@ -183,3 +183,90 @@ def ensure_uvr_lib(directory: Path | None = None, lock: ChecksumLock | None = No
     finally:
         shutil.rmtree(staging, ignore_errors=True)
     return root
+
+
+# --- LAION-CLAP's model code ---------------------------------------------------------------
+#
+# The `laion_clap` package pins numpy 1.x and installs a training stack (wandb, webdataset,
+# h5py, torchvision). Only its model definition is needed to run the released checkpoint,
+# so, as with UVR above, those files are taken from the pinned wheel and the rest is left.
+# The licence (CC0-1.0) is unpacked beside them.
+
+LAION_CLAP_VERSION = "1.1.7"
+LAION_CLAP_WHEEL = (
+    "https://files.pythonhosted.org/packages/ab/ea/"
+    "6fb3d90bc1d85e6039506c248009e7f195456b81efa0a7aa413b3e13eb04/"
+    "laion_clap-1.1.7-py3-none-any.whl"
+)
+CLAP_KEEP: tuple[str, ...] = (
+    "laion_clap/clap_module/model.py",
+    "laion_clap/clap_module/htsat.py",
+    "laion_clap/clap_module/feature_fusion.py",
+    "laion_clap/clap_module/model_configs/HTSAT-base.json",
+    f"laion_clap-{LAION_CLAP_VERSION}.dist-info/licenses/LICENSE",
+)
+# Written in place of the package's own files. The real __init__ files import the training
+# code; the image and PANN towers are never built here; and the real utils module imports
+# torchvision and h5py for helpers this project does not call. The three helpers the model
+# code does import are small enough to state here.
+CLAP_STUBS: dict[str, str] = {
+    "laion_clap/__init__.py": "",
+    "laion_clap/clap_module/__init__.py": "",
+    "laion_clap/clap_module/timm_model.py": (
+        "class TimmModel:\n"
+        "    def __init__(self, *args, **kwargs):\n"
+        "        raise NotImplementedError('image towers are not vendored')\n"
+    ),
+    "laion_clap/clap_module/pann_model.py": (
+        "def create_pann_model(*args, **kwargs):\n"
+        "    raise NotImplementedError('PANN audio towers are not vendored')\n"
+    ),
+    "laion_clap/clap_module/utils.py": (
+        "def interpolate(x, ratio):\n"
+        "    # Repeat each time step `ratio` times along the time axis.\n"
+        "    batch, steps, classes = x.shape\n"
+        "    repeated = x[:, :, None, :].repeat(1, 1, ratio, 1)\n"
+        "    return repeated.reshape(batch, steps * ratio, classes)\n"
+        "\n\n"
+        "def do_mixup(x, mixup_lambda):\n"
+        "    raise NotImplementedError('mixup is a training-time augmentation')\n"
+        "\n\n"
+        "def freeze_batch_norm_2d(module, module_match={}, name=''):\n"
+        "    raise NotImplementedError('only used when fine-tuning image towers')\n"
+    ),
+}
+
+
+def clap_lib_root(directory: Path | None = None) -> Path:
+    return (directory or THIRD_PARTY_DIR) / f"laion_clap-{LAION_CLAP_VERSION}"
+
+
+def ensure_clap_lib(directory: Path | None = None, lock: ChecksumLock | None = None) -> Path:
+    """Return the directory holding the pinned CLAP model code, fetching it once."""
+    root = clap_lib_root(directory)
+    if (root / ".complete").exists():
+        return root
+
+    base = root.parent
+    wheel_file = ModelFile.model_construct(
+        role="config",
+        filename=LAION_CLAP_WHEEL.rsplit("/", 1)[1],
+        url=LAION_CLAP_WHEEL,
+        size_bytes=None,
+        stem=None,
+    )
+    wheel, _ = fetch_file(wheel_file, base / "_archives", lock=lock or ChecksumLock())
+
+    staging = base / f"{root.name}.tmp-{os.getpid()}"
+    shutil.rmtree(staging, ignore_errors=True)
+    try:
+        if extract_zip_subset(wheel, staging, CLAP_KEEP) != len(CLAP_KEEP):
+            raise RuntimeError(f"{wheel} does not contain all of {CLAP_KEEP}")
+        for name, content in CLAP_STUBS.items():
+            (staging / name).write_text(content, encoding="utf-8")
+        (staging / ".complete").write_text(LAION_CLAP_VERSION + "\n", encoding="utf-8")
+        shutil.rmtree(root, ignore_errors=True)
+        os.replace(staging, root)
+    finally:
+        shutil.rmtree(staging, ignore_errors=True)
+    return root

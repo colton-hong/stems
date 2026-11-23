@@ -1309,9 +1309,21 @@ models:
         filename: music_audioset_epoch_15_esc_90.14.pt
         url: https://huggingface.co/lukewys/laion_clap/resolve/main/music_audioset_epoch_15_esc_90.14.pt
         size_bytes: 2352471003
+      # The text tower is RoBERTa-base; its weights are in the checkpoint, its tokenizer is not.
+      - role: config
+        filename: roberta_base_tokenizer.json
+        url: https://huggingface.co/FacebookAI/roberta-base/resolve/e2da8e2f811d1448a5b465c236feacd80ffbac7b/tokenizer.json
+        size_bytes: 1355863
+      - role: config
+        filename: roberta_base_config.json
+        url: https://huggingface.co/FacebookAI/roberta-base/resolve/e2da8e2f811d1448a5b465c236feacd80ffbac7b/config.json
+        size_bytes: 481
     config:
       amodel: HTSAT-base
       enable_fusion: false
+      text_model: roberta-base
+      window_seconds: 10
+      embedding_dim: 512
     licence_note: CC0-1.0 per Hugging Face repo metadata (checked 2026-11-22); the report had this as unverified.
     notes: Second opinion for content above 8 kHz and for zero-shot text prompts.
 

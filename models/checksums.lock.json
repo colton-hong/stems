@@ -49,6 +49,11 @@
     "sha256": "c97b3bedcd54b401c22df7d518284a9ed143f66071496347e9f8da9d32ca7aec",
     "size_bytes": 447552
   },
+  "https://files.pythonhosted.org/packages/ab/ea/6fb3d90bc1d85e6039506c248009e7f195456b81efa0a7aa413b3e13eb04/laion_clap-1.1.7-py3-none-any.whl": {
+    "filename": "laion_clap-1.1.7-py3-none-any.whl",
+    "sha256": "5451024fb9563a6f781945648151d2342845c0e06efb9304c4a9e08ae5711209",
+    "size_bytes": 1501329
+  },
   "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/5_HP-Karaoke-UVR.pth": {
     "filename": "5_HP-Karaoke-UVR.pth",
     "sha256": "fe00891defbb61f4261500af22f7624f1a3df8dc75fa3998d1aece02e6be4537",
@@ -333,6 +338,16 @@
     "filename": "mel_band_roformer_karaoke_becruily.ckpt",
     "sha256": "d3aa262ac01df870b9fc033e9c7b6cad33fe04fc9c148b6c40841326a515a0e0",
     "size_bytes": 1719139254
+  },
+  "https://huggingface.co/FacebookAI/roberta-base/resolve/e2da8e2f811d1448a5b465c236feacd80ffbac7b/config.json": {
+    "filename": "roberta_base_config.json",
+    "sha256": "ef0185e2aae6e06c5f105a285006952c340e20c7dbf43c86ec82601b13fc45e9",
+    "size_bytes": 481
+  },
+  "https://huggingface.co/FacebookAI/roberta-base/resolve/e2da8e2f811d1448a5b465c236feacd80ffbac7b/tokenizer.json": {
+    "filename": "roberta_base_tokenizer.json",
+    "sha256": "847bbeab6174d66a88898f729d52fa8d355fafe1bea101cf960dd404581df70e",
+    "size_bytes": 1355863
   },
   "https://huggingface.co/KimberleyJSN/melbandroformer/resolve/main/MelBandRoformer.ckpt": {
     "filename": "MelBandRoformer.ckpt",
