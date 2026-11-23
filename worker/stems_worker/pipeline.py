@@ -122,6 +122,50 @@ def _stage_blend(stage: str, source: str | Blend, registry: Registry) -> Blend:
     return blend
 
 
+def run_stage(
+    stage: str,
+    source: Blend,
+    vocals: np.ndarray,
+    sample_rate: int,
+    factory: SeparatorFactory,
+    *,
+    device: str,
+    overlap: float,
+    batch_size: int,
+    registry: Registry | None = None,
+    progress: Callable[[str, int, int], None] | None = None,
+    cache: OutputCache | None = None,
+    timings: TimingLog | None = None,
+) -> tuple[dict[str, np.ndarray], list[Any]]:
+    """Run an optional stage (``vocal_split`` or ``dereverb``) on a vocals stem.
+
+    Returns the stage's outputs under the model's own output names (``STAGES[stage]``
+    maps them to file names), blended if ``source`` has several members, and a record of
+    every model run. With ``registry``, ``source`` is first checked to be able to serve
+    the stage.
+    """
+    if registry is not None:
+        source = _stage_blend(stage, source, registry)
+    per_member, records = [], []
+    for model_id in source.models:
+        outputs, ran = run_model(
+            ModelRun(model_id, tuple(STAGES[stage])),
+            vocals,
+            sample_rate,
+            factory,
+            device=device,
+            overlap=overlap,
+            batch_size=batch_size,
+            progress=progress,
+            cache=cache,
+            timings=timings,
+            stage=stage,
+        )
+        per_member.append({output: outputs[output] for output in STAGES[stage]})
+        records += ran
+    return blend_stems(per_member, list(source.weights), source.method), records
+
+
 def _level_dbfs(x: np.ndarray) -> float:
     rms = float(np.sqrt(np.mean(np.square(x, dtype=np.float64))))
     return round(20.0 * float(np.log10(max(rms, 1e-12))), 2)
@@ -251,25 +295,20 @@ def separate_file(
                 fingerprint=fingerprint or registry_fingerprint(registry),
             )
         for stage in stages:
-            source = stage_blends[stage]
-            per_member = []
-            for model_id in source.models:
-                outputs, records = run_model(
-                    ModelRun(model_id, tuple(STAGES[stage])),
-                    vocals,
-                    loaded.sample_rate,
-                    factory,
-                    device=device,
-                    overlap=overlap,
-                    batch_size=batch_size,
-                    progress=progress,
-                    cache=stage_cache,
-                    timings=timings,
-                    stage=stage,
-                )
-                per_member.append({output: outputs[output] for output in STAGES[stage]})
-                stage_runs += [(stage, record) for record in records]
-            blended = blend_stems(per_member, list(source.weights), source.method)
+            blended, records = run_stage(
+                stage,
+                stage_blends[stage],
+                vocals,
+                loaded.sample_rate,
+                factory,
+                device=device,
+                overlap=overlap,
+                batch_size=batch_size,
+                progress=progress,
+                cache=stage_cache,
+                timings=timings,
+            )
+            stage_runs += [(stage, record) for record in records]
             for output, name in STAGES[stage].items():
                 extras[name] = blended[output]
 
