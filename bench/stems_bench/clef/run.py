@@ -389,6 +389,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--run-id", default="clef-omni-v1")
     parser.add_argument("--only", choices=("clef", "beats"))
     parser.add_argument("--report", type=Path, help="write the report for the run and stop")
+    parser.add_argument("--device", default="cpu", help="device for the tagger (default: cpu)")
     args = parser.parse_args(argv)
     run_dir = CLEF_DIR / args.run_id
     if args.report:
@@ -410,9 +411,14 @@ def main(argv: list[str] | None = None) -> int:
             except cl.ClefError as e:
                 skipped["clef_omni"] = str(e)
         if args.only != "clef":
-            skipped["beats"] = (
-                "the BEATs wrapper is not built yet (PROGRESS.md P3.1, BLOCKED.md B10)"
-            )
+            try:
+                from stems_worker.listening.beats import BeatsTagger
+
+                tagger = BeatsTagger.from_registry()
+                tagger.load(args.device)
+            except Exception as e:  # a missing checkpoint or a failed load: say which
+                tagger = None
+                skipped["beats"] = f"{type(e).__name__}: {e}"
         if transport is None and tagger is None:
             for name, why in skipped.items():
                 print(f"{name}: {why}", file=sys.stderr)

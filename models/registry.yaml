@@ -1281,16 +1281,14 @@ models:
       - role: weights
         filename: BEATs_iter3_plus_AS2M_finetuned_on_AS2M_cpt2.pt
         url: https://1drv.ms/u/s!AqeByhGUtINrgcpj8ujXH1YUtxooEg?e=E9Ncea
-        size_bytes: null
+        size_bytes: 363145291
     config:
       num_classes: 527
       label_map: audioset_ontology
       window_seconds: 10
     licence_note: MIT (microsoft/unilm LICENSE, checked 2026-11-22).
-    notes: Primary tagger. 16 kHz mono input, so it cannot hear above 8 kHz; CLAP covers that range.
-    unverified:
-      - The OneDrive share link is the only official source and cannot be size-checked with a HEAD request. If it is dead in Phase 1, a mirror is needed (see BLOCKED.md).
-      - The exact filename the share link serves.
+    notes: Primary tagger. 16 kHz mono input, so it cannot hear above 8 kHz; CLAP covers that range. The OneDrive share link serves the file to a browser but a sign-in page to scripts, so the download tool cannot fetch it. Open the link in a browser, download, and save the file under models/weights/beats_iter3plus_as2m_cpt2/ with the filename above; the tool then checks it against the pinned SHA-256. Fetched that way on 2026-11-22 (363,145,291 bytes, shared by Shujie Liu, dated 2024-04-04). Microsoft publishes no checksum for it, so the pinned hash is of that download. The checkpoint lists its 527 classes in its own order; the wrapper rearranges them by AudioSet id.
+    unverified: []
 
   - id: laion_clap_music
     name: LAION-CLAP music (music_audioset_epoch_15_esc_90.14, HTSAT-base)

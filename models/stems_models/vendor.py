@@ -270,3 +270,86 @@ def ensure_clap_lib(directory: Path | None = None, lock: ChecksumLock | None = N
     finally:
         shutil.rmtree(staging, ignore_errors=True)
     return root
+
+
+# --- BEATs model code ----------------------------------------------------------------------
+#
+# BEATs is not a package: its three model files live in microsoft/unilm (MIT) and expect to
+# be run from their own folder, and they call torchaudio's Kaldi filterbank, which has no
+# build for this project's torch. So each file is fetched at one pinned revision, its
+# SHA-256 pinned in the lock like any model file, and written into a package of its own
+# with the imports rewritten to stay inside it. The filterbank is torchaudio's
+# `compliance/kaldi.py` (BSD-2-Clause), which is plain torch code; its one use of the
+# rest of torchaudio is in `mfcc`, which is not called here.
+
+BEATS_COMMIT = "732d834db70ee0fc3886b4bcbcfb4ce7fb829be2"  # beats/ last changed 2024-04-05
+TORCHAUDIO_TAG = "v2.5.1"
+_UNILM_RAW = f"https://raw.githubusercontent.com/microsoft/unilm/{BEATS_COMMIT}"
+_TORCHAUDIO_RAW = f"https://raw.githubusercontent.com/pytorch/audio/{TORCHAUDIO_TAG}"
+# local name -> (url, {text to replace: replacement}); every replacement must apply once.
+BEATS_SOURCES: dict[str, tuple[str, dict[str, str]]] = {
+    "BEATs.py": (
+        f"{_UNILM_RAW}/beats/BEATs.py",
+        {
+            "import torchaudio.compliance.kaldi as ta_kaldi\n": "from . import kaldi as ta_kaldi\n",
+            "from backbone import (": "from .backbone import (",
+        },
+    ),
+    "backbone.py": (
+        f"{_UNILM_RAW}/beats/backbone.py",
+        {"from modules import (": "from .modules import ("},
+    ),
+    "modules.py": (f"{_UNILM_RAW}/beats/modules.py", {}),
+    "LICENSE": (f"{_UNILM_RAW}/LICENSE", {}),
+    "kaldi.py": (
+        f"{_TORCHAUDIO_RAW}/src/torchaudio/compliance/kaldi.py",
+        {"import torchaudio\n": "torchaudio = None  # only mfcc() uses it; not vendored\n"},
+    ),
+    "LICENSE.torchaudio": (f"{_TORCHAUDIO_RAW}/LICENSE", {}),
+}
+BEATS_PACKAGE = "beats_vendor"
+
+
+def beats_lib_root(directory: Path | None = None) -> Path:
+    return (directory or THIRD_PARTY_DIR) / f"beats-{BEATS_COMMIT[:12]}"
+
+
+def rewrite_imports(name: str, text: str, replacements: dict[str, str]) -> str:
+    """Apply each replacement, insisting that it matches exactly once."""
+    for old, new in replacements.items():
+        if text.count(old) != 1:
+            raise RuntimeError(f"{name}: expected one {old.strip()!r}, found {text.count(old)}")
+        text = text.replace(old, new)
+    return text
+
+
+def ensure_beats_lib(directory: Path | None = None, lock: ChecksumLock | None = None) -> Path:
+    """Return the directory holding the pinned BEATs model code, fetching it once.
+
+    The code is importable from there as the package ``beats_vendor``.
+    """
+    root = beats_lib_root(directory)
+    if (root / ".complete").exists():
+        return root
+
+    base = root.parent
+    lock = lock or ChecksumLock()
+    staging = base / f"{root.name}.tmp-{os.getpid()}"
+    shutil.rmtree(staging, ignore_errors=True)
+    try:
+        package = staging / BEATS_PACKAGE
+        package.mkdir(parents=True)
+        for name, (url, replacements) in BEATS_SOURCES.items():
+            source = ModelFile.model_construct(
+                role="config", filename=name, url=url, size_bytes=None, stem=None
+            )
+            fetched, _ = fetch_file(source, base / "_archives" / root.name, lock=lock)
+            text = fetched.read_text(encoding="utf-8")
+            (package / name).write_text(rewrite_imports(name, text, replacements), encoding="utf-8")
+        (package / "__init__.py").write_text("", encoding="utf-8")
+        (staging / ".complete").write_text(BEATS_COMMIT + "\n", encoding="utf-8")
+        shutil.rmtree(root, ignore_errors=True)
+        os.replace(staging, root)
+    finally:
+        shutil.rmtree(staging, ignore_errors=True)
+    return root

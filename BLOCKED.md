@@ -19,7 +19,6 @@ unblocked task.
 | B7 | Bucket credentials, only if you want live storage checks | S3-compatible: `S3_ENDPOINT_URL`, `S3_BUCKET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`. Azure: `AZURE_STORAGE_CONNECTION_STRING`, `AZURE_STORAGE_CONTAINER`. | Live verification of P5.2 and P5.3. Without them those backends are tested against stubbed clients only, and PROGRESS.md will say so. | Phase 5, optional |
 | B8 | Listening panel and reference purchases | At least 5 listeners including one who is not you; minimum LALAL.AI Pro and Moises Pro plans for the reference stems (report §9). | Running the listening test. The kit (P7.5) is built without them. | Phase 7 |
 | B9 | Azure quota requests | Yours to file if you want Azure (report §6 has paste-ready texts). The build does not wait for them. | Filling in the Azure Container Apps worker | Whenever |
-| B10 | The BEATs checkpoint file | The only official source is a OneDrive share link (https://1drv.ms/u/s!AqeByhGUtINrgcpj8ujXH1YUtxooEg?e=E9Ncea) that now serves a sign-in page to scripts, and its API form returns 401. Either open it in a browser, download the file, and save it as `models/weights/beats_iter3plus_as2m_cpt2/BEATs_iter3_plus_AS2M_finetuned_on_AS2M_cpt2.pt` (the next download run hashes and pins it), or tell me to look for a mirror and I will list candidates with their hashes for you to choose from. | P3.1 and everything in Phase 3 that uses BEATs. Nothing in Phase 1 or 2. | Phase 3 |
 
 ## Decisions I made that you can overrule
 
