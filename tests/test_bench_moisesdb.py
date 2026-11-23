@@ -187,6 +187,29 @@ def test_mono_resampled_and_short_sources_are_brought_to_one_shape(tmp_path) -> 
     assert not audio["vocals"].any()
 
 
+def test_source_types_are_read_as_the_release_writes_them(tmp_path) -> None:
+    # The real data.json files say "lead_male_singer" and "background_vocals".
+    t = generate_track(seed=8, duration_seconds=SECONDS)
+    parts = [
+        ("vocals", "lead_male_singer", t.lead_vocals, RATE),
+        ("vocals", "background_vocals", t.backing_vocals, RATE),
+        ("vocals", "Human_Choir", 0.5 * t.backing_vocals, RATE),
+        ("drums", "hi_hat", t.stems["drums"], RATE),
+    ]
+    _make_track(tmp_path, "underscored", 8, "rock", parts, provider="p")
+    meta = read_meta(tmp_path / "p" / "underscored", "p")
+    assert sorted({s.track_type for s in meta.sources}) == [
+        "background vocals",
+        "hi hat",
+        "human choir",
+        "lead male singer",
+    ]
+    audio = moisesdb.decode(meta, tmp_path)
+    np.testing.assert_allclose(audio["lead_vocals"], t.lead_vocals, atol=2.0**-21)
+    np.testing.assert_allclose(audio["backing_vocals"], 1.5 * t.backing_vocals, atol=2.0**-20)
+    assert "lead_and_backing" in moisesdb.analyse(meta, tmp_path).strata
+
+
 def test_unknown_stems_and_empty_tracks_are_errors(tmp_path) -> None:
     t = generate_track(seed=7, duration_seconds=0.5)
     _make_track(tmp_path, "weird", 7, "pop", [("theremin", "x", t.stems["bass"], RATE)], "p")
@@ -260,6 +283,27 @@ def test_selection_meets_every_quota_and_is_reproducible() -> None:
     assert [t.track_id for t in chosen] == sorted(t.track_id for t in chosen)
 
 
+def test_a_stratum_the_dataset_lacks_takes_all_there_are_when_that_is_allowed() -> None:
+    candidates = _candidates()
+    few = [t for t in candidates if "instrumental" not in t.strata]
+    few += [t for t in candidates if "instrumental" in t.strata][:3]
+    with pytest.raises(DatasetError, match="only 3 tracks are 'instrumental'"):
+        select_subset(few)
+    chosen = select_subset(few, shortfall_ok=("instrumental",))
+    assert len(chosen) == 50
+    assert sum("instrumental" in t.strata for t in chosen) == 3  # every one that exists
+    for stratum, least in QUOTAS.items():
+        if stratum != "instrumental":
+            assert sum(stratum in t.strata for t in chosen) >= least
+    # Other strata are still enforced.
+    no_piano = [
+        TrackInfo(t.track_id, t.genre, tuple(s for s in t.strata if s != "piano")) for t in few
+    ]
+    with pytest.raises(DatasetError, match="only 0 tracks are 'piano'"):
+        select_subset(no_piano, shortfall_ok=("instrumental",))
+    assert moisesdb.SHORTFALL_OK == ("instrumental",)
+
+
 def test_selection_is_random_not_the_first_tracks() -> None:
     chosen = {t.track_id for t in select_subset(_candidates())}
     assert chosen != {f"id-{i:03d}" for i in range(50)}
@@ -295,6 +339,11 @@ def test_build_frozen_records_selection_rules_strata_and_file_hashes(tree) -> No
     assert len(data["selection"]["candidate_ids_sha256"]) == 64
     assert len(data["tracks"]) == 6
     assert build_frozen(tree, **SMALL) == data  # deterministic
+    assert data["selection"]["available"]["instrumental"] == 3
+    assert data["selection"]["shortfalls"] == {}
+    scarce = build_frozen(tree, **{**SMALL, "quotas": {**SMALL["quotas"], "instrumental": 4}})
+    assert scarce["selection"]["shortfalls"] == {"instrumental": 3}
+    assert sum("instrumental" in t["strata"] for t in scarce["tracks"]) == 3
     by_id = {t["id"]: t for t in data["tracks"]}
     for stratum in QUOTAS:
         assert sum(stratum in t["strata"] for t in data["tracks"]) >= 2, stratum

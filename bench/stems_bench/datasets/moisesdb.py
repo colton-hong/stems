@@ -69,8 +69,16 @@ STEM_GROUPS: dict[str, str] = {
     "bowed_strings": "other",
     "wind": "other",
 }
+# Source types inside the vocals stem. The dataset's loader code writes these with spaces
+# ("lead male singer"); the data.json files of the release write them with underscores
+# ("lead_male_singer"). Both are accepted: see ``_type``.
 LEAD_TYPES = frozenset({"lead male singer", "lead female singer"})
 BACKING_TYPES = frozenset({"background vocals", "human choir"})
+
+
+def _type(track_type: str) -> str:
+    return track_type.strip().lower().replace("_", " ")
+
 
 # --- Selection (report section 5). Fixed before the dataset was ever seen.
 SELECTION_SEED = 2307
@@ -86,6 +94,9 @@ QUOTAS: dict[str, int] = {
     # For the lead-versus-backing comparisons: tracks annotated with both.
     "lead_and_backing": 8,
 }
+# Strata the dataset turned out not to have enough of: the selection takes all there are.
+# MoisesDB has one track without vocals (docs/corrections.md C15), against a quota of 8.
+SHORTFALL_OK: tuple[str, ...] = ("instrumental",)
 # A stem is in a track if it has sources and its whole-track RMS is above this.
 PRESENT_DBFS = -60.0
 # Drums and bass are "prominent" when each is within this many dB of the mix's RMS.
@@ -132,7 +143,7 @@ def read_meta(track_dir: Path, provider: str) -> TrackMeta:
             sources.append(
                 Source(
                     stem=name,
-                    track_type=str(source.get("trackType", "")),
+                    track_type=_type(str(source.get("trackType", ""))),
                     path=f"{stem.get('stemName')}/{source['id']}.{source.get('extension', 'wav')}",
                 )
             )
@@ -227,8 +238,12 @@ def select_subset(
     size: int = SUBSET_SIZE,
     quotas: dict[str, int] | None = None,
     min_genres: int = MIN_GENRES,
+    shortfall_ok: Sequence[str] = (),
 ) -> list[TrackInfo]:
     """Choose ``size`` tracks at random, subject to the quotas. Same input, same answer.
+
+    A stratum named in ``shortfall_ok`` that has fewer tracks than its quota contributes
+    every track it has; any other shortfall is an error.
 
     Candidates are put in a seeded random order. Each stratum, scarcest first, takes
     tracks in that order until its quota is met; then genres; then the rest of the order
@@ -246,7 +261,7 @@ def select_subset(
 
     eligible = {s: [t for t in order if s in t.strata] for s in quotas}
     for stratum in sorted(quotas, key=lambda s: (len(eligible[s]), s)):
-        if len(eligible[stratum]) < quotas[stratum]:
+        if len(eligible[stratum]) < quotas[stratum] and stratum not in shortfall_ok:
             raise DatasetError(
                 f"only {len(eligible[stratum])} tracks are {stratum!r}; "
                 f"the subset needs {quotas[stratum]}"
@@ -289,6 +304,7 @@ def build_frozen(
     quotas: dict[str, int] | None = None,
     min_genres: int = MIN_GENRES,
     expected_tracks: int | None = RELEASED_TRACKS,
+    shortfall_ok: Sequence[str] = SHORTFALL_OK,
     progress: Any = None,
 ) -> dict[str, Any]:
     """Scan the dataset, select the subset and describe it. Decodes every track once."""
@@ -301,7 +317,15 @@ def build_frozen(
         infos.append(analyse(meta, root))
         if progress is not None:
             progress(i + 1, len(metas))
-    selected = select_subset(infos, seed=seed, size=size, quotas=quotas, min_genres=min_genres)
+    selected = select_subset(
+        infos,
+        seed=seed,
+        size=size,
+        quotas=quotas,
+        min_genres=min_genres,
+        shortfall_ok=shortfall_ok,
+    )
+    available = {s: sum(s in info.strata for info in infos) for s in quotas}
     by_id = {m.track_id: m for m in metas}
     all_ids = "\n".join(sorted(by_id)).encode()
     return {
@@ -317,6 +341,10 @@ def build_frozen(
             "prominent_within_db": PROMINENT_WITHIN_DB,
             "candidates": len(metas),
             "candidate_ids_sha256": hashlib.sha256(all_ids).hexdigest(),
+            # How many of all the candidates fall in each stratum, and which quotas the
+            # dataset could not fill.
+            "available": available,
+            "shortfalls": {s: n for s, n in available.items() if n < quotas[s]},
         },
         "tracks": [
             {
