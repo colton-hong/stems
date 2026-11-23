@@ -61,6 +61,8 @@ make env                # write runs/env/worker.json (devices, package versions)
 .venv/bin/bench report RUN --out docs/benchmarks/NAME.md   # report from a run's result files
 make bench-synthetic    # every separator and blend on the synthetic set, then its report
 make bench-device-spread   # repeat runs per device, then docs/benchmarks/device-spread-synthetic.md
+python -m stems_bench.clef.prereg   # show the committed Clef-omni pre-registration (.venv/bin/python)
+python -m stems_bench.clef.run      # run the Clef-omni test; --report FILE writes its report
 make registry           # validate models/registry.yaml and print it
 make registry-sources   # HEAD every model URL and refresh sizes (network)
 make models-status      # which model files are downloaded or in progress

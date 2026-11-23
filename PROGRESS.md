@@ -2,7 +2,7 @@
 
 Single source of truth for where the build is. Read this first, every iteration.
 
-**Current phase: 2 (benchmark harness), finishing on real data; Phase 3 follows.** On 2026-11-22 the owner asked for both datasets to be downloaded for them, and said: start the benchmarks when the downloads finish, then do the next phase. So Phase 3 may start once the real benchmarks are running, without a further go-ahead; the stop-and-wait rule applies again at the end of Phase 3.
+**Current phase: 3 (listening layer and the Clef-omni test), stopped at its blocked tasks; Phase 2's real benchmarks are still running in the background.** Every Phase 3 task that can be done without the BEATs checkpoint (B10) or a Cloudflare token (B5) is done; see the Phase 3 summary. Phase 2 finishes when `tools/run_real_benchmarks.sh` does (P2.10 to P2.13, P2.14b): each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task. Do not start Phase 4 without the owner's go-ahead.
 
 ## How to use this file
 
@@ -305,3 +305,48 @@ recommended defaults, GPU timings (MPS and CPU only; Modal needs B4).
 **Next:** wait for the owner. With the datasets, Phase 2 finishes at P2.5b, P2.10 to P2.13
 and P2.14b. Phase 3 starts at P3.1, which needs the BEATs file (B10); P3.2 to P3.8 can be
 built without it or the datasets.
+
+### Phase 3 (2026-11-22, stopped at its blocked tasks)
+
+Started on the owner's instruction of 2026-11-22 (benchmarks first, then the next phase),
+while the real benchmarks run. Done: P3.2 to P3.8. Not done: P3.1 (BEATs wrapper) and
+P3.9 to P3.11 (running the test and its report). **Nothing has been sent to Clef-omni and
+no AudioSet tagger has run**, so there is no result of any kind yet for the test.
+
+- **Listening** (P3.2 to P3.4): the AudioSet class-to-stem table; the CLAP wrapper with
+  text prompts and a high-band check; `build_track_features` and `stem_signals`, which
+  turn any tagger's 527 class probabilities into schema-valid `track_features` and
+  per-stem metrics, with BS.1770 loudness. With no tagger the hearing fields say unknown
+  and the rest still holds, which is the state today.
+- **The Clef-omni test** (P3.5 to P3.8, plus the runner): pre-registration committed
+  (`bench/preregistration/clef-omni-v1.json`: thresholds, wording, 50 tracks with their
+  30-second windows and presence answers, Part B's 100 clips, the stem map's hash);
+  clip builder; client with limits, full logging and replay; scoring with the decision
+  rule; `python -m stems_bench.clef.run` to run it all and write the report.
+
+What the data showed while building it:
+
+- By the presence rule, vocals are absent from 6 of the 50 excerpts and piano is present
+  in 14. A3 (vocals present or absent, 90%) therefore rests on 6 negatives; always
+  answering "present" would score 88%. The report states this next to A3.
+- CLAP's prompts single out isolated drums, bass and guitar but are weak on vocals, piano
+  and full mixes (3 tracks, a look, not a measurement). CLAP cannot stand in for BEATs.
+
+Choices made that the owner may want to change:
+
+- Every listening threshold in `config/defaults.yaml` (`listening`) is a first guess,
+  marked `calibrated: false`. They are measured in P7.1.
+- `reverb_estimate` is never "dry": not hearing reverberation is not treated as evidence.
+- Backing vocals are approximated by AudioSet's Choir, Chant and Humming with no lead
+  class heard; AudioSet has no backing-vocals class.
+- One clip per Clef-omni request (183 requests in all), so no question has to say which
+  clip it means. The pre-registration was amended once to record this, before any request.
+- The reverb probe uses Part B's five clean vocal stems; Part B's guitar-or-piano stems
+  are three guitar and two piano.
+
+Not confirmed against the live service: whether the REST endpoint wraps its answer in
+`{result, success}` (both forms are accepted), and everything about rate limits.
+
+**Next, for the owner:** the BEATs checkpoint (B10) unblocks P3.1 and the BEATs half of
+P3.9; a Cloudflare token (B5) unblocks the Clef-omni half. With both, P3.9 and P3.10 are
+one command each. Phase 4 waits for a go-ahead.
