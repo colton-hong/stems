@@ -462,6 +462,8 @@ class _Runner:
         self._track: TrackAudio | None = None
         self.keep: dict[str, set[str] | None] = dict.fromkeys(spec.keep_estimates, _ALL)
         for system in spec.ensembles:
+            if self.ensemble_applicability(system) is not None:
+                continue  # never scored on this dataset: keep nothing for it
             for model_id, outputs in system.needed().items():
                 if model_id not in self.keep:
                     self.keep[model_id] = set()

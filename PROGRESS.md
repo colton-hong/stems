@@ -2,7 +2,7 @@
 
 Single source of truth for where the build is. Read this first, every iteration.
 
-**Current phase: 2 (benchmark harness), complete as far as it goes without the datasets. Waiting for the owner: for MUSDB18-HQ and MoisesDB (B2, B3) to finish Phase 2, or for the word to start Phase 3.**
+**Current phase: 2 (benchmark harness), finishing on real data; Phase 3 follows.** On 2026-11-22 the owner asked for both datasets to be downloaded for them, and said: start the benchmarks when the downloads finish, then do the next phase. So Phase 3 may start once the real benchmarks are running, without a further go-ahead; the stop-and-wait rule applies again at the end of Phase 3.
 
 ## How to use this file
 

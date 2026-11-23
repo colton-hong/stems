@@ -854,6 +854,20 @@ def test_blends_a_dataset_cannot_score_are_not_applicable(world, frozen_path, tm
     assert outcomes["vocal_split:single_best"][1].startswith("needs the 'vocals' input")
 
 
+def test_audio_is_not_kept_for_blends_the_dataset_cannot_score(
+    world, frozen_path, tmp_path
+) -> None:
+    mix_only = MixOnlyDataset(frozen_path)  # no guitar, piano or six-stem other references
+    run(world, mix_only, tmp_path, [], track_ids=("synth-01",), ensembles=systems())
+    kept: dict[str, set[str]] = {}
+    for path in (tmp_path / "estimates" / "synthetic").rglob("*.npy"):
+        kept.setdefault(path.parts[-3], set()).add(path.stem)
+    assert kept["six_stem"] == {"vocals", "drums", "bass"}  # not its guitar or piano
+    assert kept["four_stem"] == {"vocals", "drums", "bass", "other"}
+    assert "guitar_only" not in kept
+    assert "splitter" not in kept
+
+
 def test_command_with_ensembles_adds_their_members(world, dataset, tmp_path, capsys) -> None:
     common = {"factory": world.factory, "registry": REGISTRY, "dataset": dataset}
     common |= {"bench_dir": tmp_path, "defaults": fake_defaults()}
