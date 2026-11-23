@@ -1,0 +1,1008 @@
+{
+  "dataset": "musdb18hq_train",
+  "protocol_version": 1,
+  "sample_rate": 44100,
+  "split": "train",
+  "tracks": [
+    {
+      "id": "A Classic Education - NightOwl",
+      "files": {
+        "mixture.wav": "f2420feedcdee9591dd649442c81149e31a0c06ee8c6e655d93d8f8e742cf706",
+        "vocals.wav": "2459bde9e47c9300ee5fdb4212e584b73208fb58d4d47f868a4b0d776bf42526",
+        "drums.wav": "526cc85c3f380c5e1a3b648750f1807cbdd1bef8fe0a8489a28fcda42fc3f208",
+        "bass.wav": "5dd028d15d0c23325ce39fb6df5ae028c57bff13f5b223c331ef5d1a78c45243",
+        "other.wav": "ef9ef3407072d7fce5d7c43c09f05086ca000cba4e47e57ed1e9ecba87ac5ace"
+      }
+    },
+    {
+      "id": "ANiMAL - Clinic A",
+      "files": {
+        "mixture.wav": "1be44b5b40452ca80986372cbffccccdfec1e9f81863e79d5c3c01c3760c170f",
+        "vocals.wav": "f71608535174c1c6d4ed02f5aab09e4605c0f725f8244f147c57c50a40510759",
+        "drums.wav": "02de5a5d78932815f7605c94e5432b9c963c5a907c6777ab916c7e00a4acc06b",
+        "bass.wav": "8b7c0374060b48aac191c39c52a09ce069e36470dc50067b0e8e6632aa2e7392",
+        "other.wav": "c1666fc2be37d7eee6a7e3bb4fb67aa4e97b53bb3d39ffab1b2b075359156b11"
+      }
+    },
+    {
+      "id": "ANiMAL - Easy Tiger",
+      "files": {
+        "mixture.wav": "f7c07a39f8a64a86bf392047d62d299061efc7c43cf9274525ba8ac61c783993",
+        "vocals.wav": "6445c4b640bfcadd4480841c44c02ed27ccf80068c5661bf454a08f43c29f0a4",
+        "drums.wav": "10d776f353d2f374fa92c8f1750dbcc0372d93c0a17986bd2bc739706787dbb3",
+        "bass.wav": "d72829d249dde5065798c5dfcdb3c0c8308f86afd014fb6e602e76251dac4835",
+        "other.wav": "5b4ad1fd9a45c63df3f80fd4a1ca64b2857d4fde7d6a5709df29c2c779153333"
+      }
+    },
+    {
+      "id": "ANiMAL - Rockshow",
+      "files": {
+        "mixture.wav": "7b19ec8253b44596dadb5e9cc90d0b0652cd421e46f85ac521b27bcb37b533b0",
+        "vocals.wav": "b304f177e8d6ad8e8919ab4ef82d43783de13d5b7a637b9e540c73826a48c62e",
+        "drums.wav": "66884d850da0832a4b4a9449b97a6b95c39f8cfc22addd6d4b5f556756ac3f34",
+        "bass.wav": "c249819d62c505511d6dd2371f33c4bde0e8446e6d339c9c2c332584b9fdea1f",
+        "other.wav": "b7f4f74ca4a9766c8b65dcbd00c3dc1006b38c255ad6f4d78c746cc622a2ab99"
+      }
+    },
+    {
+      "id": "Actions - Devil's Words",
+      "files": {
+        "mixture.wav": "5db2a85177c0407c1381cc4415d04e2a7d420fbbfac2a2adc8c8661d6d086595",
+        "vocals.wav": "9dc71d633a234b82476119e0406bb3c77fa19539ba0ec03d3146d1995a6ed315",
+        "drums.wav": "c3c575144c84aec8761cf9babd6b5118b4778b5ec50d111197ab534829b38d75",
+        "bass.wav": "93e31809d64cb434365e2378581f4a17563c5bf9ad0b6c3bff2874ffa765d298",
+        "other.wav": "ff3278988c605091ec929ba41d2b21c09a0ccdc4eff438d5b20a1f95745e5462"
+      }
+    },
+    {
+      "id": "Actions - One Minute Smile",
+      "files": {
+        "mixture.wav": "0a12fe67897976b2e2457e39102bc5e3394e4344e69e6eeb9c88e8ebeaf4b9d8",
+        "vocals.wav": "53e34e30474a54761f0d2b38740125403a0aebeb6bd2d1137bf0697706cd8552",
+        "drums.wav": "5d68b57ae75b7b7f6edf859531b0cc406df7da9f962602604a6fe5b961997c49",
+        "bass.wav": "6d3a5dc32a448c9c65e0c49dd3509a8bd165e28ea84c4b67abc3e4c32bbd4c66",
+        "other.wav": "aa1d01d3f1ddc22d145b583bf3abc93d393bc5994589ef802fa10915cd0081cf"
+      }
+    },
+    {
+      "id": "Actions - South Of The Water",
+      "files": {
+        "mixture.wav": "97b9a177eb0a4c073219f4e6cd73b7beb7799095f12f51f575fcc9a4c9698d05",
+        "vocals.wav": "a291c0b65425172f60758a207ab0a72e9f641a7cf15b548bf0dcc4f8f2297c51",
+        "drums.wav": "83ef207e4373427da5754889b037ccf932ccabcf251d346a187cec9a999b45b4",
+        "bass.wav": "6ddafde0acdaf5cf7554d4d2a7654c48310f930dd7b592ac39fc6cc94c06f63b",
+        "other.wav": "a028193a481a721c99809a9916b5f65bcc4bb439318bdaae2edd4ed1615bdd65"
+      }
+    },
+    {
+      "id": "Aimee Norwich - Child",
+      "files": {
+        "mixture.wav": "a52a879436c9e80edee65879482ada14c4badf80ee50d02134710f8a4fdbb5e9",
+        "vocals.wav": "48b756b68fbbd8847d576e2df1b344248dfbdd36404e2361103e3b64541096e5",
+        "drums.wav": "f4ae7f4b3d0fc49bf85a1c280b80d5ea25a2aa0986a00a7549dc2873e827a165",
+        "bass.wav": "4e86f7759e112e9ef40fed91503027b8f1b0c895b9b02ce6ec5c99c932c761ae",
+        "other.wav": "60d18f176164f84d3cc015a3732168aadfce40733c60ef3ea2490dc8a76e0c51"
+      }
+    },
+    {
+      "id": "Alexander Ross - Goodbye Bolero",
+      "files": {
+        "mixture.wav": "012db8fa35600f1b9628ead6ea93bea8ab01b814b07a2eee32752ceb0d3e2197",
+        "vocals.wav": "c966719457da8c49621c1ac007ffe29af44eda5d0e6ef560dff34440a0cb50cf",
+        "drums.wav": "7db749605b203db26ec2049b095599931b770ce84b3905304111b19624f8aae9",
+        "bass.wav": "b872d455c3f3f653bdc0b60f2cf688bfaf6dccc46f5764eaafe43dd703ac4d0b",
+        "other.wav": "f4bc8c93ccea6df47254cc24bbc8b33ebe940b75ebf77be94f7b83e952ff7c0e"
+      }
+    },
+    {
+      "id": "Alexander Ross - Velvet Curtain",
+      "files": {
+        "mixture.wav": "95218137ee364f0d0e3858070fc5ff988069e91459c677944b3fab5514f3d1ae",
+        "vocals.wav": "f95cbd8d11ed379319f6a5253f97568f91e737c98ece5715934b67fdbd9cb729",
+        "drums.wav": "977874d89e923b9813470257145e2a7ef8c8d6c3bf60dc19ec91bb340efafbc4",
+        "bass.wav": "1c8ea4e5f8a6f63190d9ee25d56cd91a3dba185433298b375e85e4ec33d29d71",
+        "other.wav": "188e9852ca4582450a5c8310f39f0a8bfbf4085c868d533e369e9adf98367a45"
+      }
+    },
+    {
+      "id": "Angela Thomas Wade - Milk Cow Blues",
+      "files": {
+        "mixture.wav": "8be4ca19c906f12e12882ee42abe5a4eb49fbae81c7e630278895d202283a997",
+        "vocals.wav": "e01a1030e1f1a3486a233d0ece53ec415bafebedad016a29949fc87d532b7ebd",
+        "drums.wav": "44b3b1fd99158300b947ba39b8640a6041f786c377c70b2b1d6ef68b6a5a1458",
+        "bass.wav": "0e06db512fc28bf0c4a490cae46bece369dd2dcc55443aa27605e7ef22442fbf",
+        "other.wav": "40ec8dbaaed8e0966a8f8a05a5e6be4749c7dc9d2c365ed328e2ec2d9e2880b2"
+      }
+    },
+    {
+      "id": "Atlantis Bound - It Was My Fault For Waiting",
+      "files": {
+        "mixture.wav": "54096f14f42d7d1a183b743c3a602590a922e1b3819c8ff23c7d59b1ecc0f46c",
+        "vocals.wav": "d2f622cd5486fd920ec1c435636781fde509795926424c1bd399e8c0d374e685",
+        "drums.wav": "ec9fde0f0e05cac46b79220c79395ec8c04ececd5994d23d6a313e2887919eab",
+        "bass.wav": "59933178e3a33a3d0b3409b35fb0af31f2c124cec2cb2304f5ce08b128b01983",
+        "other.wav": "94fe7aaad6ead827c0338b71b840b53132dfe5896f3a21e6183180a4f2dec859"
+      }
+    },
+    {
+      "id": "Auctioneer - Our Future Faces",
+      "files": {
+        "mixture.wav": "77d0350a02d8631dc6ed34c208482525191b901bc5283ac4dfd08ed866d178ec",
+        "vocals.wav": "c821f14ea114cbbad3f6bf4274f63ddfc2ed1c3dae6c0c1c1f7864bf1c9de52b",
+        "drums.wav": "60887d7e8be520d4754e68f0c370d4b5b9feca6e4ccbd1af75872a9f024c1b04",
+        "bass.wav": "264a81ebe1dee63a6a7c79d498ab0821751d9e9e2b632db2eea332f5b895214b",
+        "other.wav": "d2deaa742b3be23a7c13189bb7178b43b8dc444769d9d99cb43339788eaeabec"
+      }
+    },
+    {
+      "id": "AvaLuna - Waterduct",
+      "files": {
+        "mixture.wav": "329c34dac9e17f9de2ca2dd9401d9bfe1e5166e88cd364c92f3050facd2c8fe7",
+        "vocals.wav": "fb258eae91f8ed2b3ba0390bcfe22d5d4989e6d756f5d7ae91cc556c3aae91e7",
+        "drums.wav": "f8100e218c1c1fe9d70ba3e12f34c1483629f15039b45bedeeb425781d7ae366",
+        "bass.wav": "d119155a254820ea24471625a16466138440f1127bbd6e4e5ed3b34b16c937c1",
+        "other.wav": "695fd61b803aa3f19a75391e14b8109749e1a12f23da724afffbd33614e21577"
+      }
+    },
+    {
+      "id": "BigTroubles - Phantom",
+      "files": {
+        "mixture.wav": "3e747b34de668b8bb4bcd498c275065b58410aeab145ec8d38a61c986a8fb2be",
+        "vocals.wav": "744364656b667ed1c370c2a42bd0e76386d10c750474f6d96e5a32da6b8d5a2c",
+        "drums.wav": "c087cfb137d1b4c2ed8eea0342b4680fc189e16acb05c7d100ffc54cd0570142",
+        "bass.wav": "1bba7cad74968d6edcffbece790e48d774c85b3182136e2a21f3874f58034cbc",
+        "other.wav": "b1433db5ae7cfcf2ab89b5216a175501cb8b8fe174e930005bfb2483eccde4c0"
+      }
+    },
+    {
+      "id": "Bill Chudziak - Children Of No-one",
+      "files": {
+        "mixture.wav": "cc1152bbf460d5d923c1d72d42184db5797fd1b0e6a0d156f84d6e7a4daf6e44",
+        "vocals.wav": "7e9fd6f898f89e4b661bdd27e80980f052416adf1708b8fad236d1d61b9bf930",
+        "drums.wav": "bfaeb61d4391d607e4f7fcbb565bf25cd85d957dbda3224e601179da9a53828b",
+        "bass.wav": "349b8d8d33d3a88ab52714f768b7b1c30dc14a2163079436db9ef83c28b12bd6",
+        "other.wav": "93eb4e410ad8de3c15e1f80fa932508dd4157f85cce1578b1de87772239e37f4"
+      }
+    },
+    {
+      "id": "Black Bloc - If You Want Success",
+      "files": {
+        "mixture.wav": "9159d73fda0ce0884e75e20bb7e04461d131af52acee1ea53ddb98adc9a85418",
+        "vocals.wav": "45a6bcf3289276bc75a040df436667c197cc08696852690c19dc21d8d08a6811",
+        "drums.wav": "3fa84a024339949692acad6ce6c03817af186cac4b4430051b41b99ec46d0cf4",
+        "bass.wav": "c934065d8df89af38fc4ef0b4d60a81cad6fe490d4e24a66aec595c81ebec6c2",
+        "other.wav": "2c661393634ff065b1e0545b9e431570eae8fbdcf4caadf6f9c24ab55282a698"
+      }
+    },
+    {
+      "id": "Celestial Shore - Die For Us",
+      "files": {
+        "mixture.wav": "b3cec223f5fdccb4afe53fae8d28b6f002c75a4ba75169cff9c21305372e1ae2",
+        "vocals.wav": "f296bf52ab905afe0eb8793720295ec9be03cd077e5226b966d475a95ba8a87a",
+        "drums.wav": "1ceb7475d9b96bca24ee2e30438d8f9b45ebbd002b9e8889425bc301571b63b5",
+        "bass.wav": "b2b153eb8f017bee2ad45e11f4d4be6957fb973227f6cc22089f35dc951fa6c3",
+        "other.wav": "2a2cb59843cf098094dcd940d239172d4896dd7b8701dbbd1c7f87b13cf73e67"
+      }
+    },
+    {
+      "id": "Chris Durban - Celebrate",
+      "files": {
+        "mixture.wav": "afda9322fef76a8988b2c7788304678284a681532d40eaf70dd5638f628f0d2c",
+        "vocals.wav": "eb704b20f4b9cd6fff4fe2415ea39bb38746717cb38262d52e48c60dc0f00532",
+        "drums.wav": "c88710e79a85d12e797b2e54fa4b976596f2535d98d32ebf79ac5b6df7e88648",
+        "bass.wav": "7a94e0db7bacb83981edcc871318bfb515c9095c0c3c99e8f9859e816f4a7266",
+        "other.wav": "eee3583145c46efa65787a5ef29a5f1e6f8558230942fbc82a02b5f9ceaadc10"
+      }
+    },
+    {
+      "id": "Clara Berry And Wooldog - Air Traffic",
+      "files": {
+        "mixture.wav": "b2755eb0c8a49e294e4878d91a55535b06503c1d3331dbd7931a2dcdf4f3525c",
+        "vocals.wav": "66fdc663ed366ca8f80ff98c4657a34fe592221ee5bb20522022ae5bc61a1cc7",
+        "drums.wav": "964e2743b81f3140591963902375688837480bac12a5ddc481e63320262d9dfd",
+        "bass.wav": "9e923d9a287235d7fbede4fd8f5802972039084b50e285f10d478b205b54ad8e",
+        "other.wav": "3bd86ce9e22a03ad0de74d218de1899c59eb3644ce60d5a8c7a275b4050637e2"
+      }
+    },
+    {
+      "id": "Clara Berry And Wooldog - Stella",
+      "files": {
+        "mixture.wav": "cb5a7a8bebc8e9598a981737d18dabb7bc5faca782704fc05e7b681268e9ce79",
+        "vocals.wav": "2c7ae1b0b2c86ade691c1b3bb000c62678fc3350f9dadc4fde0488154e9de7a3",
+        "drums.wav": "eb56748f77398172ec5746a42009394079d843aa7c6ebc67ebf6d00c6853d7f6",
+        "bass.wav": "99333ebb3cabd6f1e59fccf0c01f3f9d7a013c8175e01319bedede86b9ac3674",
+        "other.wav": "65b78922ce70d9168f622aaacf82b9f228b0046e224e833ec4a8d8a94bc0223c"
+      }
+    },
+    {
+      "id": "Clara Berry And Wooldog - Waltz For My Victims",
+      "files": {
+        "mixture.wav": "d9bae53f038eed5a596d0ab5a6e8852e99bd3a205c75e630f4cf764a3d093382",
+        "vocals.wav": "a24d0952d3aa04cc5e4d1514e63d5e1ecb9dceda77ec355014bfe02be97b519b",
+        "drums.wav": "38670510d1b05b35eda2521609c2084a020862afa823e0a7bdb2488e529efdf2",
+        "bass.wav": "306c46ab279f3656531b575b25d33a1e49ecbec99d4d6b70152ab2fa151e32c0",
+        "other.wav": "5c576af0439cdb45f43d2c99db8997e51bdfb9f61a4707e96bb4d2eef66aa5f2"
+      }
+    },
+    {
+      "id": "Cnoc An Tursa - Bannockburn",
+      "files": {
+        "mixture.wav": "e0b767626c3b395fd3c7bb1ab23295b0e641d296a7e1aad925dcd3e87411e435",
+        "vocals.wav": "b33cb9b64311297234d4adac61f25d5e7fc9f66f2bb7c85447d392926a2e98ef",
+        "drums.wav": "99edc58c655c230ada1f8dc19cdeee1345ee06e18980d962d8f678478b163ca7",
+        "bass.wav": "c2072943a271b00688f2c591fdc179dcb2e3853511641b9e7781ba6819b461e1",
+        "other.wav": "1470275ca067059e89adeaf595f01c1ec147bb0de04d172bba83848fb2e21324"
+      }
+    },
+    {
+      "id": "Creepoid - OldTree",
+      "files": {
+        "mixture.wav": "9ee3ee2121a0352c26d6e79d15fedd8f13e6fc78ee0751066a66a0a9a2df2003",
+        "vocals.wav": "a97d6ec2cc5e664eb32e08877f46e8507e6048459d8cdf7e4597a545c9302c20",
+        "drums.wav": "f2f1baf24ae1eb6e0f0f54060dc6ade9013c87e50efb1577e431a24c0b7a5aeb",
+        "bass.wav": "f1e192ec1a72d89a716bb5954061aa61c9d0a9783b224eb2008acc5795eb31ac",
+        "other.wav": "298387c18749d3867df1d7a0c04b4fa47ab3c647aa548d43b868616375d83df1"
+      }
+    },
+    {
+      "id": "Dark Ride - Burning Bridges",
+      "files": {
+        "mixture.wav": "1aa76d745f361149c1c8359ccf683824d862f3c6aae6e47ae0bd5f6fed9cf773",
+        "vocals.wav": "2701f8bfeae496a234f2b40e385c5310005c1a489ce1e0e9400c08e4041dd3db",
+        "drums.wav": "fb61b026cd44420edd6e185a09647540bb60a9f95b9947ec80ff4e86db7b342d",
+        "bass.wav": "b573cddd988cb0441f6797e955d3586e082b7f6306231c20faa8a8afd7941d36",
+        "other.wav": "dd09c2c1f8385132da2984e3cc2f01fe76d657e5d64809f89895f32931388a5f"
+      }
+    },
+    {
+      "id": "Dreamers Of The Ghetto - Heavy Love",
+      "files": {
+        "mixture.wav": "607024fc548eafcbed5109051fd9bfe9f467905a02933d36ad91cdd923133382",
+        "vocals.wav": "b95b9b9e83ca453e96ca6fe42aa897ff847e6f826b0925a69667a3e57050b3ca",
+        "drums.wav": "33768418eb671bdd1970872ca214d1d59783dee65a9189ae6ef4cbe2cf88ff49",
+        "bass.wav": "4becbc9f703b0c1d563b222d2df627e543764f4afcde80354ad0af012fd9b13e",
+        "other.wav": "cb3683f2dc6fd16f939a2dcff68fd96be1833671075c66f9eb24d92b8d57a77e"
+      }
+    },
+    {
+      "id": "Drumtracks - Ghost Bitch",
+      "files": {
+        "mixture.wav": "476343b5c4b49f44ca9be9f9b5f97d2b196837a22f5c159fcfa68892e2e9107b",
+        "vocals.wav": "dab196094c5182bea42d68d99d1ed4a788d05d52708903a88058df1a796efa4f",
+        "drums.wav": "f9c0730ea9139d68be37d64d578aa636617bc4e7ef92eeab4d9066f1b2bbd435",
+        "bass.wav": "2519c0971d7cd0060b8ad4325eba0036135705193e22614adf0b101432bb9400",
+        "other.wav": "9f1150b73b5f9a0721e522d1f514bd9a0fdd420d581f1e1ee444f3f5d46adef4"
+      }
+    },
+    {
+      "id": "Faces On Film - Waiting For Ga",
+      "files": {
+        "mixture.wav": "3fc5c89ccd3d852be97d4320b24bce98bf5b85f73231f6cb7c4d6ae18f737190",
+        "vocals.wav": "755d246fa2d74e1693520bfc5b8038a5c5c19189d6ec75d1a4da1eb48913ea98",
+        "drums.wav": "364cca8074396c307695b8ccfc54bf28bcb8827c02d0a1e603d31f1aed10d2cc",
+        "bass.wav": "740c63558f071086a926c9cd221a6c845a50e503d67142c7eea8220b73c17134",
+        "other.wav": "6cb9bafcb831fbc3dba328e23476f2b51cbdc266f94da5c7c6db95efc8addef8"
+      }
+    },
+    {
+      "id": "Fergessen - Back From The Start",
+      "files": {
+        "mixture.wav": "18d971734852c7e000e0c73a7171d496adbbb96888797694709556430dfaca27",
+        "vocals.wav": "db26c7857d2f017caa50931ce52c2e24b30de83f6ddb2fa3b2ef7e561527402f",
+        "drums.wav": "02968a3cc2dc968dc9a0e43490efc5b0bf3f068dbcc714b9eda9058f6890430f",
+        "bass.wav": "33c416ff331d23d65b53998dcffa2afa7f8c7bc89bc172b2257f48f2d4351729",
+        "other.wav": "a763a57ed8196d9a05159c33419a1e77086289f00b0fdc2b3ae4dea5b8319ceb"
+      }
+    },
+    {
+      "id": "Fergessen - Nos Palpitants",
+      "files": {
+        "mixture.wav": "7acf9e80cb7f4920f6e854bde684fec778b159be95adc89a0a29b900a8346f48",
+        "vocals.wav": "210a4d21590bf5d6f7e7b0a3a69cfb1dbe67e9ac5e8415aa469780b73fa37022",
+        "drums.wav": "94fda0bffd8c28188761156316de3e72bd91abb4b28d1f1ba42f25c91ad08d4e",
+        "bass.wav": "78e397739115c2cd2d87f894b4399ef0e25b561635c023fed18808e989c4fb41",
+        "other.wav": "7cd5bada7d0fa475aaedcf175c8fbf841a39447c1a0628867d1f42d39f9a743f"
+      }
+    },
+    {
+      "id": "Fergessen - The Wind",
+      "files": {
+        "mixture.wav": "aae50192c67a5b6082e41383d98f2e5a7434662ea3c92547eaa271c8d6700a0c",
+        "vocals.wav": "6dc028eb3824bb5c1ce84a6962ea04ba22aa13263d66f0d718d2cb558dee6a55",
+        "drums.wav": "68b19bbba5b8d6c0ed2d42cf25c8cd0d39fea092dcb7d76f63f16ddf4a8e735d",
+        "bass.wav": "d8332708b93725883479a77ac8e82ac6acb8243f4d628d9546c71cc03ef6bf8d",
+        "other.wav": "8c0f941abc86fb86faaef18058be8babb47d800a62f1f7a7cd6ceecf2d844d5c"
+      }
+    },
+    {
+      "id": "Flags - 54",
+      "files": {
+        "mixture.wav": "264fc70b09a22709e425cc831e0b1d96c39512d61cd0d57c1e90c522edc09b74",
+        "vocals.wav": "86b73e485f5b4d75fa7238e6ca1a1c8700fa38a222943e42690bb93d3d147e46",
+        "drums.wav": "576ce6e44856fa5124bfd76b341ba3d844be03598197779dc50a09d44ae7c33a",
+        "bass.wav": "c1689bb49b99b2fdcc887c40af0026185b88864b0384bafc6004962bdfb5076a",
+        "other.wav": "8d204048493c6b1834853f085f5400fcd5a29cf64dc682e7780d3535f4e4cabb"
+      }
+    },
+    {
+      "id": "Giselle - Moss",
+      "files": {
+        "mixture.wav": "88164108349a4df47d18eaaa140d83d923c7ccd15ddd0180c06e491027e1e6a2",
+        "vocals.wav": "4e1a0480ce104d5dc23b1111f904302ea0bc019772c4b3cf5639c9a54c31a049",
+        "drums.wav": "b76dcbc11fdc4e14f105ba870983cdb31712548ac808d19eea4690e6977edf16",
+        "bass.wav": "85a1c08202904d575199cd35bd96e9694518313fe2f7edc1a2c2604509b805c4",
+        "other.wav": "d5e02b046b6be58c8e099cbd54577714f40e67ef5f6a2575d26b221c2b40a268"
+      }
+    },
+    {
+      "id": "Grants - PunchDrunk",
+      "files": {
+        "mixture.wav": "c4fa57c25f2b1e9f5b918fe3686eb9044a3e57012b13a1ffa7c8ace53b583bfc",
+        "vocals.wav": "47a7d64bab4402e51592e01dc3645ea23232f48bf3b4f1cc53ec256d08cd6ae1",
+        "drums.wav": "b83e9c13d349574059e11796f72a85ddb130c7befc148966311958f90e8b6b58",
+        "bass.wav": "7a194bfc6ba2a7edfbed0b63d41a6e2edcd5013b07eef9ab9c008b74951a1330",
+        "other.wav": "3e9121f0a6a9780f1e1ec3ee47aaa947b4ede8c94fb6ad2a17c8d0038a338daf"
+      }
+    },
+    {
+      "id": "Helado Negro - Mitad Del Mundo",
+      "files": {
+        "mixture.wav": "1ad42b2f0d6649c938aebf49e4310a0d2f6a69824f7122451c1f87c027570110",
+        "vocals.wav": "5febfa465ac00c6cc7393bca83c22828a6bb51b6f12490d72e920864c6d93a99",
+        "drums.wav": "9778067dd8642d32040a9ae110ce98eefb0f06d00cdc05ff9459aa9f8c9a6b53",
+        "bass.wav": "f95451e2256ac475193f6fe18fb1658f5b7829d669818fb2e58a5a8e67272137",
+        "other.wav": "b6759d1a2de6c8812c52e237db6e55db4e4f5f9f795fad08646ff20de8f6b2e0"
+      }
+    },
+    {
+      "id": "Hezekiah Jones - Borrowed Heart",
+      "files": {
+        "mixture.wav": "8e98cce31324caa3ae332691f78d51fe2e01b6e1145bc4f3924473ba60bdcb42",
+        "vocals.wav": "db39aaa6c978f0ffe9da9cb2bdcb09c3a5706caac9c751e607793f91c870734c",
+        "drums.wav": "8c3979e4f3da61a377ea132e50e53b647fcdf785ccd9901f087ccf23ec37c9d7",
+        "bass.wav": "56b02a7b3608ba8bc7af12b2b64ab7f30623614fd649f15c533ab3afe631206d",
+        "other.wav": "457a10b5ac2076a7e0b44eef1f53b1ddffbe410408a10b2b85515a8a7ac67b58"
+      }
+    },
+    {
+      "id": "Hollow Ground - Left Blind",
+      "files": {
+        "mixture.wav": "ecc1399733f92e38ec04fa62627539517b134403d26647732c0274cbd43b0ce8",
+        "vocals.wav": "99e2c74bd048cb390471f7871636535ecfe8cd20048103391123570b6f097811",
+        "drums.wav": "5f16e6bcf7fe6c8040ea584bf8faa9acdd3e3f0b4c1d1698fb19bde28a34f4ec",
+        "bass.wav": "3f8fb91018ab2f9c9659508cb835bbf51eee41bd949832cab6432d6002efd928",
+        "other.wav": "9eaf36b2e131a23618b17e7cb8407a57c669e0977335480664c4d01360cf3d19"
+      }
+    },
+    {
+      "id": "Hop Along - Sister Cities",
+      "files": {
+        "mixture.wav": "c570428c2c6d761cc63ed5c2b64865d54314e4db515c20b9c034f26a6e0fd9df",
+        "vocals.wav": "4dfb3550e48c3876e38836300c0f4ceba2f023e0a971cfa52d64d2f06ec8f37d",
+        "drums.wav": "db80f2082f56114f2dacb6e0ee26e078fb0e048f500a1206a331f0e827b9685c",
+        "bass.wav": "8f106e1d86aec0787e7e9c166701de014f18922ad335834563ba1fa2fc4d1fdd",
+        "other.wav": "938c31aba112fbf7b1cb4674df97cb71d7d015586a4d375ff354ad6582b774ce"
+      }
+    },
+    {
+      "id": "Invisible Familiars - Disturbing Wildlife",
+      "files": {
+        "mixture.wav": "a1d2aba90215c40a1a29f2821adfc961e72a6ffc084b65a817bd01404490ea4c",
+        "vocals.wav": "0aaccbb02c0d3d9a98ede9ac922121a384312b515af3f12779ebab80af1d1858",
+        "drums.wav": "e59650cc13dfc98d403f2387d26ab798cebe9b5333521c222a6f28c633a2d3e5",
+        "bass.wav": "ba51efbc539b06bd8d5ee2a8e506e76cd2e10121b053db5e01eda36f074c5c13",
+        "other.wav": "d22ef4bc107bd4a5122f18a72aae76719d7fc9161d9de3261bf5bdd0ef95bcdf"
+      }
+    },
+    {
+      "id": "James May - All Souls Moon",
+      "files": {
+        "mixture.wav": "14b288b6d09bed1cd83499461757de1c8c423b918b9cd8c8dec0edc5f419a4fe",
+        "vocals.wav": "51b855da93dae55634a37898297da6db88c28d6855abc38b61a0918b09ddd5cc",
+        "drums.wav": "a7be63213ecc8570a20aebcd389427449a9f7c2e10f7d032163b3c665d77c74d",
+        "bass.wav": "cf3cb9eb9a34ab2b133f07d7ed213b540b42736e3152d8b4136a7bd809e7615b",
+        "other.wav": "c9397896c48eec4b45b57010f5e2084599319448207f114c002a3e9f8f739d70"
+      }
+    },
+    {
+      "id": "James May - Dont Let Go",
+      "files": {
+        "mixture.wav": "b9a95aa22f28fa3f9f374371b7a324bd40013961090982254e6ca5db83a05d58",
+        "vocals.wav": "595020241760bbe2cfb3843fead50f258b47b0bdc31e8ed26abcd58955652f7f",
+        "drums.wav": "306327d129ce8698d8753d50a472915e30bb0ac1dcdf952173529e6c0866381b",
+        "bass.wav": "a0db86439fea08dbe8efb7ce3c094fd12db882ff05275402ca2049525c597db8",
+        "other.wav": "57016133b24a5dec4d867bffc61e1b072530dfc1fcb9d8775e0966f44f4e0c5d"
+      }
+    },
+    {
+      "id": "James May - If You Say",
+      "files": {
+        "mixture.wav": "a2a0309b70637451e5ed4d0e18a92b150fb71bb0c22b036f2472db981401519b",
+        "vocals.wav": "a520a9293f4b4da03daeec72d087b006f43b49590cdf720d7d36c5358d8242eb",
+        "drums.wav": "2fc15743f10a50a358fb7d7a2b4d6aa676db8dc66841d9382d3e95c14f12e3c1",
+        "bass.wav": "7163e5f09b8f19f4558eeb611071a0196dadd26ecee063b6a1f252ab0322404c",
+        "other.wav": "b048c43eda913855bbe7019821705d5bbc6851a689e1fccbdc8dd5da9f19a536"
+      }
+    },
+    {
+      "id": "James May - On The Line",
+      "files": {
+        "mixture.wav": "d7f7cb6b6e11ce22452d5af3f031c7acc6b91dcf55b871be91762ba2b7563e1a",
+        "vocals.wav": "410875dc9d87e71469b49345b667029497c94e0876645a1505ae175dd55a4a22",
+        "drums.wav": "0cd2fa212c7da74846a03a36f9603a7a2f29b74edf354d4fbbecadb6c411663f",
+        "bass.wav": "9059ca1e23b02f282bf54d1d35106aec022ccaa295234cec994f32f5d73242d5",
+        "other.wav": "b0a4ed7cc09eac880585276aa63009f17327fbb4a2912b384a42deb91cc212c5"
+      }
+    },
+    {
+      "id": "Jay Menon - Through My Eyes",
+      "files": {
+        "mixture.wav": "96c9b4cf01ca1439a01dd823124234015920381260a5eb032b093284c5f21f81",
+        "vocals.wav": "a3e83307be5a310f43d5cfdf0cb208565dd71fdc3a712d31ab053777e3bc76c8",
+        "drums.wav": "ccb58079a6baad7acdf2708e955670b832c0e7a59e32981b0181cb8bc83e2f1b",
+        "bass.wav": "3ad5b41b8dd806b1133fefdaf31aa289ff9b78710556714bed8b95ffd5ee4916",
+        "other.wav": "efb72045ed28035df4b9847e2854561fa89d23813f2d7846e2dfb6f673c76861"
+      }
+    },
+    {
+      "id": "Johnny Lokke - Promises & Lies",
+      "files": {
+        "mixture.wav": "72271d316f3ec7b3f33e3d4ed85c7bac92aaf7e5ae9c798753060b9e005e60ea",
+        "vocals.wav": "12992098e3748d9e6877154ede04eabe513ee41738b917202b965c586b0f0b18",
+        "drums.wav": "c13f36a9c47512b7d31c2ee65655c4256a78a934449d70acae8ce844c3d08f87",
+        "bass.wav": "3f377adc71e115e5436f5fa1b32a6ec024035b457e70df72c51f18cfaaf7d885",
+        "other.wav": "41698175f9e100e117845f298af25a97429bea2a3cf80ee45d977f82f20cef40"
+      }
+    },
+    {
+      "id": "Johnny Lokke - Whisper To A Scream",
+      "files": {
+        "mixture.wav": "02b1f0366c9bfdcd7ad0c381688038de4ae7d2461f03588577bdd7b8083f40ac",
+        "vocals.wav": "521c47d13e96dc96f8ce545cbb1c9943b745c0e15f52ea508ceb77c300cd3171",
+        "drums.wav": "b2ff5fcffaacb292fbe7f1f17b6423bc7c14dfe7fab533cc8d630ea3b21fccbd",
+        "bass.wav": "905d6779eecce0fa456be36ce14595d251daffba823e6aba4b7a82345df60613",
+        "other.wav": "b0eb1b178ef931be47a21011afb76ce251595d42b36289fb8efaada763a7c586"
+      }
+    },
+    {
+      "id": "Jokers, Jacks & Kings - Sea Of Leaves",
+      "files": {
+        "mixture.wav": "970416d578126420b3fd1d891e874d8c7984dd8bf6a661c2aad6b694ab83ddaa",
+        "vocals.wav": "5a0c86d846867ea5ea237cf9e6e4ab5dd507298bf228bb15ed8009f9556148bb",
+        "drums.wav": "716535f41942b5ea240b5b316b2ee9c9a64d47d4becd904e5fd482376118f575",
+        "bass.wav": "1e54ddb4a9c27ef35af63c40e7adb76c0e9ad5531b7e5d246410e8eaa77af26a",
+        "other.wav": "e1a7470bb411b70cbde033ef241b9ff88342d9551ba16c8351604475583021f4"
+      }
+    },
+    {
+      "id": "Leaf - Come Around",
+      "files": {
+        "mixture.wav": "ee360cd6c33eb3efb38bcd38fb2905f4adfd1eab54e1a21fdcc82b309b7ab848",
+        "vocals.wav": "052290e872a23f2e7699aebb26e27e691bebdffcdb22987455abe2ab59690504",
+        "drums.wav": "906cf0751b0df0546d33a6a8dadd1909f2db288ab3ab91ee78a54d9c50754692",
+        "bass.wav": "2507a47d55b74a3d962b6fc2af9bda16405dd870ba7047d285645f9ae3e383ef",
+        "other.wav": "976129e7455e5b35c66cf4b6bce417dcb95c3103c825631c802d424dcf96ad98"
+      }
+    },
+    {
+      "id": "Leaf - Summerghost",
+      "files": {
+        "mixture.wav": "ed20771fffeb7a95c15ebdf8f5441757111e83c716dcb20437efe0f4a7fbfc9e",
+        "vocals.wav": "2af8852aeaca0a47b168c3151df09ed9c84c4c804b0573b995aeed0042f3245c",
+        "drums.wav": "e191bec288c83cb14439b63cf18ae6eb9a2019e6dadb08bfa8130d53ebe5beb2",
+        "bass.wav": "8a884fd1f7c39c53801442cdc1efba47690ee0bc0f46a6169dd729d9ae4df2ce",
+        "other.wav": "476c7aa56ba22c7404d2688dec75740ecbca5782d7eaaec601d588cc559578c6"
+      }
+    },
+    {
+      "id": "Leaf - Wicked",
+      "files": {
+        "mixture.wav": "bfcb352c49835f7ae25d72bd6f1dcac2967845d9aafe6d1872688fc1598de31c",
+        "vocals.wav": "4ee22f585bd38dba087b8277d2a1f6e5ac63e0f2ea27f33dd8bab0dc0b4331e3",
+        "drums.wav": "7892ecb0786dce7aef7227011b1ff5cf5d8b435aa309100172482e531d2ad5fe",
+        "bass.wav": "3dd36e5685b33b42e8df27c7307a206626c1bc49e3f18a6c1e3b2e62c88e7c18",
+        "other.wav": "a0f9a9822d6d9e9ec2379bc271aec3e326eb57eb00ff96c2223f9861cae0a44d"
+      }
+    },
+    {
+      "id": "Lushlife - Toynbee Suite",
+      "files": {
+        "mixture.wav": "84614e24d1ec6b9c6e3805c05a6b752e4b395a18e30ebd4320bc186268e59296",
+        "vocals.wav": "57ba12c1d75447f5719bdcc64a7a962c4514cce2676fd488c18e4e6f5fb7c31a",
+        "drums.wav": "47ca2e40e967477c6fa92d431501156cb3d894136de0e42de2141822240422aa",
+        "bass.wav": "6cd5c9dc87128f5e035573ec560ce1a9a22320020a31ae5d9f432408909d71d4",
+        "other.wav": "46a4d511e69648ae9f8f588dfdca3c8dbd1329a93d6051420771591a34fc4898"
+      }
+    },
+    {
+      "id": "Matthew Entwistle - Dont You Ever",
+      "files": {
+        "mixture.wav": "3890c025688af3384a00dc53a62b3f113eb541e30dd621c921f7cb897f64a318",
+        "vocals.wav": "524a2dd296c84dc30323c410fbe30bb5df61a5fd62c1e7fb43c71f7205d4bded",
+        "drums.wav": "5e96f4ffa653fb9c85c09b52b6bb6e26fa8f2a35bf9b52e53e63cee8ba30b160",
+        "bass.wav": "c624884df3201b926e5559214180a4851b303dd48651b83e966dd81fad0e42bd",
+        "other.wav": "8fbd030e80f89bb7de29d5007a1399239182bdd9155ca52818928c5184e762db"
+      }
+    },
+    {
+      "id": "Meaxic - Take A Step",
+      "files": {
+        "mixture.wav": "c849ec222808333230e149352164ec7a29277f95f3b8f95c57a4b992b4b0a598",
+        "vocals.wav": "0c9bb04fef72b0265f01351418d85c56bcfd72df665e8e3a1cd0ef93a209e5fc",
+        "drums.wav": "5dfb4102817242a3cb43f5f15983958fd807e0dc198c7f27e9bf4a3cbf3c2c0f",
+        "bass.wav": "690d0bfc0a3dc92a9abe57a3b5299d61bc01d5ca99640121ec325149f8baae25",
+        "other.wav": "710d63136b05550e2ef123672434636b098118ceb48bf3d8e8c94265aaeb462c"
+      }
+    },
+    {
+      "id": "Meaxic - You Listen",
+      "files": {
+        "mixture.wav": "95dc25647359eab53a4077498b364e87e258f4e832ebccbb75a27772cd38d40c",
+        "vocals.wav": "875af150a18226519a0ed78bb61de1572492545e26db7f272057c633061115ae",
+        "drums.wav": "85481437ac10053f23d52d2aff34e9eb0dd5a8894c7d859bd2dc7c6932e7d7d9",
+        "bass.wav": "230644df68010b3892799875f2b76043fe699c24e20d44951bb25ef63199e642",
+        "other.wav": "e8193c959e1821635270ca99676510846e51c020c8646dfa54b94aa0dd51d805"
+      }
+    },
+    {
+      "id": "Music Delta - 80s Rock",
+      "files": {
+        "mixture.wav": "d57b043234b6b72351680500784293062480c22e4c58ac1556c37dde54f34366",
+        "vocals.wav": "12f9fc6ca1cec7dcf843d97b72f3b81f58045224f7133e9745ddd09303989769",
+        "drums.wav": "13d43bd7af4cfb61bfdaa6c56b85b2ef090c82467d9870fbd158335c951e1384",
+        "bass.wav": "61af179f548964ff0aa4ce7fdab4482009eb0e0771eefec8550b4b181bfee11f",
+        "other.wav": "59a6de308233eaba211c531c643b27a73fbd59d0ceaa635425467fc9142c800f"
+      }
+    },
+    {
+      "id": "Music Delta - Beatles",
+      "files": {
+        "mixture.wav": "2d96588712dad1ea00634fa69aaa752112c9a24d2788bb6e6abc0e660805a650",
+        "vocals.wav": "f3c313290096667f260cef43f3ce07256649bb446b74e0682bd9359b88a587a0",
+        "drums.wav": "605a3c29a26e6e83303e6904eae0629903463f208c68b984d06aa66c4a2767e8",
+        "bass.wav": "47409f1616ee1d7ed5599b9cbc003b0da43a34082f5c2fa5453077cdfe19a269",
+        "other.wav": "d7e27adba3a3631413d744ebe3381ebcc0e2f0b6c0451b39f7476c6669745393"
+      }
+    },
+    {
+      "id": "Music Delta - Britpop",
+      "files": {
+        "mixture.wav": "b37de370353629cf4ef52b36bc4a4ec302254a8ff11abb5f76dab9d623d8a052",
+        "vocals.wav": "45f0d5f4d784aa9cca50583e685bc7f7007ec17aacf1e5678c922337b61ef3ba",
+        "drums.wav": "bfb922f9f4876eff520c5509331d88796e6796f11f153d7d4ef0c0897b7defab",
+        "bass.wav": "77758e9b65375a4fdb3d144775341b3787113210c12b59694cc0e1b2fdcfeae5",
+        "other.wav": "4e02ead9c891dc59c5c3fb540d86578b6706063d313073b98e7cb7f085e98389"
+      }
+    },
+    {
+      "id": "Music Delta - Country1",
+      "files": {
+        "mixture.wav": "2b7895bb6da4c48efbb1410f9d69b51e1db4c1883962af1ba35bf6f868ed6e9c",
+        "vocals.wav": "2864e2d6adf05df5a5b3b0c01f1ddd69e46f318100f07dec15b70c1e152e0f48",
+        "drums.wav": "e66c22666638d881e6e47af3f286a8eccad071042e21b78e2bd8c18d50ae9265",
+        "bass.wav": "25f33ab649c71fb8c1c704b44e4722d8c79778b8219b6fff7ac169a4f56de4ad",
+        "other.wav": "9a5708f7767baeae59151f8f4a7846726a83de8d6036d9d0d278f740c64b6240"
+      }
+    },
+    {
+      "id": "Music Delta - Country2",
+      "files": {
+        "mixture.wav": "e13b0537f9d8308776e6ca3c0cceaf2b3272c065ff07289e1601e4d017c40dbc",
+        "vocals.wav": "839a02aecd5fa7d1729ea2b2f561726bd0daec2ae1bc6e19edf8d5b99c0938c9",
+        "drums.wav": "14751b5951b290b93a58d36c5683fc61f0b1ebc79355c2bc4e608725c313dfb9",
+        "bass.wav": "ca406192098693f95716fb57821c6e6e805f76cfb3913338245a9196baa0ec35",
+        "other.wav": "bca965705ec6a7bd5beb8a7ab86bdc14750b0799f4b273fc2e38877404f10d62"
+      }
+    },
+    {
+      "id": "Music Delta - Disco",
+      "files": {
+        "mixture.wav": "f3375050749870811548c3fd4e7d4fd666a8964f2ba11b30c466c67d6e595f47",
+        "vocals.wav": "1b73afe18d4a72bc1252d8ab23bafe4c73ebc46dcc896cbc7aebf237ae8fbaa4",
+        "drums.wav": "9d9da3baeed087d636d5a9679f8a2eafdef55fb019dcf5e67e4b7267e2518d86",
+        "bass.wav": "77673156903d8aa703bc3a92e61569d0e723cc1c316c2c007ba0579db76212a5",
+        "other.wav": "28fc1d2b7f40b4bca1d4bc0ea476628b183a09be8b71296065a17d44f087011f"
+      }
+    },
+    {
+      "id": "Music Delta - Gospel",
+      "files": {
+        "mixture.wav": "baac01fbf45ed10e0bba5aa06813bbe3112f54e28d4d809bf10bfc75570cda72",
+        "vocals.wav": "8e03b4d55f27170a91b2576e797fc6f1fa8c32d18fd6572b1c7dabe60a0816df",
+        "drums.wav": "282f6189771cbd37e67235ff6ee5faa42caff6684a8648782cccc0180967fe78",
+        "bass.wav": "b92b4f6994c703c8e4522f27734429bf6f954dcbb55cde52f8c5530651aae09b",
+        "other.wav": "b30d7b997f359b855a89761164f13c9b8db2482d44b469e2b42484158dcb5c2d"
+      }
+    },
+    {
+      "id": "Music Delta - Grunge",
+      "files": {
+        "mixture.wav": "32e522de57ec56c1f91bf354f49b75685ebfdf1659e57cbbdb9b724f5ee09752",
+        "vocals.wav": "fa2e1671819870bf6174c18e02f811e2bfcb2e51d862bae484f8069a3f2f53b0",
+        "drums.wav": "f7df33e0765f6d0e9c4565d463837214659e3c6dc96fbb63d4cc579ed98bbcd3",
+        "bass.wav": "197dee1a3a1b3c47c90b892c39cbb921628b94db6d9a2cdff73b3279b115d363",
+        "other.wav": "b413a3e097c350a051bca3ee3a5e1105a35c9e42a7c7eb6edd77b5b1481f2c57"
+      }
+    },
+    {
+      "id": "Music Delta - Hendrix",
+      "files": {
+        "mixture.wav": "fa6f6f696a383d8ab2d42e7156b85c696e5ffe68ffff20fc1c67bb6a7ec0ad9f",
+        "vocals.wav": "29322a8e73ddd4b22338d6295fd32583012922570f1e4d6a3ceb2741d222f8d0",
+        "drums.wav": "f3f33b3289283de7e5ebb5c7acc1afbc9959bd16002c00946b76dd8caefc5fd6",
+        "bass.wav": "a0a11e51278e3e00779811907127299bd31a52dd87ea91022952775fc7b3cec2",
+        "other.wav": "b6c896d34bb1151e2cc2b2d595dd5b49ad23074f9a7262cb72f2f2db2397d080"
+      }
+    },
+    {
+      "id": "Music Delta - Punk",
+      "files": {
+        "mixture.wav": "83a80593bf35ffa6c4380285460f5db80b37ca1aa8fcf34a67f19d586ce33163",
+        "vocals.wav": "02c558be44f6c586b1b5a5172613d20256389aaa8408e02c284f29002802d46e",
+        "drums.wav": "204827f2971da0df1126b705d5cebf3d5db676b15999da8fda4e5e7d202b9c6b",
+        "bass.wav": "f978f0e2e0b9a6067838c9d625bf50e0dda885042e42a87668a979134e57ab4f",
+        "other.wav": "bd810199a9104be6ce33a622c3141af22af3836ba6459afd953b44ef1257294d"
+      }
+    },
+    {
+      "id": "Music Delta - Reggae",
+      "files": {
+        "mixture.wav": "235fec2fe8f3be8da7a95a25469d712239514e7fcbb20b05f5a7ac8cea19a4d2",
+        "vocals.wav": "194350e19e739fd270712286639529660a4c130f0e79a6ad78e3defd6014f08d",
+        "drums.wav": "5988e220b70ef5e4dc6a92c8e4570ab60a961d80b4b4bac557d7a5e7fef847ce",
+        "bass.wav": "79eaeb005642ddb6a868ca57797b81b3c0cc3e0dc483e8cbbb71e761e69d65c8",
+        "other.wav": "485cf1060325f94d81da3566b71b2f9cb6946e6b172f0c03d7311ee23b066a28"
+      }
+    },
+    {
+      "id": "Music Delta - Rock",
+      "files": {
+        "mixture.wav": "485321864fd9c7393bbd150d80481379d0f2d27d4be9e1bbe2fcca6e6bc31090",
+        "vocals.wav": "63eef9138086fffd2ec3739a5166a94db12624b0626d76018217ea8b104b82d3",
+        "drums.wav": "a88ccd687936bb57c853aa383c7745c44863db626a187ff0f544b74fd0b40aae",
+        "bass.wav": "5bf728b772e5624e5d1a28f4a9e687c10c006ba29e4b31e7c9e6456b269c95c7",
+        "other.wav": "1fb018e1dea7a6f7e2d65204ae3661a0b0ba17eb1e11250ec0a3591c30732f8a"
+      }
+    },
+    {
+      "id": "Music Delta - Rockabilly",
+      "files": {
+        "mixture.wav": "c6587d5efd41efa9f97b3794f9325088c9d7667c6b462a78e3b05b5b8ad2d70d",
+        "vocals.wav": "0bc68827d7039394f53f51f3a7582ef6c57fce41e37223a5adf561ab62d8b4e5",
+        "drums.wav": "ff2107a3adbfb43d3e087654ed43581664c58c7fb926addfd63af05024dfa099",
+        "bass.wav": "437ea6adad20c6dc9668141140297fa83c2eb4ceede4176151cd4e6d7c4eccd1",
+        "other.wav": "d9d39f7933943c37e10de13cbe119bf3182fa40df873a69984da53378e7d609e"
+      }
+    },
+    {
+      "id": "Night Panther - Fire",
+      "files": {
+        "mixture.wav": "faad3ed299106c68ec30ae1ddd246c2d65371eef138064c03c848c10e8f101e7",
+        "vocals.wav": "f5ddf9ef6f1a865646047633dd57d8b5f808732a201ecad5c463baeb939a3b1f",
+        "drums.wav": "b8127564ac5ae7f313f480b1a7a50dfba7fcb801de810c55d80aa20583763fd2",
+        "bass.wav": "9b64784a0ed8db487cb0d8d903ed4f8dcfc5c1ef8e30ac36233c27c2442d7a3d",
+        "other.wav": "94bbf7c228222a04c5b5e0922cfee37baa90cb96a7fc97270a99fe0335a6109d"
+      }
+    },
+    {
+      "id": "North To Alaska - All The Same",
+      "files": {
+        "mixture.wav": "06ccfbee6afbf6d780c8fd34b9c04382491e3e6c02e453873794e2d639f22b83",
+        "vocals.wav": "b59926764d153f8ebb0830fc147e7ee3848343d03140e92e2a0769dcb41e1d03",
+        "drums.wav": "0fc30b51c739496fc8360d2fabf809c9d5604f728754fc26acf631788cdc6b7c",
+        "bass.wav": "64cf4b1fa7474955dc7fd3df4ab5a53dd5cdc0015441f5b4607727145a81880c",
+        "other.wav": "4179a9f965fe9dda931807434cd3976a7ba3c68ae8f0ec6736ff028a7a566e91"
+      }
+    },
+    {
+      "id": "Patrick Talbot - A Reason To Leave",
+      "files": {
+        "mixture.wav": "2cad4ec97ecc7f3bd0e07da8008a706adac20768ef79aa79190ff2d167d2209f",
+        "vocals.wav": "34eddc9975a8734ce1e4d826ad0023667db694a50ac85592a22e794331b2dd35",
+        "drums.wav": "fbd04d60d99f1b41c0b08fe554e5ed7c5c155e860024918483b0a8d49a06f8fa",
+        "bass.wav": "934f884680f8ea9ddd7f07e053a8a8917d053494d3edfc3ae6140ad245fde4f8",
+        "other.wav": "3ef0c5f3b4c664d638e9cd91e8dcb7282239ec6bf426d11a2193d2c9ac34c811"
+      }
+    },
+    {
+      "id": "Patrick Talbot - Set Me Free",
+      "files": {
+        "mixture.wav": "b25ab3fec247bdb74ee1a7ea40c60d52d79d9d4dcfe84409e0abf2c4a37ce865",
+        "vocals.wav": "c314309fb9208248d121b76c31e0de047bbe5e7e2e29a451556b9f354cf21e7f",
+        "drums.wav": "56230e544a1724d00ecb75133f3a367624ba8cb7c8a854d7ba8dd17a82656e64",
+        "bass.wav": "821dcfff66efaf1a7e3749ab327e0eb6ee7504328b72d3c371c2ecb2d7e7e39d",
+        "other.wav": "6c7faa728b7f99361b1f40aeac61bd62636a46040de42f275e3768aa3e772345"
+      }
+    },
+    {
+      "id": "Phre The Eon - Everybody's Falling Apart",
+      "files": {
+        "mixture.wav": "e32e253cf400198db3a1146a592a056a3eb78dd2dce537af29425ec2cf68f1f6",
+        "vocals.wav": "e6957d15da094ccc2ad02b8b37ff6831322d95606d9fb3ca75e4581a290bc523",
+        "drums.wav": "e71897b1d04cb3deda7aa74dafef09ee0abbae21756b2408d5349c881f4ce451",
+        "bass.wav": "6f2aec979a1c5039ab926b69ceffbe889460f66db0cc7d05a31ce81c67e90594",
+        "other.wav": "e55be98faaefe4fc836254f07602ac2857981526f1ea97188037eccb09894085"
+      }
+    },
+    {
+      "id": "Port St Willow - Stay Even",
+      "files": {
+        "mixture.wav": "d2197853813bf29ca1dffe7aa8e675696ef2565f9e40c6fcff04cb60a7112267",
+        "vocals.wav": "7c908bd600ace8081bf94bfcc1a139d23206c79231e3be6be3487797608e78f2",
+        "drums.wav": "62176692e9a24d8acd47fe3426eb54c88f129060762c7e84795f84ed77973b9f",
+        "bass.wav": "089e3dc92aee790e1dd9440a259f2d7e60695da9f0f69eb9ac391c132b5906ba",
+        "other.wav": "9f34cec5496f9201b3097ef9337828f76f8cfb3320dea0c89f81ac45eb7b368f"
+      }
+    },
+    {
+      "id": "Remember December - C U Next Time",
+      "files": {
+        "mixture.wav": "ccc7abe91407108bd198fd630474f8ee1fcecd26e54a2ca8ffb60f87652e81cf",
+        "vocals.wav": "a48711a307f1fccf6ab735549e22f51e9a0bca0b050cac3a526867fd3b05b43c",
+        "drums.wav": "c173d7de32f84993d78ac77d3d98a0c3563ba6fbe3a35850a69ccb79a5c89bdf",
+        "bass.wav": "ed81fd6b37e3e62f575d7152a99cee00e5585915a1ac4974b083eb7a0512ab52",
+        "other.wav": "17a124d67c4985d52ba34a9b8818a1c2a5d993fcd92ec65424063d8b5167b4a4"
+      }
+    },
+    {
+      "id": "Secret Mountains - High Horse",
+      "files": {
+        "mixture.wav": "21745c1fcadc3ba20088134432699a944bf0038f53ea377dcff473804f3acc53",
+        "vocals.wav": "bcae92740b2c7240ca158cdc25fe1e031b97289e2375e8a96ee0fd18f5543917",
+        "drums.wav": "683ad48c124c6fdda5b72eb229bb4c671ea60d46247a7c22749a4bb6890f5d6a",
+        "bass.wav": "b24cd422cc7590a4dbb6510255984d48ae708d9f048e8c18c9a393437fb7b6b3",
+        "other.wav": "f1640144539a15deb9ad57625b7e0461b3a2b6cbdf404dc317c8903bdbbe3d49"
+      }
+    },
+    {
+      "id": "Skelpolu - Human Mistakes",
+      "files": {
+        "mixture.wav": "581ae12aa635ddea945c98962a175fc60ff65e72384f41c59dd69248422b1e90",
+        "vocals.wav": "f3e055446fd9bce96dbe6aac8cba2e6086a0e5f1febf5db924ba2958d29b8181",
+        "drums.wav": "1a9a4577ce1512c6727554a6a9d91719210b376500faf06ac9e747f494d3f753",
+        "bass.wav": "a9056d4d9b1a75afaf202cd6349979e1fd5e5a36da2ff32f9a1b979dc276f926",
+        "other.wav": "e64f15f369c62b50974c5c8a1d133f86ecd5c66d80aef4edd296a3a7fd37ae93"
+      }
+    },
+    {
+      "id": "Skelpolu - Together Alone",
+      "files": {
+        "mixture.wav": "d959525abd62e570b07d9005052b5516724a899bf4bb01fe83afd52d91e60fae",
+        "vocals.wav": "035d8ddb98dd2a25344abc290f246b2b6181cae24da739fc3719785d7ceba70a",
+        "drums.wav": "69752b2513a7973644fa1b79b966f96bbd503755a69894ce46db8b3293c6b3d1",
+        "bass.wav": "2c3f204f55a97718dbcbd08e760581a012e1f7b087e649edb865a0e7b783cbaa",
+        "other.wav": "ab969a8347da37ed565a054e230e98cef0443a98875447923961e8a813f07eff"
+      }
+    },
+    {
+      "id": "Snowmine - Curfews",
+      "files": {
+        "mixture.wav": "8584b155f3a150be1d72a1a923d16a9a089ee122fd6a96516eb443593654735c",
+        "vocals.wav": "97459e10f035a8a62da3c10b5ad9f82ce55153210099d0fd9ef5202fdd6114f7",
+        "drums.wav": "fc00cc81290ae288cfb92ae91ee3772e1d34d5b93f7e3441535176c81c72d759",
+        "bass.wav": "b5ecb0094fe30ec64464fc5a5a1edb05d3c40268f5ce32214d19b77e9995a90b",
+        "other.wav": "fa3a479ec58336c10cefaea6f7c040b7d2fe8a838a5439004c54a7722319551b"
+      }
+    },
+    {
+      "id": "Spike Mullings - Mike's Sulking",
+      "files": {
+        "mixture.wav": "b2c4c46db9a219b0e37238c6fb8049e856e25a8310362cc44ac7db23fffff4d8",
+        "vocals.wav": "c93b0b7674a82879ed4dd0dcf6825be9005580b83711db69a31b1a770504590b",
+        "drums.wav": "81d20e9a2eeed9662146601b48c145d772e71402a392b76830b2c6f4849a199d",
+        "bass.wav": "c0db15ef5096b8b6b0815e1367700af9a3ab381b981a6ad02ae290a417396c17",
+        "other.wav": "36e0f253396278f7b64e3841d90031c106ea22a7911e36083feec11c868c41fe"
+      }
+    },
+    {
+      "id": "St Vitus - Word Gets Around",
+      "files": {
+        "mixture.wav": "c02666532ecee50a3496c8bf9d82351de8e7e3dcda72df17615e229776bc0378",
+        "vocals.wav": "6bfe96d19d530ad8dccfe13333cd8931348ccfeb562fa11459fa03b6dab54488",
+        "drums.wav": "5a77740fac2c77946c6f81f34691d8edeba5359963c2fc0970f792d0de1dcd15",
+        "bass.wav": "44d5b3756e6bb95059be61a715977bec6dcd4a625452a01854764c6fe31ab823",
+        "other.wav": "9f009eca22ce0b32fc15508ecc0a894790bed5545a074a93523bf3ee16bdb8fc"
+      }
+    },
+    {
+      "id": "Steven Clark - Bounty",
+      "files": {
+        "mixture.wav": "8d0a9223bd5aa624d75d07517cd074f5fdb0c9f73d066913fef64c6ced909b92",
+        "vocals.wav": "5d0399c9a03f8ff3e877e3dfe9f22dcfea036973cbf0d482a34e2c9dd5d9892d",
+        "drums.wav": "100a7d1e05be6a40e474e902faff0788680b03ed04656db4ac5343a9df6ad83d",
+        "bass.wav": "4acdbbd1636fbe92991ce5c64cac2016c93faeccc8f6ff92ed49d5fbc5441ab0",
+        "other.wav": "9a0ddbc44f35a6418d01d8c0e15fca1d13db7b68714451fa06a00767b9822dff"
+      }
+    },
+    {
+      "id": "Strand Of Oaks - Spacestation",
+      "files": {
+        "mixture.wav": "3053908baec614c73e31ffca0967edab1fac53a99c2c8e903028f114d88a0e09",
+        "vocals.wav": "883922ed43d110fda28f96579831f2f4e7707c7cf1c9e87acb830265bf00ed91",
+        "drums.wav": "b8d7bdf9d3cfd5147ccdc5f36b12ee36b80ecb7f79165e9b1887636febd26905",
+        "bass.wav": "62f7c43bb7046999d39c44aa1dea6a4f414798e3154d7585ecbc64b540d3ab24",
+        "other.wav": "3859e4d4a82f1d10a091e6880ebc85af6ad052257f7879788db9c8284d48187e"
+      }
+    },
+    {
+      "id": "Sweet Lights - You Let Me Down",
+      "files": {
+        "mixture.wav": "6aca5c82ac89d3b02bf893cf1e6247b42673f8a1c87d4238e184cc52ae9fd898",
+        "vocals.wav": "531bed59f7aa9a4a88866549bfb02eb02ed2c5b4a8be7ce8cafa781617c10b06",
+        "drums.wav": "cea0467c891789bb824d39fd41bceb197870500b399592f643aba58ad89993a3",
+        "bass.wav": "c7f2be8f93b4ca065ba9fab56e395307c7080a140b1527ff38bb2ee6cd6bb090",
+        "other.wav": "7059349318afd1671166fcec073d42c399cf2fd563ad07950d9abfd0649ff2db"
+      }
+    },
+    {
+      "id": "Swinging Steaks - Lost My Way",
+      "files": {
+        "mixture.wav": "602ddf75d0a41d63d08a21bbe27fc80c4f5a188acf8cb772c77979d9467a66e0",
+        "vocals.wav": "fc99692780aabc7467a8c05322d2d0cf0706bcc93a3331f7c3df237b8e5753d2",
+        "drums.wav": "4a58bc549c5fad795aee788d6045edc0c59d8b257115b4450ef1c0bbc2df86a9",
+        "bass.wav": "819383eb39214e3fa76aff734c8210a988dfa89a1972cd5fb34a480f19043c32",
+        "other.wav": "797e9047d16ca8b7521a63012ccbf300b7de01952d98794da644570c851f9633"
+      }
+    },
+    {
+      "id": "The Districts - Vermont",
+      "files": {
+        "mixture.wav": "1577df6607e24b9ff39ce3b291bc581ef5fb28982e852b3969a1870dd98dcc29",
+        "vocals.wav": "51a2e0722df6066669b58a648b333c5050efa4746ac9faf74aae7e51f4d28ea6",
+        "drums.wav": "9284277cd3f203c02d96117087e010b0afd570c9090749a34aa5e44156aaae74",
+        "bass.wav": "a2873badc56b85da27a2df6db36cab7c23b4c0949b284ca7f378c6094fedc38c",
+        "other.wav": "97702deb83376f7037635634c31ce7c325ebf3c1ec6f772f09b40dc0ae40c627"
+      }
+    },
+    {
+      "id": "The Long Wait - Back Home To Blue",
+      "files": {
+        "mixture.wav": "dbd38e4964d323edb9eed153c3868bde76db58d264be8fe5143a5891bf4ecebd",
+        "vocals.wav": "73149dc055c092a43643b2006a827951c61a0ac4c0958a163f538d714993bb71",
+        "drums.wav": "3fed953b8bef19799ab8e560a7770e899bde4af4f2d4c41f61c899b36ac4ea1f",
+        "bass.wav": "5277390cecec7d908fa869135b89cee8920e8581acc99fee147cf959f043ea9b",
+        "other.wav": "b57ad7c8c99506f3d43a0236a147011f544a1c2cb8391ef45b34d0a7ef4fa603"
+      }
+    },
+    {
+      "id": "The Scarlet Brand - Les Fleurs Du Mal",
+      "files": {
+        "mixture.wav": "01c8cb87b75381a9aacbeec68b15a0d5bd06a026a9509ea55d9d6cf8760352bf",
+        "vocals.wav": "a8d688d3da7f4ba088447e23c0cb37813b531d467d4b2fb686fd232120be4257",
+        "drums.wav": "1d30f95a4d6d2c4b1a27ca1985672c371b10cda0129c0d0c7d7ea8ce758d610b",
+        "bass.wav": "337b2c924e01b8435ce9376e7658e21508bb5f72c7296991492a64c9081aa505",
+        "other.wav": "8d58a0d8be0a3eb70a22935cbd30fd1c738a541b59026668b1878084629acd04"
+      }
+    },
+    {
+      "id": "The So So Glos - Emergency",
+      "files": {
+        "mixture.wav": "9e384c9ad6c97be34126050a3844d7e9b713f6e636552371c376353da4608183",
+        "vocals.wav": "a0b9609ff99e23353f2fee90da81707d6bb36dae6a75d0fa35b2006e38677baf",
+        "drums.wav": "3a7d66d06f98eeefe84de67265077a544cee0da67c7dd1abf646c8814c28edde",
+        "bass.wav": "6ef72ee0d2c35e00742aa7dc3f783267eff3c553334bf6334c1dd4e33839e18c",
+        "other.wav": "6b28bd3b958f996c5637cb879a0642a666eb7a9a24be2a31a36bd601b127b3e7"
+      }
+    },
+    {
+      "id": "The Wrong'Uns - Rothko",
+      "files": {
+        "mixture.wav": "4f41aacbc1de653389436cba2ee15d024db45d2e1a30da5caf6174643113a985",
+        "vocals.wav": "89255b638ff5986891ddb4a2c0dc36f8b7a7f74c8c5bc6dbf5410507fcfa56f7",
+        "drums.wav": "a2f6652a97ae2c3acfbbdc617f58f0bc3d7166159450b7de4639fb5a2c92b008",
+        "bass.wav": "c82508e03714cad376f4e6eb018cc50b63da30521d05d5bd992f6c07de0566e7",
+        "other.wav": "43bf17905bc40fae00ac9b5d05e519b4d4ce68bb2ee4b1af457fd2966da3cef0"
+      }
+    },
+    {
+      "id": "Tim Taler - Stalker",
+      "files": {
+        "mixture.wav": "45bc2f2adbc9b7dd9c36b4cb31a994056b01cf9387d56df8996295e3f1a77089",
+        "vocals.wav": "2a2d88ac49d83a1ee2b85227ac64b2c0f23615c8bc13b16d2dfe6275193a3fb1",
+        "drums.wav": "7ce8a7a79773c78b7a33c76130cb806c45f6620406e4c082693ba4a1786ed538",
+        "bass.wav": "0070f5a14c10ead26c1e010d3f48e62c5be026a8fad0dd7b300b597660eaaac9",
+        "other.wav": "63ac56776ac6d36b714fbdfbe4cc3ab6180842d6afa6bcc9a1c22ed9ce840cf4"
+      }
+    },
+    {
+      "id": "Titanium - Haunted Age",
+      "files": {
+        "mixture.wav": "dab5f148e8ddc5741d8c167484f48598ba1d222ce8c4558bbd708dfbd0b49a07",
+        "vocals.wav": "4052d46d3d61206328315cf664bc550cf9ac8d4238b933f65fdc18f1cabcce6b",
+        "drums.wav": "890b7714e2b36ac4cb05bd721612b62ab1885db9084044a13fd2ad022c9dfa3a",
+        "bass.wav": "7aeb5b5eb99d8b330589288292812200bb1d2938d43c935e04bea2c5921b8828",
+        "other.wav": "66b291203d7694b1d04b82d21afbae34703517c159cee92622354021cc30ad47"
+      }
+    },
+    {
+      "id": "Traffic Experiment - Once More (With Feeling)",
+      "files": {
+        "mixture.wav": "4a6337374435cda27a8df62beb15d139eaf8b5ea709c2310da262410e23de956",
+        "vocals.wav": "b0762fd724c016a8678fe6dca36573c2982b03e177a45160e7898559066b75da",
+        "drums.wav": "f279eda434d4305fcf319ced7b05d0d0f60d46c18899412dcb8d8f1b1f0a6e8a",
+        "bass.wav": "093b1eefcd15ec81c9871e10b9d157e8a6e15fd21bbb88d7a9e790aecff6ffa5",
+        "other.wav": "e4e63a658cd780d47c46b38151041a4dd630c1930dfee8123a3fd5da8d3a0827"
+      }
+    },
+    {
+      "id": "Traffic Experiment - Sirens",
+      "files": {
+        "mixture.wav": "8b5a796a67207e22db35984a8ae993b46299b29fa878346eb14cda9377a2c870",
+        "vocals.wav": "d9f1a50c0bbb15b8a66bd276d44dd6cf757d058352936ff448f0df93941c1fe3",
+        "drums.wav": "8d98f3ad7e2fe85ac125399b98ef8fe732215c85838768e9dffcc07391958e86",
+        "bass.wav": "448c0ba9f21b3a65e0161eba743b07dadc9a03f4b01d478da8b3a44591255f88",
+        "other.wav": "46801a84759d4fa2537f518c1c53437c4950bc19c5a42bb6ccc934454d7f0e57"
+      }
+    },
+    {
+      "id": "Triviul - Angelsaint",
+      "files": {
+        "mixture.wav": "900ba8370c8c0ff666c95b0c3caac59d1a1ce38cb325d5b1fde44752b7f30250",
+        "vocals.wav": "f6d161a64c7e8bb89d627f0ea8c1e113a3281908bc86d8aa3c0a21ccb8a6be83",
+        "drums.wav": "2d89ed857c4710256ae803d0f353b587a1641c86305fecea06b1f4e68f24ffe5",
+        "bass.wav": "984146acfc5da05dbf66c48b58e840d0a56468e72f36946773bc9707dbf6fd24",
+        "other.wav": "8be92339c3a11daab33b25f135b0433d4506bc0a0268d2c4dba13a3869db6f67"
+      }
+    },
+    {
+      "id": "Triviul - Dorothy",
+      "files": {
+        "mixture.wav": "201666db79ab856c00eea2e06bb688ec7c09a4a67cb5b4b6479464172c1da754",
+        "vocals.wav": "ac8314e11eedc8bc1549fa3e5de610d0f20faf970717a5e565c86548023e842b",
+        "drums.wav": "6e2288557772b063c8466b0e563e724b9c15931627d7f32fa80c49b67f070a26",
+        "bass.wav": "488200d4c4bffdadd8365b3de0f9f6c356a90eb5b4bb7d4a33cda786aafbe379",
+        "other.wav": "c0d7e36be26f5dcea604d1a4a53d0a2b5b6607510127e10a487d64d10ba411a0"
+      }
+    },
+    {
+      "id": "Voelund - Comfort Lives In Belief",
+      "files": {
+        "mixture.wav": "b67553e35fbe889ca485b110db7c1bc508b4f7313626cd8973fff1150a1db527",
+        "vocals.wav": "25696881f5739dc83925ce2ae1afab2bf9d90858e0748da583609461393fffb6",
+        "drums.wav": "fbc95f47bdbc2db2d2a33a1ceda55a3147a0be42c2175d865b69776e761c8c6d",
+        "bass.wav": "dd8aaad51d047245d2bc1ef311ad81569cc989d2c6263ced6efb79569425ebc3",
+        "other.wav": "b6b10725613fdbce7da272df06e5c185558af1955fca18fd0aea96cb9c3f2ec4"
+      }
+    },
+    {
+      "id": "Wall Of Death - Femme",
+      "files": {
+        "mixture.wav": "f945afe6ae83d0d4f6a4e5ca1150fefa13d42061100504f712cdbd67cd42c4aa",
+        "vocals.wav": "3e4b298b9e25c89c268ffe1de8491d386745c60dd89f24414bff9bb31e4e36c4",
+        "drums.wav": "1800ef6c1ac42cf586aae48bbb7979c292d0dc4c5329393215ed3c48bb250228",
+        "bass.wav": "7a8547d623f5be8ebc5f56a4b2fd183f6642a2b37cbe7bdca189206a32dc7a02",
+        "other.wav": "bb00ddfe724db88da16b8ad2fe7189e38c9509e8d162e5a3402e84e93da3ec19"
+      }
+    },
+    {
+      "id": "Young Griffo - Blood To Bone",
+      "files": {
+        "mixture.wav": "d1984c0aa9b43ed0896aa56730a4e9d42ef91375368eb5387e9f5d415d2240c4",
+        "vocals.wav": "6c40db742504ababe412591d73e597c8a64b365c5a23baa1ae6719e964e93156",
+        "drums.wav": "665438724c6c60ee6892edb09211b0fa5e68a8d3c1d8188c8b5f07c17c31c99c",
+        "bass.wav": "e9281e0b4d213595aa22c5b4fe3194c9f0de928cc09f0f33746d6d9f790b7c67",
+        "other.wav": "158decc1cb2f7a1ee1ec5eaff040a9461809143658259aedf474fa152b9edd9e"
+      }
+    },
+    {
+      "id": "Young Griffo - Facade",
+      "files": {
+        "mixture.wav": "121346716a4e76811f459576039940aa26197f908b0c76069f9ec19c292872fb",
+        "vocals.wav": "e5b4abed2b57056750a47d883c4658f9e647a9ba0b0fabeb80d86c5202dbd4c6",
+        "drums.wav": "ad445b4fe31a83455a724331fbf989535f7e1cb20ddcc8f373dde8bb86b48f88",
+        "bass.wav": "1624da613f4f46521cdedc62c4db469c3d83dece0393e860c56750d3f607f97f",
+        "other.wav": "7fdbb04c0da579396fdc5e218dc7f4386016ec2b62f3b0a9a1d6eb36436f9f19"
+      }
+    },
+    {
+      "id": "Young Griffo - Pennies",
+      "files": {
+        "mixture.wav": "56c2360199fd3be2430f5b8706039805a7291de69fce938c9e7dcd02af8c97f1",
+        "vocals.wav": "71bfc1afe0ef87fc3a2268dd9cadfa4ece946d94abe6b9f946164f3532df2c0a",
+        "drums.wav": "333fb9c1836a503b2560da3c7e2cd399acd4df5369d006d2f8fef1a2c873e569",
+        "bass.wav": "6e76cb4e46785156f1ed353e08e472606ac9c63d9e3ac0e4c5a614d7ddcd3b37",
+        "other.wav": "495c2952b01425676fa473c3dcfbcdb8c02520c1ffeff3584fb9c22c121ce224"
+      }
+    }
+  ]
+}
