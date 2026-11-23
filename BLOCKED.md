@@ -1,9 +1,9 @@
 # BLOCKED
 
 Things only you can provide, in the order the build will need them. **B2 and B3 (the two
-datasets) are being downloaded** (started 2026-11-22 at the owner's request, into
-`~/Datasets/`): MUSDB18-HQ is open on Zenodo after all, and MoisesDB's form returned a link
-at once. When both are unpacked and verified the rows below are removed. When you resolve an item, delete it or mark it done, and the next loop iteration
+datasets) are resolved** (2026-11-22, downloaded at the owner's request into `~/Datasets/`,
+both verified against their published hashes, unpacked, and their track lists frozen and
+committed). When you resolve an item, delete it or mark it done, and the next loop iteration
 picks up the tasks it unblocks.
 
 Rule for loop iterations: if a task needs something on this list, skip it and take the next
@@ -13,8 +13,6 @@ unblocked task.
 
 | # | What I need | Exactly | Unblocks | First needed |
 |---|---|---|---|---|
-| B2 | MUSDB18-HQ on local disk | Request access on Zenodo (https://zenodo.org/records/3338373), download, unpack, and set `MUSDB18HQ_PATH` in `.env` to the folder that contains `train/` and `test/`. About 23 GB. | P2.10 (real MUSDB18-HQ benchmark), P2.12 (blend tuning on its train split), P2.13, P2.14b. Once the path is set I freeze the track lists, you or I commit them, and the runs start in the background | Phase 2 |
-| B3 | MoisesDB on local disk | Request access through the Moises / Music.AI research site (https://music.ai/research/), download, unpack, and set `MOISESDB_PATH` in `.env` to the folder that contains `moisesdb_v0.1/`. | P2.5b (freezing the 50-track subset: I run `python -m stems_bench.datasets.moisesdb --freeze` once the path is set), P2.11, all of the Clef-omni test (P3.5, P3.9), P7.1 calibration | Phase 2 |
 | B4 | Modal account and token | Create the account, add a payment method, then set `MODAL_TOKEN_ID` and `MODAL_TOKEN_SECRET` in `.env`. | GPU timings in Phase 2 (without it every timing is Apple MPS), P5.12 live check, P7.3 cost per song | Phase 2, optional until Phase 5 |
 | B5 | Cloudflare account id and Workers AI token | Set `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_AUTH_TOKEN` in `.env`. The report estimates the whole test at under $0.02, inside the free daily allowance. | P3.9 (running the Clef-omni test). The harness itself is built and tested without it. | Phase 3 |
 | B6 | TypeSafe API key with prepaid credit | Create a key at https://console.typesafe.ai, add credit (the report found no free starter credit), set `TYPESAFE_API_KEY` in `.env`. | P4.9 (live Jev check and recording real responses), P7.1 calibration against real Jev answers. Everything else runs on the fallback and the recorded mock. | Phase 4 |
