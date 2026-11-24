@@ -7,7 +7,7 @@ import pytest
 
 from stems_common import schemas
 from stems_common.levels import peak_dbfs, rms_dbfs, silence_fraction
-from stems_common.settings import load_defaults
+from stems_common.settings import MIX_INSTRUMENTS, MixThresholds, load_defaults
 from stems_common.synthetic import generate_track
 from stems_worker.listening import features
 from stems_worker.listening.audioset import StemMapError, default_stem_map
@@ -22,11 +22,16 @@ _SHIPPED = load_defaults()
 # The rules under test are the same whatever the thresholds are. The presence thresholds
 # are fixed here so that re-calibrating config/defaults.yaml does not change what the
 # scripted scores below mean.
+# In a mix an instrument is named only if it has thresholds of its own; here every
+# instrument has them, so that the rules for naming can be tested.
 SETTINGS = _SHIPPED.listening.model_copy(
     update={
         "presence": _SHIPPED.listening.presence.model_copy(
             update={"present_min": 0.5, "absent_max": 0.2}
-        )
+        ),
+        "mix_presence": {
+            name: MixThresholds(present_min=0.5, absent_max=0.2) for name in MIX_INSTRUMENTS
+        },
     }
 )
 
@@ -110,6 +115,33 @@ def test_a_full_band_is_described():
 def test_vocal_presence(heard, expected):
     result = build_track_features(noise(10), SR, tagger=ScriptedTagger(heard))
     assert result["vocal_presence"] == expected
+
+
+def test_an_instrument_without_mix_thresholds_is_never_named():
+    loud = {"Singing": 0.95, "Drum kit": 0.9, "Piano": 0.9, "Synthesizer": 0.9, "Rock music": 0.8}
+    only_piano = SETTINGS.model_copy(
+        update={"mix_presence": {"piano": MixThresholds(present_min=0.3, absent_max=0.05)}}
+    )
+    result = build_track_features(noise(10), SR, tagger=ScriptedTagger(loud), settings=only_piano)
+    assert result["detected_instruments"] == ["piano"]
+    assert result["vocal_presence"] == "unknown"  # nothing was measured for vocals in a mix
+    assert result["genre_hint"] == "Rock music"
+    # Each instrument is judged by its own thresholds, not by the ones for stems.
+    faint = build_track_features(
+        noise(10), SR, tagger=ScriptedTagger({"Piano": 0.35}), settings=only_piano
+    )
+    assert faint["detected_instruments"] == ["piano"]
+
+
+def test_as_shipped_only_instruments_whose_mix_thresholds_held_up_are_named():
+    shipped = _SHIPPED.listening
+    loud = {"Singing": 0.95, "Drum kit": 0.9, "Bass guitar": 0.9, "Electric guitar": 0.9,
+            "Piano": 0.9, "Synthesizer": 0.9, "Trumpet": 0.9, "Violin, fiddle": 0.9}  # fmt: skip
+    result = build_track_features(noise(10), SR, tagger=ScriptedTagger(loud), settings=shipped)
+    assert set(result["detected_instruments"]) <= set(shipped.mix_presence)
+    if "vocals" not in shipped.mix_presence:
+        assert result["vocal_presence"] == "unknown"
+    assert schemas.errors("track_features", result) == []
 
 
 def test_reverb_is_never_called_dry_and_weak_genres_give_no_hint():
@@ -325,3 +357,7 @@ def test_thresholds_must_be_ordered():
         with pytest.raises(ValueError, match="must"):
             type(SETTINGS).model_validate(broken)
     assert SETTINGS.calibrated is False
+    for table in ({"kazoo": {"present_min": 0.5, "absent_max": 0.2}},
+                  {"piano": {"present_min": 0.2, "absent_max": 0.2}}):  # fmt: skip
+        with pytest.raises(ValueError, match="must"):
+            type(SETTINGS).model_validate({**data, "mix_presence": table})

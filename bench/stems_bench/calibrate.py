@@ -98,6 +98,32 @@ CRITERIA: dict[str, float] = {
 }
 
 
+# The commit at which everything above was fixed, before any clip was scored.
+STEM_RULES_COMMIT = "7d58a494a794e18ae92bc136c86b29e46827c103"
+
+# -- presence in a full mix (added in Phase 8) ---------------------------------------------
+# The stem calibration showed that thresholds chosen on stems do not work on a mix. A mix
+# gets thresholds of its own, one pair per instrument, chosen by the same two rules
+# (choose_present_min, choose_absent_max) on the calibration mixes and checked on the
+# held-out mixes. This block was written after the stem results were known and before
+# any threshold for a mix was computed; the scores are those of the same run.
+#
+# An instrument is judged only if at least this many mixes have it and this many lack it,
+# in the calibration set (to choose on) and in the held-out set (to check on).
+MIX_MIN_EACH = 10
+# What the held-out mixes must show before track_features may name the instrument.
+MIX_CRITERIA: dict[str, float] = {
+    # The score ranks a mix with the instrument above a mix without it this often.
+    "auc_min": 0.80,
+    # Of the answers it commits to (present or absent), this many are right.
+    "decided_accuracy_min": 0.90,
+    # And it commits to an answer at least this often.
+    "coverage_min": 0.50,
+}
+# The commit that added the block above. Filled in by the commit after it.
+MIX_RULES_COMMIT: str | None = None
+
+
 class CalibrationError(ValueError):
     """The calibration cannot be run or reported as asked."""
 
@@ -436,6 +462,64 @@ def evaluate(rows: Sequence[Mapping[str, Any]], thresholds: Mapping[str, float])
     }
 
 
+def mix_pairs(rows: Iterable[Mapping[str, Any]], stem: str) -> list[tuple[float, bool]]:
+    """(score for ``stem``, is it really playing) for every mix."""
+    return [
+        (float(row["scores"][stem]), bool(row["present"][stem]))
+        for row in rows
+        if row["kind"] == "mix"
+    ]
+
+
+def analyse_mix(
+    calibration: Sequence[Mapping[str, Any]], heldout: Sequence[Mapping[str, Any]]
+) -> dict[str, dict[str, Any]]:
+    """Per instrument: thresholds for a full mix from one set, and how they do on the other."""
+    out: dict[str, dict[str, Any]] = {}
+    for stem in PRODUCT_STEMS:
+        chosen_on, checked_on = mix_pairs(calibration, stem), mix_pairs(heldout, stem)
+        counts = {
+            name: {
+                "with": sum(1 for _, there in pairs if there),
+                "without": sum(1 for _, there in pairs if not there),
+            }
+            for name, pairs in (("calibration", chosen_on), ("heldout", checked_on))
+        }
+        entry: dict[str, Any] = {
+            **counts,
+            "judged": min(n for part in counts.values() for n in part.values()) >= MIX_MIN_EACH,
+            "present_min": None,
+            "absent_max": None,
+            "auc": None,
+            "coverage": None,
+            "decided_accuracy": None,
+            "passed": False,
+        }
+        if entry["judged"]:
+            present_min, absent_max = choose_present_min(chosen_on), choose_absent_max(chosen_on)
+            entry.update(
+                present_min=present_min,
+                absent_max=absent_max,
+                auc=auc(
+                    [s for s, there in checked_on if not there],
+                    [s for s, there in checked_on if there],
+                ),
+            )
+            if present_min is not None and absent_max is not None and absent_max < present_min:
+                outcome = presence_outcome(checked_on, present_min, absent_max)
+                entry.update(
+                    coverage=outcome["coverage"], decided_accuracy=outcome["decided_accuracy"]
+                )
+                entry["passed"] = bool(
+                    entry["auc"] >= MIX_CRITERIA["auc_min"]
+                    and outcome["decided_accuracy"] is not None
+                    and outcome["decided_accuracy"] >= MIX_CRITERIA["decided_accuracy_min"]
+                    and outcome["coverage"] >= MIX_CRITERIA["coverage_min"]
+                )
+        out[stem] = entry
+    return out
+
+
 def verdict(heldout: Mapping[str, Any]) -> dict[str, Any]:
     """Each criterion with its measured value, and whether all of them hold."""
     stems, bleed = heldout["presence_on_stems"], heldout["bleed"]
@@ -498,6 +582,7 @@ def analyse(
             for name, part in (("calibration", calibration), ("heldout", heldout))
         },
     }
+    result["mix"] = analyse_mix(calibration, heldout)
     if not result["usable"]:
         result["verdict"] = {"checks": {}, "calibrated": False}
         return result
@@ -586,7 +671,7 @@ def render(analysis: Mapping[str, Any], run: Mapping[str, Any], current: Mapping
             "need. Nothing was changed and `listening.calibrated` stays false.",
             "",
         ]
-        return "\n".join(lines)
+        return "\n".join(lines + _mix_section(analysis, run))
 
     def presence_rows(label: str, part: Mapping[str, Any]) -> str:
         return (
@@ -713,7 +798,76 @@ def render(analysis: Mapping[str, Any], run: Mapping[str, Any], current: Mapping
             "and does not retry on the tagger's word."
         )
     lines.append("")
-    return "\n".join(lines)
+    return "\n".join(lines + _mix_section(analysis, run))
+
+
+def _mix_section(analysis: Mapping[str, Any], run: Mapping[str, Any]) -> list[str]:
+    """The part of the report about hearing an instrument in a full mix."""
+    mix, counts = analysis["mix"], analysis["counts"]
+    added = run.get("mix_rules_commit")
+    when = f"at commit `{added[:12]}`" if added else "in the commit that adds this section"
+    lines = [
+        "## Presence in a full mix, with thresholds of its own",
+        "",
+        "The thresholds above were chosen on stems and do not work on a mix. This part "
+        "gives a mix its own thresholds, one pair per instrument, chosen by the same two "
+        f"rules on the {counts['calibration']['mix_clips']} calibration mixes and checked on "
+        f"the {counts['heldout']['mix_clips']} held-out mixes. Its rules and its bar were added "
+        f"to `bench/stems_bench/calibrate.py` {when}: after the results above were known, "
+        "and before any threshold for a mix was computed. The scores are those of the same "
+        "run; nothing was scored again.",
+        "",
+        f"An instrument is judged only if at least {MIX_MIN_EACH} mixes have it and at least "
+        f"{MIX_MIN_EACH} lack it, in each set. AUC is the chance that a mix with the "
+        "instrument scores above a mix without it.",
+        "",
+        "| Instrument | Mixes without it (calibration, held out) | AUC | `present_min` | "
+        "`absent_max` | Answered | Right | Result |",
+        "|---|---:|---:|---:|---:|---:|---:|---|",
+    ]
+
+    def found(value: float | None) -> str:
+        return "none found" if value is None else f"{value:.4f}"
+
+    for stem, entry in mix.items():
+        without = f"{entry['calibration']['without']}, {entry['heldout']['without']}"
+        if not entry["judged"]:
+            lines.append(f"| {stem} | {without} | - | - | - | - | - | cannot be judged |")
+            continue
+        lines.append(
+            f"| {stem} | {without} | {_num(entry['auc'])} | "
+            f"{found(entry['present_min'])} | {found(entry['absent_max'])}"
+            f" | {_pct(entry['coverage'])} | {_pct(entry['decided_accuracy'])} | "
+            f"{'pass' if entry['passed'] else 'fail'} |"
+        )
+    passed = [stem for stem, entry in mix.items() if entry["passed"]]
+    unjudged = [stem for stem, entry in mix.items() if not entry["judged"]]
+    lines += [
+        "",
+        f"Needed on the held-out mixes: AUC at least {MIX_CRITERIA['auc_min']:.2f}, right at "
+        f"least {_pct(MIX_CRITERIA['decided_accuracy_min'])} of the times it answers, and an "
+        f"answer at least {_pct(MIX_CRITERIA['coverage_min'])} of the time.",
+        "",
+    ]
+    if unjudged:
+        lines += [
+            f"Cannot be judged: {', '.join(unjudged)}. Too few of these mixes are without "
+            "them (or with them) to choose a threshold or to check one.",
+            "",
+        ]
+    if passed:
+        lines.append(
+            f"**Passed: {', '.join(passed)}.** `track_features` names these in a mix, with "
+            "the thresholds above (`listening.mix_presence`), and no other instrument."
+        )
+    else:
+        lines.append(
+            "**No instrument passed.** `listening.mix_presence` is empty: `track_features` "
+            'names no instrument in a mix and leaves the vocal presence "unknown", '
+            "instead of guessing."
+        )
+    lines.append("")
+    return lines
 
 
 # -- commands ------------------------------------------------------------------------------
@@ -776,22 +930,6 @@ def cmd_collect(args: argparse.Namespace) -> int:
     return 0
 
 
-def _rules_commit() -> str:
-    """The commit that last changed this file: when the rules were fixed."""
-    import subprocess
-
-    from stems_common.paths import REPO_ROOT
-
-    out = subprocess.run(
-        ["git", "log", "-1", "--format=%H", "--", "bench/stems_bench/calibrate.py"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    return out.stdout.strip() or "unknown"
-
-
 def cmd_report(args: argparse.Namespace) -> int:
     from stems_common.settings import load_defaults
 
@@ -801,7 +939,8 @@ def cmd_report(args: argparse.Namespace) -> int:
         print(f"calibrate: {run_path} is missing; run `collect` first", file=sys.stderr)
         return 2
     run = json.loads(run_path.read_text(encoding="utf-8"))
-    run["rules_commit"] = run.get("rules_commit") or _rules_commit()
+    run["rules_commit"] = STEM_RULES_COMMIT
+    run["mix_rules_commit"] = MIX_RULES_COMMIT
     # The thresholds in use when this run was first reported. Kept with the run, so that
     # applying the chosen values to the config does not change what "until now" means.
     before_path = run_dir / "before.json"

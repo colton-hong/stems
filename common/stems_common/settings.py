@@ -140,6 +140,25 @@ class PresenceSettings(_Strict):
         return self
 
 
+# What track_features may name in a mix (the schema's detected_instruments).
+MIX_INSTRUMENTS = (
+    "vocals", "drums", "bass", "guitar", "piano", "strings", "synth", "brass", "other"
+)  # fmt: skip
+
+
+class MixThresholds(_Strict):
+    """One instrument's presence thresholds in a full mix, where scores run far lower."""
+
+    present_min: float = Field(ge=0, le=1)
+    absent_max: float = Field(ge=0, le=1)
+
+    @model_validator(mode="after")
+    def _check(self) -> MixThresholds:
+        if self.absent_max >= self.present_min:
+            raise ValueError("absent_max must be below present_min")
+        return self
+
+
 class BleedSettings(_Strict):
     # Tagger score of the strongest other source heard on a stem.
     slight_min: float = Field(ge=0, le=1)
@@ -175,9 +194,19 @@ class ListeningSettings(_Strict):
     # False until the thresholds below have been measured on labelled audio (P7.1).
     calibrated: bool
     presence: PresenceSettings
+    # Per instrument, the thresholds for hearing it in a full mix. Only instruments whose
+    # thresholds held up on held-out mixes are listed; any other is never claimed.
+    mix_presence: dict[str, MixThresholds]
     bleed: BleedSettings
     genre_min: float = Field(ge=0, le=1)
     reverb: ReverbSettings
+
+    @model_validator(mode="after")
+    def _check_mix(self) -> ListeningSettings:
+        unknown = sorted(set(self.mix_presence) - set(MIX_INSTRUMENTS))
+        if unknown:
+            raise ValueError(f"mix_presence names must be among {MIX_INSTRUMENTS}, got {unknown}")
+        return self
 
 
 class SlotModels(_Strict):

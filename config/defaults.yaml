@@ -129,6 +129,11 @@ listening:
     # detected_instruments of track_features are not to be relied on.
     present_min: 0.6466
     absent_max: 0.0207
+  # Hearing an instrument in a full mix needs thresholds of its own, per instrument, and
+  # only those that held up on held-out mixes are listed (docs/gate-calibration.md). An
+  # instrument not listed here is never named in track_features, and with no entry for
+  # vocals the vocal_presence stays "unknown".
+  mix_presence: {}
   # Bleed on an output stem, by the tagger score of the strongest other source in it.
   # Still first guesses: the calibration found no thresholds that separate clean stems
   # from bled ones well enough to use, so these were left as they were.

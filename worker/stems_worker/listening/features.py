@@ -246,18 +246,31 @@ def build_track_features(
     }
     if tagger is not None:
         heard = hear(channels, sample_rate, tagger, settings, stem_map)
-        present, absent = settings.presence.present_min, settings.presence.absent_max
         stems = heard.stems(stem_map)
-        lead = heard.score(classes.lead_vocals)
-        if lead >= present:
-            features["vocal_presence"] = "lead_vocals"
-        elif heard.score(classes.backing_vocals) >= present and lead <= absent:
-            features["vocal_presence"] = "backing_only"
-        elif stems["vocals"] <= absent:
-            features["vocal_presence"] = "none"
-        found = [stem for stem in PRODUCT_STEMS if stem != "other" and stems[stem] >= present]
-        found += [name for name in GROUPS if heard.score(classes.groups[name]) >= present]
-        if heard.score(classes.other_rest) >= present:
+        # An instrument playing in a full mix scores far lower than on its own stem, so a
+        # mix has its own thresholds, per instrument, and only for instruments where they
+        # were measured to work. Anything else is left unsaid rather than guessed.
+        table = settings.mix_presence
+
+        def there(name: str, score: float) -> bool:
+            return name in table and score >= table[name].present_min
+
+        vocals = table.get("vocals")
+        if vocals is not None:
+            lead = heard.score(classes.lead_vocals)
+            if lead >= vocals.present_min:
+                features["vocal_presence"] = "lead_vocals"
+            elif (
+                heard.score(classes.backing_vocals) >= vocals.present_min
+                and lead <= vocals.absent_max
+            ):
+                features["vocal_presence"] = "backing_only"
+            elif stems["vocals"] <= vocals.absent_max:
+                features["vocal_presence"] = "none"
+        found = [stem for stem in PRODUCT_STEMS if stem != "other" and there(stem, stems[stem])]
+        found += [name for name in GROUPS if there(name, heard.score(classes.groups[name]))]
+        # The whole "other" stem, groups included: the score the thresholds were measured on.
+        if there("other", stems["other"]):
             found.append("other")
         features["detected_instruments"] = found
         genre = max(classes.genres, key=lambda i: heard.score([i]))

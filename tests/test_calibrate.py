@@ -304,6 +304,98 @@ def test_report_says_so_when_no_thresholds_can_be_chosen() -> None:
     assert "none found" in text
 
 
+# -- presence in a full mix --------------------------------------------------------------
+
+
+def mixes(set_name: str, *, piano_works: bool, count: int = 24) -> list[dict]:
+    """Mixes that all have vocals; half have piano, the other half guitar."""
+    rng = np.random.default_rng(11 if set_name == "calibration" else 12)
+    rows = []
+    for n in range(count):
+        heard = {"vocals": 0.2}
+        if n % 2 == 0:
+            heard["piano"] = 0.05 if piano_works else float(rng.uniform(0.001, 0.02))
+        if n % 2 == 1:
+            heard["guitar"] = float(rng.uniform(0.001, 0.3))
+        row = mix_row(set_name, f"{set_name}-{n:02d}", heard)
+        # What a tagger gives an instrument that is not there.
+        for stem in ("piano", "guitar"):
+            if stem not in heard:
+                row["scores"][stem] = 0.004 if stem == "piano" else float(rng.uniform(0.001, 0.3))
+        if not piano_works and "piano" not in heard:
+            row["scores"]["piano"] = float(rng.uniform(0.001, 0.02))
+        rows.append(row)
+    return rows
+
+
+def test_the_mix_rules_are_what_the_report_says_they_are() -> None:
+    assert cal.MIX_MIN_EACH == 10
+    assert cal.MIX_CRITERIA == {
+        "auc_min": 0.80,
+        "decided_accuracy_min": 0.90,
+        "coverage_min": 0.50,
+    }
+    assert cal.STEM_RULES_COMMIT.startswith("7d58a494a794")
+
+
+def test_an_instrument_heard_in_a_mix_gets_its_own_thresholds_and_passes() -> None:
+    mix = cal.analyse_mix(
+        mixes("calibration", piano_works=True), mixes("heldout", piano_works=True)
+    )
+    piano = mix["piano"]
+    assert piano["calibration"] == piano["heldout"] == {"with": 12, "without": 12}
+    assert (piano["judged"], piano["passed"]) == (True, True)
+    # Far below anything a stem threshold would be: a mix has its own scale.
+    assert (piano["present_min"], piano["absent_max"]) == (0.05, 0.004)
+    assert (piano["auc"], piano["coverage"], piano["decided_accuracy"]) == (1.0, 1.0, 1.0)
+    # Guitar scores the same with and without: judged, and failed.
+    assert (mix["guitar"]["judged"], mix["guitar"]["passed"]) == (True, False)
+    # Every mix has vocals and none has drums: there is nothing to tell apart.
+    for stem in ("vocals", "drums"):
+        assert mix[stem]["judged"] is False
+        assert mix[stem]["passed"] is False
+        assert mix[stem]["auc"] is None
+
+
+def test_mix_thresholds_are_chosen_on_one_set_and_checked_on_the_other() -> None:
+    mix = cal.analyse_mix(
+        mixes("calibration", piano_works=True), mixes("heldout", piano_works=False)
+    )
+    assert (mix["piano"]["present_min"], mix["piano"]["absent_max"]) == (0.05, 0.004)
+    assert mix["piano"]["passed"] is False
+
+
+def test_the_report_says_which_instruments_can_be_named_in_a_mix() -> None:
+    def report(works: bool, commit: str | None) -> str:
+        rows = (
+            separable("calibration")
+            + separable("heldout")
+            + mixes("calibration", piano_works=works)
+            + mixes("heldout", piano_works=works)
+        )
+        return cal.render(cal.analyse(rows), {**RUN, "mix_rules_commit": commit}, CURRENT)
+
+    good = report(True, "c" * 40)
+    assert "## Presence in a full mix, with thresholds of its own" in good
+    assert "at commit `cccccccccccc`" in good
+    # The twelve mixes of `separable` have vocals and bass and nothing else.
+    assert "| piano | 24, 24 | 1.000 | 0.0500 | 0.0100 | 100.0% | 100.0% | pass |" in good
+    assert "| drums | 36, 36 | - | - | - | - | - | cannot be judged |" in good
+    assert "**Passed: bass, piano.**" in good
+    assert "Cannot be judged: vocals, drums, other." in good
+    bad = report(False, None)
+    assert "in the commit that adds this section" in bad
+    assert "**Passed: bass.**" in bad
+    assert "| piano | 24, 24 |" in bad
+    assert "| fail |" in bad
+    nothing = cal.render(
+        cal.analyse(separable("calibration", tracks=9) + separable("heldout", tracks=9)),
+        RUN,
+        CURRENT,
+    )
+    assert "**No instrument passed.**" in nothing
+
+
 # -- collecting, with a stand-in tagger --------------------------------------------------
 
 
