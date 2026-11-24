@@ -312,14 +312,10 @@ def test_default_assignment_can_be_planned_against_the_real_registry() -> None:
     assignment = {s: defaults.ensembles.slots[s].single_best for s in PRODUCT_STEMS}
     plan = plan_composition(PRODUCT_STEMS, assignment, load_registry())
     by_model = {r.model_id: r.outputs for r in plan.runs}
-    # Provisional defaults: four models serve the six stems.
-    assert by_model == {
-        "mel_roformer_kim_vocals": ("vocals",),
-        "scnet_xl_ihf": ("drums", "other"),
-        "htdemucs_ft": ("bass",),
-        "bs_roformer_sw_6stem": ("guitar", "piano"),
-    }
-    assert plan.other_method == "subtract"
+    # The defaults chosen on the tuning tracks (docs/benchmarks/recommendation.md): one
+    # six-stem model serves all six stems, and its "other" is used as it is.
+    assert by_model == {"bs_roformer_sw_6stem": PRODUCT_STEMS}
+    assert plan.other_method == "direct"
 
 
 def _fraction(output, stem) -> float:

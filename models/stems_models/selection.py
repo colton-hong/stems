@@ -20,7 +20,10 @@ def check_defaults(defaults: Defaults, registry: Registry) -> list[str]:
                 problems.append(f"{slot}: {model_id!r} has status {entry.status!r}")
             if slot not in entry.candidate_for:
                 problems.append(f"{slot}: {model_id!r} is not a registered candidate for it")
-        if models.single_best not in models.two_model_blend:
+        # Once the blends are settled they are built around the single model. While
+        # `provisional` is true the single model may have been chosen by measurement
+        # ahead of them (docs/benchmarks/recommendation.md), and this is not asked.
+        if not defaults.ensembles.provisional and models.single_best not in models.two_model_blend:
             problems.append(f"{slot}: two_model_blend should include the single_best model")
         if not set(models.two_model_blend) <= set(models.full_ensemble):
             problems.append(f"{slot}: full_ensemble should include both blend models")

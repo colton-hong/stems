@@ -92,6 +92,13 @@ def run(client, name: str, **options):
     )
 
 
+def configured_fallback(stem: str) -> str:
+    """The first model the config lists for ``stem`` that is not its default."""
+    slot = SLOTS[stem]
+    listed = (*slot.two_model_blend, *slot.full_ensemble)
+    return next(m for m in listed if m != slot.single_best)
+
+
 def fallback_plan(stems, **options):
     parsed = from_selection(
         stems, settings=SETTINGS, quality_mode=options.pop("quality_mode", "unspecified")
@@ -157,7 +164,7 @@ def test_an_unsure_stem_falls_back_to_the_config_and_says_why(client) -> None:
     assert plan["plan"]["drums"] == {
         "requested": True,
         "primary_model": SLOTS["drums"].single_best,
-        "fallback_model": "htdemucs_ft",
+        "fallback_model": configured_fallback("drums"),
     }
     assert plan["confidence"] == pytest.approx(0.41)
     assert plan["needs_review"] is True
@@ -165,7 +172,8 @@ def test_an_unsure_stem_falls_back_to_the_config_and_says_why(client) -> None:
     assert decision.record["fallback_reason"] is None
     notes = decision.record["notes"]
     assert notes[0] == "low_confidence: model.drums 0.41 (minimum 0.8)"
-    assert "drums: Jev was unsure, so the configured default scnet_xl_ihf is used" in notes
+    default = SLOTS["drums"].single_best
+    assert f"drums: Jev was unsure, so the configured default {default} is used" in notes
 
 
 def test_when_nothing_jev_said_can_be_used_the_rules_decide(client) -> None:
@@ -185,7 +193,11 @@ def test_when_nothing_jev_said_can_be_used_the_rules_decide(client) -> None:
 
 
 def test_a_blend_is_planned_when_jev_says_it_is_worth_it(client) -> None:
-    best = run(client, "best_quality_blend").value
+    decision = run(client, "best_quality_blend")
+    best = decision.value
+    # Jev's own answer, not the config's mapping: the reply was read and used.
+    assert decision.provider == "mock"
+    assert decision.record["fallback_reason"] is None
     assert best["quality_target"] == "best_quality"
     assert best["ensemble_mode"] == "full_ensemble"
     assert all(best["plan"][s]["requested"] for s in PRODUCT_STEMS)
@@ -250,7 +262,7 @@ def test_without_jev_the_plan_is_the_configuration() -> None:
         assert entry["primary_model"] == SLOTS[stem].single_best
         assert entry["fallback_model"] not in ("none", entry["primary_model"])
         assert "confidence" not in entry
-    assert plan["plan"]["vocals"]["fallback_model"] == SLOTS["vocals"].two_model_blend[1]
+    assert plan["plan"]["vocals"]["fallback_model"] == configured_fallback("vocals")
     assert plan["ensemble_mode"] == SETTINGS.mode_for_quality["balanced"]
     assert plan["confidence"] == 1.0
     assert plan["needs_review"] is False
@@ -380,11 +392,18 @@ def test_the_estimate_uses_measured_rates_only() -> None:
     )
 
     decision = fallback_plan(["drums", "piano"], device="mps")
-    # scnet_xl_ihf is timed on mps here; the piano model is not.
-    assert decision.value["estimated_seconds"] == pytest.approx(200 * 0.3)
+    # One model serves both stems and has no timing on mps here: nothing is assumed.
+    assert {SLOTS["drums"].single_best, SLOTS["piano"].single_best} == {"bs_roformer_sw_6stem"}
+    assert decision.value["estimated_seconds"] == 0.0
     assert decision.record["notes"] == [
         "estimated_seconds is a lower bound: no timing on mps for bs_roformer_sw_6stem"
     ]
+    # With a timing for it, the model is counted once, not once per stem.
+    timed = fallback_plan(
+        ["drums", "piano"], device="mps", rates={("bs_roformer_sw_6stem", "mps"): 0.3}
+    )
+    assert timed.value["estimated_seconds"] == pytest.approx(200 * 0.3)
+    assert timed.record["notes"] == []
     nothing = fallback_plan(["drums"], rates={})
     assert nothing.value["estimated_seconds"] == 0.0
     assert "lower bound" in nothing.record["notes"][0]

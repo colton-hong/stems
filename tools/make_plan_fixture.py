@@ -35,6 +35,11 @@ def choice(slot, picked, confidence, second=None, p=None):
         left = round(1 - p, 4)
     for o in rest:
         probabilities[o] = round(left / len(rest), 6)
+    if not rest:
+        # Two candidates only: whatever the picked one leaves all goes to the other, so
+        # that the probabilities sum to 1 and the reply is one the parser accepts.
+        other = second if second is not None else picked
+        probabilities[other] = round(probabilities[other] + left, 4)
     return {
         "type": "choice",
         "choice": picked,

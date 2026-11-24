@@ -662,8 +662,13 @@ def systems(*slots, **changes):
 def test_the_real_config_gives_three_modes_per_slot_and_a_composed_other() -> None:
     built = ensemble_systems(load_defaults(), load_registry())
     by_id = {system.id: system for system in built}
-    assert len(built) == 8 * 3 + 3
-    assert by_id["vocals:single_best"].members == ("mel_roformer_kim_vocals",)
+    # Three modes for each of the eight slots, and a composed six-stem other for the two
+    # modes whose "other" is a blend of four-stem models. The single model for "other" is
+    # a six-stem one (docs/benchmarks/recommendation.md), whose other needs no composing.
+    assert len(built) == 8 * 3 + 2
+    assert by_id["vocals:single_best"].members == ("bs_roformer_sw_6stem",)
+    assert by_id["other:single_best"].targets == ("other",)
+    assert "other_composed:single_best" not in by_id
     assert by_id["vocals:two_model_blend"].weights == (0.5, 0.5)
     assert by_id["vocals:full_ensemble"].method == "waveform"
     assert by_id["vocal_split:single_best"].outputs == ("lead_vocals", "backing_vocals")

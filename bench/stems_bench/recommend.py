@@ -137,6 +137,41 @@ def scores_on(rows: Sequence[Mapping[str, Any]], model: str, stem: str) -> dict[
     return None
 
 
+BLEND_MODES = ("two_model_blend", "full_ensemble")
+
+
+def blends_beside(
+    rows: Sequence[Mapping[str, Any]], chosen: Mapping[str, Mapping[str, Any]]
+) -> dict[str, dict[str, Any]]:
+    """The config's blends for each stem, as the benchmark scored them, beside the chosen
+    single model. For information: the rule above does not choose blends."""
+    out: dict[str, dict[str, Any]] = {}
+    for stem, entry in chosen.items():
+        if entry["model"] is None:
+            continue
+        modes = {}
+        for mode in BLEND_MODES:
+            row = next(
+                (
+                    r
+                    for r in rows
+                    if r["system"] == f"{stem}:{mode}"
+                    and r["target"] == stem
+                    and (r.get("medians") or {}).get("sdr") is not None
+                ),
+                None,
+            )
+            if row is not None:
+                modes[mode] = {
+                    "sdr": float(row["medians"]["sdr"]),
+                    "difference_db": float(row["medians"]["sdr"]) - entry["sdr"],
+                    "seconds_per_audio_minute": row.get("seconds_per_audio_minute"),
+                }
+        if modes:
+            out[stem] = modes
+    return out
+
+
 def seconds_per_minute(rows: Sequence[Mapping[str, Any]], models: Sequence[str]) -> float | None:
     """Seconds per minute of audio to run each of ``models`` once; None if one is untimed."""
     total = 0.0
@@ -165,9 +200,16 @@ def build(
         for name, data in tests.items():
             new = scores_on(data["rows"], entry["model"], stem) if entry["model"] else None
             old = scores_on(data["rows"], in_use[stem], stem)
+            composed = False
+            if old is None:
+                # What the product delivered when its model's own output is a different
+                # thing: the six-stem "other" made from a four-stem one (PLAN.md, "Other").
+                old = scores_on(data["rows"], f"{stem}_composed:single_best", stem)
+                composed = old is not None
             checks[stem][name] = {
                 "chosen": new,
                 "in_use": old,
+                "in_use_composed": composed,
                 "difference_db": None if new is None or old is None else new["sdr"] - old["sdr"],
             }
     picked = [entry["model"] for entry in chosen.values() if entry["model"]]
@@ -176,6 +218,7 @@ def build(
         "tuning_dataset": tuning["dataset"],
         "test_runs": {name: data["run_id"] for name, data in tests.items()},
         "chosen": chosen,
+        "blends": blends_beside(tuning["rows"], chosen),
         "in_use": dict(in_use),
         "checks": checks,
         "time": {
@@ -260,6 +303,36 @@ def render(report: Mapping[str, Any]) -> str:
     def seconds(value: float | None) -> str:
         return "not known" if value is None else f"{value:.1f} s"
 
+    if report.get("blends"):
+        lines += [
+            "",
+            "## The configured blends beside it",
+            "",
+            "The config also names a two-model blend and a full ensemble for each stem, with "
+            "equal weights; nobody has tuned them yet (P2.12). On the same tuning tracks, "
+            "against the chosen single model:",
+            "",
+            "| Stem | Chosen model | Two-model blend | Against it | Full ensemble | Against it |",
+            "|---|---:|---:|---:|---:|---:|",
+        ]
+        best_gain = None
+        for stem, modes in report["blends"].items():
+            cells = []
+            for mode in BLEND_MODES:
+                scored = modes.get(mode)
+                cells += [
+                    _db(scored and scored["sdr"]),
+                    _db(scored and scored["difference_db"], signed=True),
+                ]
+                if scored and (best_gain is None or scored["difference_db"] > best_gain):
+                    best_gain = scored["difference_db"]
+            lines.append(f"| {stem} | {_db(chosen[stem]['sdr'])} | " + " | ".join(cells) + " |")
+        lines += [
+            "",
+            f"The most any of them gains on the single model is {_db(best_gain, signed=True)} dB, "
+            "and each costs more models. The six-stem `other` has no blend row here: its "
+            "blends are four-stem ones, scored against a different target.",
+        ]
     lines += [
         "",
         "## Time",
@@ -283,14 +356,17 @@ def render(report: Mapping[str, Any]) -> str:
             if new is None and old is None:
                 continue
             lines.append(
-                f"| {stem} | `{name}` | {_db(new and new['sdr'])} | {_db(old and old['sdr'])} | "
+                f"| {stem} | `{name}` | {_db(new and new['sdr'])} | "
+                f"{_db(old and old['sdr'])}{' (composed)' if check['in_use_composed'] else ''} | "
                 f"{_db(check['difference_db'], signed=True)} | "
                 f"{(new or old)['tracks']} |"
             )
     lines += [
         "",
-        "MUSDB18-HQ has no guitar or piano references, so those stems appear for MoisesDB "
-        "only. Test runs: "
+        '"Composed" is the six-stem other the product has been delivering: a four-stem '
+        "model's other with the guitar and piano stems taken out, which the benchmark scores "
+        "as its own system. MUSDB18-HQ has no guitar or piano references, so those stems "
+        "appear for MoisesDB only. Test runs: "
         + ", ".join(f"`{name}` from run `{run}`" for name, run in report["test_runs"].items())
         + ".",
         "",
@@ -299,6 +375,9 @@ def render(report: Mapping[str, Any]) -> str:
         "- One tuning list of 30 tracks from one dataset decides. MUSDB18-HQ's training "
         "tracks have not been scored yet.",
         "- Only the models the config named when the benchmark started are candidates.",
+        "- Which songs each checkpoint was trained on is not known here. A model that met "
+        "these datasets' songs in training would score higher on them than on new music, "
+        "and nothing in this repository can tell.",
         "- SDR is not how it sounds. No listening test has been run.",
         "- The vocal split and de-reverb models are not chosen here, and neither are blends.",
         "",

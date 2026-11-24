@@ -122,6 +122,7 @@ def test_the_report_shows_the_choice_and_then_the_test_lists() -> None:
     assert report["checks"]["drums"]["list_b"] == {
         "chosen": {"sdr": 13.0, "tracks": 50},
         "in_use": None,
+        "in_use_composed": False,
         "difference_db": None,
     }
     # One model for both stems runs once; the two in use each run.
@@ -137,6 +138,48 @@ def test_the_report_shows_the_choice_and_then_the_test_lists() -> None:
     assert "- in use until now: `old`, `old4`: 28.0 s" in text
     assert "`list_a` from run `run-a`" in text
     assert rec.seconds_per_minute(tuning["rows"], ["new", "nobody"]) is None
+
+
+def test_a_stem_the_product_composed_is_set_beside_the_composed_figure() -> None:
+    tuning = data("tune-run", [row("six", "other", 2.5), row("six", "vocals", 9.0)])
+    tests = {
+        "list_a": data(
+            "run-a",
+            [
+                row("six", "other", 3.0, tracks=33),
+                row("other_composed:single_best", "other", 2.0, tracks=33),
+                row("other_composed:full_ensemble", "other", 9.0, tracks=33),
+            ],
+        )
+    }
+    report = rec.build(tuning, tests, {"other": "four"})
+    check = report["checks"]["other"]["list_a"]
+    assert check["in_use"] == {"sdr": 2.0, "tracks": 33}
+    assert check["in_use_composed"] is True
+    assert check["difference_db"] == pytest.approx(1.0)
+    assert "| other | `list_a` | 3.00 | 2.00 (composed) | +1.00 | 33 |" in rec.render(report)
+
+
+def test_the_configured_blends_are_shown_beside_the_chosen_model() -> None:
+    tuning = data(
+        "tune-run",
+        [
+            row("six", "vocals", 10.0),
+            row("six", "drums", 12.0),
+            row("vocals:two_model_blend", "vocals", 10.4, rate=40.0),
+            row("vocals:full_ensemble", "vocals", 9.5, rate=70.0),
+            row("drums:two_model_blend", "drums", 11.0, rate=30.0),
+            row("drums:single_best", "drums", 99.0),  # not a blend: left out
+        ],
+    )
+    report = rec.build(tuning, {}, {"vocals": "old", "drums": "old"})
+    assert report["blends"]["vocals"]["two_model_blend"]["difference_db"] == pytest.approx(0.4)
+    assert report["blends"]["vocals"]["full_ensemble"]["difference_db"] == pytest.approx(-0.5)
+    assert set(report["blends"]["drums"]) == {"two_model_blend"}
+    text = rec.render(report)
+    assert "| vocals | 10.00 | 10.40 | +0.40 | 9.50 | -0.50 |" in text
+    assert "| drums | 12.00 | 11.00 | -1.00 | - | - |" in text
+    assert "The most any of them gains on the single model is +0.40 dB" in text
 
 
 def test_the_command_refuses_without_the_tuning_report(tmp_path, capsys) -> None:

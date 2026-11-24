@@ -1,0 +1,412 @@
+{
+  "blends": {
+    "bass": {
+      "full_ensemble": {
+        "difference_db": -1.8707348252460658,
+        "sdr": 13.767415195843041,
+        "seconds_per_audio_minute": 52.0452
+      },
+      "two_model_blend": {
+        "difference_db": -0.9055204136681105,
+        "sdr": 14.732629607420996,
+        "seconds_per_audio_minute": 26.8056
+      }
+    },
+    "drums": {
+      "full_ensemble": {
+        "difference_db": -0.9241206467905858,
+        "sdr": 11.217379341668368,
+        "seconds_per_audio_minute": 42.2604
+      },
+      "two_model_blend": {
+        "difference_db": -0.8842694134283811,
+        "sdr": 11.257230575030572,
+        "seconds_per_audio_minute": 33.9393
+      }
+    },
+    "guitar": {
+      "full_ensemble": {
+        "difference_db": -2.16810976787282,
+        "sdr": 5.684038507726812,
+        "seconds_per_audio_minute": 28.3857
+      },
+      "two_model_blend": {
+        "difference_db": -1.4891126380058655,
+        "sdr": 6.363035637593766,
+        "seconds_per_audio_minute": 24.724800000000002
+      }
+    },
+    "piano": {
+      "full_ensemble": {
+        "difference_db": -2.9245662665640957,
+        "sdr": 5.703238059914062,
+        "seconds_per_audio_minute": 21.8712
+      },
+      "two_model_blend": {
+        "difference_db": -2.9245662665640957,
+        "sdr": 5.703238059914062,
+        "seconds_per_audio_minute": 21.8808
+      }
+    },
+    "vocals": {
+      "full_ensemble": {
+        "difference_db": 0.026208074368170742,
+        "sdr": 11.505616161061582,
+        "seconds_per_audio_minute": 72.2346
+      },
+      "two_model_blend": {
+        "difference_db": -0.09558098033385143,
+        "sdr": 11.38382710635956,
+        "seconds_per_audio_minute": 42.435900000000004
+      }
+    }
+  },
+  "checks": {
+    "bass": {
+      "moisesdb_subset": {
+        "chosen": {
+          "sdr": 15.089476920242392,
+          "tracks": 48
+        },
+        "difference_db": 1.8990744501562364,
+        "in_use": {
+          "sdr": 13.190402470086156,
+          "tracks": 48
+        },
+        "in_use_composed": false
+      },
+      "musdb18hq_test": {
+        "chosen": {
+          "sdr": 12.465909708119728,
+          "tracks": 50
+        },
+        "difference_db": 2.5199679848967875,
+        "in_use": {
+          "sdr": 9.94594172322294,
+          "tracks": 50
+        },
+        "in_use_composed": false
+      }
+    },
+    "drums": {
+      "moisesdb_subset": {
+        "chosen": {
+          "sdr": 12.94744390971318,
+          "tracks": 48
+        },
+        "difference_db": 1.4436056795416654,
+        "in_use": {
+          "sdr": 11.503838230171514,
+          "tracks": 48
+        },
+        "in_use_composed": false
+      },
+      "musdb18hq_test": {
+        "chosen": {
+          "sdr": 13.34733942858735,
+          "tracks": 50
+        },
+        "difference_db": 1.4262650967169463,
+        "in_use": {
+          "sdr": 11.921074331870404,
+          "tracks": 50
+        },
+        "in_use_composed": false
+      }
+    },
+    "guitar": {
+      "moisesdb_subset": {
+        "chosen": {
+          "sdr": 9.189431003140534,
+          "tracks": 45
+        },
+        "difference_db": 0.0,
+        "in_use": {
+          "sdr": 9.189431003140534,
+          "tracks": 45
+        },
+        "in_use_composed": false
+      },
+      "musdb18hq_test": {
+        "chosen": null,
+        "difference_db": null,
+        "in_use": null,
+        "in_use_composed": false
+      }
+    },
+    "other": {
+      "moisesdb_subset": {
+        "chosen": {
+          "sdr": 2.965469729055847,
+          "tracks": 33
+        },
+        "difference_db": 0.9792964598056586,
+        "in_use": {
+          "sdr": 1.9861732692501883,
+          "tracks": 33
+        },
+        "in_use_composed": true
+      },
+      "musdb18hq_test": {
+        "chosen": null,
+        "difference_db": null,
+        "in_use": null,
+        "in_use_composed": false
+      }
+    },
+    "piano": {
+      "moisesdb_subset": {
+        "chosen": {
+          "sdr": 5.797927322251725,
+          "tracks": 20
+        },
+        "difference_db": 0.0,
+        "in_use": {
+          "sdr": 5.797927322251725,
+          "tracks": 20
+        },
+        "in_use_composed": false
+      },
+      "musdb18hq_test": {
+        "chosen": null,
+        "difference_db": null,
+        "in_use": null,
+        "in_use_composed": false
+      }
+    },
+    "vocals": {
+      "moisesdb_subset": {
+        "chosen": {
+          "sdr": 10.545117600369274,
+          "tracks": 49
+        },
+        "difference_db": -0.27051629106733444,
+        "in_use": {
+          "sdr": 10.815633891436608,
+          "tracks": 49
+        },
+        "in_use_composed": false
+      },
+      "musdb18hq_test": {
+        "chosen": {
+          "sdr": 12.29571312317237,
+          "tracks": 50
+        },
+        "difference_db": 0.34477547803911257,
+        "in_use": {
+          "sdr": 11.950937645133257,
+          "tracks": 50
+        },
+        "in_use_composed": false
+      }
+    }
+  },
+  "chosen": {
+    "bass": {
+      "best_model": "bs_roformer_sw_6stem",
+      "best_sdr": 15.638150021089107,
+      "candidates": {
+        "bs_roformer_sw_6stem": {
+          "sdr": 15.638150021089107,
+          "seconds_per_audio_minute": 18.2514,
+          "tracks": 30
+        },
+        "htdemucs_6s": {
+          "sdr": 12.331976198937344,
+          "seconds_per_audio_minute": 3.774,
+          "tracks": 30
+        },
+        "htdemucs_ft": {
+          "sdr": 12.616052267771739,
+          "seconds_per_audio_minute": 8.2425,
+          "tracks": 30
+        },
+        "scnet_large": {
+          "sdr": 11.58069937345723,
+          "seconds_per_audio_minute": 7.827000000000001,
+          "tracks": 30
+        },
+        "scnet_xl_ihf": {
+          "sdr": 12.888520530476704,
+          "seconds_per_audio_minute": 25.2516,
+          "tracks": 30
+        }
+      },
+      "gives_up_db": 0.0,
+      "model": "bs_roformer_sw_6stem",
+      "sdr": 15.638150021089107
+    },
+    "drums": {
+      "best_model": "bs_roformer_sw_6stem",
+      "best_sdr": 12.141499988458953,
+      "candidates": {
+        "bs_roformer_sw_6stem": {
+          "sdr": 12.141499988458953,
+          "seconds_per_audio_minute": 18.2514,
+          "tracks": 30
+        },
+        "htdemucs_6s": {
+          "sdr": 10.287128012981867,
+          "seconds_per_audio_minute": 3.774,
+          "tracks": 30
+        },
+        "htdemucs_ft": {
+          "sdr": 10.57204554266801,
+          "seconds_per_audio_minute": 8.2425,
+          "tracks": 30
+        },
+        "scnet_large": {
+          "sdr": 10.462696501855923,
+          "seconds_per_audio_minute": 7.827000000000001,
+          "tracks": 30
+        },
+        "scnet_xl_ihf": {
+          "sdr": 11.26067794192262,
+          "seconds_per_audio_minute": 25.2516,
+          "tracks": 30
+        }
+      },
+      "gives_up_db": 0.0,
+      "model": "bs_roformer_sw_6stem",
+      "sdr": 12.141499988458953
+    },
+    "guitar": {
+      "best_model": "bs_roformer_sw_6stem",
+      "best_sdr": 7.852148275599632,
+      "candidates": {
+        "bs_roformer_sw_6stem": {
+          "sdr": 7.852148275599632,
+          "seconds_per_audio_minute": 18.2514,
+          "tracks": 27
+        },
+        "htdemucs_6s": {
+          "sdr": 3.269992157087435,
+          "seconds_per_audio_minute": 3.774,
+          "tracks": 27
+        },
+        "mel_roformer_guitar_becruily": {
+          "sdr": 3.590450409663407,
+          "seconds_per_audio_minute": 6.539700000000001,
+          "tracks": 27
+        }
+      },
+      "gives_up_db": 0.0,
+      "model": "bs_roformer_sw_6stem",
+      "sdr": 7.852148275599632
+    },
+    "other": {
+      "best_model": "bs_roformer_sw_6stem",
+      "best_sdr": 2.6118270042280995,
+      "candidates": {
+        "bs_roformer_sw_6stem": {
+          "sdr": 2.6118270042280995,
+          "seconds_per_audio_minute": 18.2514,
+          "tracks": 27
+        },
+        "htdemucs_6s": {
+          "sdr": 0.006432245592323769,
+          "seconds_per_audio_minute": 3.774,
+          "tracks": 27
+        }
+      },
+      "gives_up_db": 0.0,
+      "model": "bs_roformer_sw_6stem",
+      "sdr": 2.6118270042280995
+    },
+    "piano": {
+      "best_model": "bs_roformer_sw_6stem",
+      "best_sdr": 8.627804326478158,
+      "candidates": {
+        "bs_roformer_sw_6stem": {
+          "sdr": 8.627804326478158,
+          "seconds_per_audio_minute": 18.2514,
+          "tracks": 15
+        },
+        "htdemucs_6s": {
+          "sdr": 1.9716498656478931,
+          "seconds_per_audio_minute": 3.774,
+          "tracks": 15
+        }
+      },
+      "gives_up_db": 0.0,
+      "model": "bs_roformer_sw_6stem",
+      "sdr": 8.627804326478158
+    },
+    "vocals": {
+      "best_model": "bs_roformer_sw_6stem",
+      "best_sdr": 11.479408086693411,
+      "candidates": {
+        "bs_polarformer_vocals": {
+          "sdr": 11.196722067352912,
+          "seconds_per_audio_minute": 29.9664,
+          "tracks": 30
+        },
+        "bs_roformer_sw_6stem": {
+          "sdr": 11.479408086693411,
+          "seconds_per_audio_minute": 18.2514,
+          "tracks": 30
+        },
+        "bs_roformer_viperx_vocals": {
+          "sdr": 11.150141637413471,
+          "seconds_per_audio_minute": 29.879400000000004,
+          "tracks": 30
+        },
+        "htdemucs_6s": {
+          "sdr": 8.65432162103804,
+          "seconds_per_audio_minute": 3.774,
+          "tracks": 30
+        },
+        "htdemucs_ft": {
+          "sdr": 8.77711827634382,
+          "seconds_per_audio_minute": 8.2425,
+          "tracks": 30
+        },
+        "mel_roformer_kim_vocals": {
+          "sdr": 11.088546528967235,
+          "seconds_per_audio_minute": 12.5055,
+          "tracks": 30
+        },
+        "scnet_large": {
+          "sdr": 9.288487846621381,
+          "seconds_per_audio_minute": 7.827000000000001,
+          "tracks": 30
+        },
+        "scnet_xl_ihf": {
+          "sdr": 11.022569120521432,
+          "seconds_per_audio_minute": 25.2516,
+          "tracks": 30
+        }
+      },
+      "gives_up_db": 0.0,
+      "model": "bs_roformer_sw_6stem",
+      "sdr": 11.479408086693411
+    }
+  },
+  "in_use": {
+    "bass": "htdemucs_ft",
+    "drums": "scnet_xl_ihf",
+    "guitar": "bs_roformer_sw_6stem",
+    "other": "scnet_xl_ihf",
+    "piano": "bs_roformer_sw_6stem",
+    "vocals": "mel_roformer_kim_vocals"
+  },
+  "test_runs": {
+    "moisesdb_subset": "moisesdb-v1",
+    "musdb18hq_test": "musdb18hq-v1"
+  },
+  "time": {
+    "chosen": 18.2514,
+    "chosen_models": [
+      "bs_roformer_sw_6stem"
+    ],
+    "in_use": 64.251,
+    "in_use_models": [
+      "mel_roformer_kim_vocals",
+      "scnet_xl_ihf",
+      "htdemucs_ft",
+      "bs_roformer_sw_6stem"
+    ]
+  },
+  "tuning_dataset": "moisesdb_tuning",
+  "tuning_run": "moisesdb-tuning-v1"
+}

@@ -20,6 +20,17 @@ def test_defaults_load_and_match_the_registry() -> None:
     assert check_defaults(load_defaults(), load_registry()) == []
 
 
+def test_settled_blends_must_be_built_around_the_single_model(raw: dict) -> None:
+    # While the blends are provisional the single model may be chosen ahead of them...
+    raw["ensembles"]["slots"]["drums"]["single_best"] = "scnet_small"
+    raw["ensembles"]["provisional"] = True
+    assert check_defaults(Defaults.model_validate(raw), load_registry()) == []
+    # ...and once they are settled, a blend that leaves it out is a mistake.
+    raw["ensembles"]["provisional"] = False
+    problems = check_defaults(Defaults.model_validate(raw), load_registry())
+    assert "drums: two_model_blend should include the single_best model" in problems
+
+
 def test_gate_thresholds_match_project_decision_8() -> None:
     gate = load_defaults().gate
     assert (gate.pass_probability_min, gate.score_min, gate.confidence_min) == (0.8, 2, 0.7)
