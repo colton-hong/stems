@@ -2,7 +2,7 @@
 
 Single source of truth for where the build is. Read this first, every iteration.
 
-**Current phase: 7 (calibration and hardening), started 2026-11-24.** The owner asked on 2026-11-24 for each phase to follow the last without waiting. Phases 0, 1, 4, 5 and 6 are complete apart from live checks that need the owner's accounts (S3 and Azure, B7; Modal, B4). Still open from earlier phases: P3.11 (optional); Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done, the tuning stage on MoisesDB started 2026-11-24T04:53Z; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task).
+**Current phase: 8 (the gate on real output, and real jobs end to end), started 2026-11-24.** The owner asked on 2026-11-24 for each phase to follow the last without waiting, and for new phases to be added when none is left; Phase 8 was added that way. Phases 0, 1, 4, 5, 6 and 7 are complete apart from checks that need the owner's accounts (S3 and Azure, B7; Modal, B4; the listening test, B8). Still open from earlier phases: P3.11 (optional); Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done, the tuning stage on MoisesDB started 2026-11-24T04:53Z; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task).
 
 ## How to use this file
 
@@ -145,7 +145,23 @@ Format: `- [ ] Pn.m Task. **Accept:** how to tell it is done.`
 - [x] P7.4 Deployment guide (local, Modal, S3 or Azure Blob, the Azure Container Apps seam). **Accept:** `docs/deployment.md` gives the steps for each target, and marks every step as run here (with its date) or not run. — Done: `docs/deployment.md`: the four parts (API, worker, storage, web app) and how to run them on one machine, behind HTTPS, with a bucket, with workers on Modal, and what the Azure Container Apps seam needs. Every step says whether it was run here and when. Run here: install, checks, the API, the web app in development and built, and a whole job in the browser with stand-in models (2026-11-24). Not run: a job with real models through the API; anything on the internet (HTTPS, a proxy, Postgres); any bucket (B7); Modal (B4). The guide lists what the code assumes in each case (one API process, web app and API on the same site, a CORS rule on the bucket for the player) and what to check on a first real run. It is a guide written from the code, not from having deployed it.
 - [x] P7.5 Listening-test kit: blind randomised 30-second excerpts and a scoring sheet per report §9. **Accept:** `python -m stems_bench.listening_kit` builds a kit from several systems' stems (the same 30-second excerpt per track for every system, level-matched, anonymous names, the key kept apart, a scoring sheet per listener) and scores returned sheets against the report's pass bar; tested on synthetic audio. Running the test itself needs B8. — Done: `python -m stems_bench.listening_kit`. `build` reads a manifest of tracks and each system's stems and writes the folder listeners get: per track and stem the same 30-second excerpt (the loudest of the mix) from every system, matched in level to within 0.2 dB and kept under a -1 dBFS peak, as A, B, C, D in an order that changes from stem to stem; a sheet per listener with the rows in an order of their own; and instructions. The key (which letter is which system, and the gains applied) is written outside that folder, and the tool refuses to put it inside. `score` unblinds returned sheets and applies the report's bar: ahead of the free reference by 0.3 points on at least 70% of tracks, ahead of every paid reference on mean overall quality, behind on no stem by more than 0.5, with at least 5 listeners and every reference present. Bad cells and missing rows are listed and left out. 14 tests on synthetic audio with four stand-in systems. **No listening test has been run**: it needs the other tools' stems, two paid plans and a panel (B8).
 - [x] P7.6 Hardening pass: limits, failure paths, a security review of upload and download handling. **Accept:** `docs/security-review.md` lists what was reviewed, each finding with its fix and the test that holds it, and what was left as it is. — Done: `docs/security-review.md`: a review, by the author of the code, of what a stranger's upload can do to the server and what anyone but the uploader can reach. 12 findings fixed, each named with the test that holds it. The ones that mattered most: separated audio was kept in a shared cache the 7-day deletion never touched (the worker now caches inside the job's own temporary folder); a stopped worker left a copy of the upload in the temp directory; worker logs were never deleted; the media decoders ran inside the API process (the upload check now runs in a child process with a 20-second limit); any sample rate was accepted (now 8 kHz to 192 kHz, at most 8 channels); a failed job showed the exception's own message; nothing capped the queue overall (now 12 jobs). Also: owner-only permissions on a storage folder the code creates, no-store and nosniff headers on every API reply, and frame and permissions policies on the web pages. The review also lists what was found sound and what was left as it is and why (links work without the cookie by design, in-process rate limits, no cap on event streams, no dependency scan). 14 tests in `tests/test_api_hardening.py`, 3 more for the worker, and a browser test of the page headers. Not an independent audit and not a penetration test.
-- [ ] P7.7 Optional: fine-tune the weakest stem on MoisesDB if the benchmark shows a clear gap. **Accept:** done, or a note saying it was not and why.
+- [x] P7.7 Optional: fine-tune the weakest stem on MoisesDB if the benchmark shows a clear gap. **Accept:** done, or a note saying it was not and why. — Not done, and this is the note. The benchmark does show a gap: on the MoisesDB subset (run `moisesdb-v1`, `docs/benchmarks/moisesdb.md`) the best model scores 2.97 dB on the six-stem other, 5.80 dB on piano and 9.19 dB on guitar, against 10.82 dB on vocals and 12.95 dB on drums. Fine-tuning was not attempted, for three reasons. It is training of a large model: this machine has no NVIDIA GPU, its own GPU has been taken by the benchmark queue since 2026-11-23, and there is no rented one (B4). It needs a protocol of its own: tracks to train on that are outside both the frozen test subset and the tuning list, and it is not known which MoisesDB tracks the published checkpoints were already trained on. And the recommendation of a default model per stem (P2.13), which says what there is to improve on, is not finished. No training code was written.
+
+## Phase 8: the gate on real output, and real jobs end to end
+
+Added on 2026-11-24 under rule 6 (no phase was left). Phase 7 measured the listening layer
+on reference stems with bleed mixed in by hand, and ran every job behind the API with
+stand-in models. This phase measures it on what real separators produce, switches on
+whatever passes, and puts real models through the API and the browser.
+
+- [ ] P8.1 A tool that measures the listening layer on real separator output, with its rules fixed first. **Accept:** `python -m stems_bench.gate_outputs collect` scores the outputs the benchmark kept (resumable, with a `status.json`), each with the SDR and SIR the benchmark measured for it; the questions, the rules tried, how thresholds are chosen and the bar each must clear are in the committed code before any output is scored; tested on made-up data with a stand-in tagger.
+- [ ] P8.2 Run it and report. **Accept:** `docs/gate-on-real-output.md` generated from a finished run, with a verdict for each question (can an empty stem be told from a real one; does the bleed score prefer the better of two outputs).
+- [ ] P8.3 Act on P7.1 and P8.2, one signal at a time. **Accept:** `listening.calibrated` becomes one switch per signal, each true only if its held-out check passed; the gate and the web app use exactly the signals that are on (a stem found empty gets a note that says the instrument was not found, not the generic one); with every switch off nothing changes; tests for both states; `make web-e2e` passes.
+- [ ] P8.4 Presence in a full mix: thresholds of its own from the scores of run `gate-v1`, or a stated dead end. **Accept:** `docs/gate-calibration.md` gains a section with thresholds chosen on the calibration mixes and checked on the held-out ones against a bar fixed first; `track_features` uses them if they pass, and otherwise reports "unknown" and no instruments instead of guesses.
+- [ ] P8.5 A real job through the API and the browser: real models, no stand-ins. **Accept:** one command runs it (the API, the local provider, the real registry, the synthetic fixture) and checks that all six stems arrive and play; run here once, with each model's time and its device stated; `docs/deployment.md` no longer says "not run" for it.
+- [ ] P8.6 Dependency audit. **Accept:** `pip-audit` and `npm audit` are run and their dated results are in `docs/security-review.md`, with what was changed and what was left and why.
+- [ ] P8.7 The web app at phone width. **Accept:** upload to download, and the axe checks, pass at 375 px wide with no sideways scrolling, inside `make web-e2e`.
+- [ ] P8.8 Rate limits behind a reverse proxy (BLOCKED.md D7). **Accept:** a setting names the proxies to trust; the forwarded address is used only when the connection comes from one of them; with the setting empty nothing changes; tests for a trusted proxy, an untrusted one and a forged header; `docs/deployment.md` says how to set it.
 
 ---
 
@@ -619,3 +635,55 @@ Choices made here that the owner can overrule (BLOCKED.md D10, D11):
 For the owner: `make api` in one terminal and `cd web && npm run dev` in another, then
 http://localhost:3000. With no weights downloaded for a stem's model the first real job
 will download them. Phase 7 (calibration and hardening) waits for a go-ahead.
+
+## Phase 7 summary (2026-11-24)
+
+Done: P7.1 to P7.6. P7.7 (optional fine-tuning) was not done; its note says why.
+
+- **Gate calibration** (P7.1, `docs/gate-calibration.md`). 1,270 one-minute excerpts of
+  MoisesDB scored by the tagger, thresholds chosen on 30 tracks and checked on 50 others,
+  with the rules and the pass bar committed first.
+- **End-to-end tests** (P7.2). A 13th browser test covers the vocal split and de-reverb
+  extras; a slow test runs the real vocals model through the worker's storage entry point.
+- **Cost per song** (P7.3, `docs/cost-per-song.md`). Decisions and storage are priced from
+  measured usage and prices read that day. Separation on a rented GPU is not priced: no
+  job has run on one.
+- **Deployment guide** (P7.4, `docs/deployment.md`), every step marked run here or not.
+- **Listening-test kit** (P7.5): builds a blind kit and scores returned sheets.
+- **Security review** (P7.6, `docs/security-review.md`): 12 findings fixed, each held by a
+  named test.
+
+What the phase found:
+
+- **The tagger can tell whether a stem holds its own instrument, and little else.** On
+  held-out tracks its presence answer is right 97.1% of the time when it gives one (it
+  gives one 57.5% of the time). Its bleed score barely separates clean stems from bled
+  ones (AUC 0.644; half of the clean stems flagged), and in a full mix it is wrong more
+  often than right about what is playing. Three of the five checks failed, so
+  `listening.calibrated` stays false: stems are delivered with the "could not be
+  quality-checked" note and nothing is retried on the tagger's word. The two presence
+  thresholds in the config are now the measured ones; the bleed thresholds are still
+  guesses.
+- **Data from an upload outlived its deletion in three places**: separated audio in a
+  shared cache, a copy of the upload in the temp folder of a stopped worker, and the
+  job's log. All three are fixed and tested.
+
+Not verified, and why:
+
+- **The gate on real separator output.** The calibration used reference stems with bleed
+  mixed in by hand. How the tagger scores what a separator really produces is Phase 8.
+- **Jev as the judge.** The planned sample of Jev's gate answers on these clips was not
+  run: Jev would be judging the same bleed scores that failed. How often Jev decides, and
+  how well, is unmeasured beyond the three live calls of P4.9.
+- **Real models behind the API and the browser.** One real model has run through the
+  worker's entry point on a 6-second fixture. No real job has gone through the API.
+- **Cost of separation on a rented GPU** (B4), **S3 and Azure** (B7), **the listening
+  test** (B8): each waits for something only the owner can provide.
+- The security review is the author's own; no outside audit, scan or attack.
+
+Still open from earlier phases: P2.12, P2.13 and P2.14b (the tuning stage of the real
+benchmarks is running; a later iteration commits its report and continues) and P3.11
+(optional).
+
+**Next:** Phase 8, added under rule 6: measure the listening layer on real separator
+output, switch on the signals that pass, and run real models through the API.
