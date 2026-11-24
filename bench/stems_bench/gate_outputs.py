@@ -133,6 +133,29 @@ IN_FORCE_DB = -19.81
 WHOLE_RULES_COMMIT: str | None = "fcd175726d06774dfa6f9e3c25b0f9e90aa6a93a"
 
 
+# -- retrying an empty stem (added in Phase 9, after P9.2) ---------------------------------
+# The gate tries a stem it finds empty again with the fallback model, and delivers the
+# retry if that is not empty. A real job (docs/product-vs-benchmark.md) showed the bad
+# side of this: a song with no guitar, a silent first attempt, and a fallback model whose
+# leftovers were delivered as the guitar. This counts both sides on the kept outputs. The
+# block was written after that job and before any of these counts was made.
+#
+# For every held-out track and stem where the kept outputs hold both the default model's
+# output and the fallback model's, and the default model's is empty by the rule in force
+# (level against the mix over the whole song at or below RETRY_EMPTY_DB):
+#   stays empty   the fallback's output is empty too: the retry changes nothing
+#   rescue        the instrument is in the song, the fallback's output is not empty, and
+#                 its measured SDR over the track is above 0 dB and above the default's
+#   wrong         the instrument is not in the song and the fallback's output is not empty:
+#                 leftovers would be delivered as the instrument
+#   no better     in the song, not empty, but the SDR is not above 0 dB and the default's
+RETRY_EMPTY_DB = -21.68
+# What is done with the result: the gate keeps retrying empty stems only if rescues
+# outnumber wrong deliveries. Otherwise (fewer, or as many, or none of either) it stops:
+# a stem found empty is delivered at once with its note.
+RETRY_RULES_COMMIT: str | None = None
+
+
 class OutputsError(ValueError):
     """The measurement cannot be run or reported as asked."""
 
@@ -681,6 +704,76 @@ def analyse_whole(
     }
 
 
+def analyse_retry(
+    rows: Sequence[Mapping[str, Any]],
+    levels: Sequence[Mapping[str, Any]],
+    chains: Mapping[str, Sequence[str]],
+) -> dict[str, Any]:
+    """What retrying an empty stem with the fallback model would do, on the held-out outputs.
+
+    ``chains`` maps a stem to (default model, fallback model), as the product is configured.
+    """
+    by_id = {level["id"]: level for level in levels}
+    joined = {
+        (row["track_id"], row["stem"], row["model_id"]): {**row, **by_id[row["id"]]}
+        for row in rows
+        if row["set"] == "heldout" and row["id"] in by_id
+    }
+
+    def empty(row: Mapping[str, Any]) -> bool:
+        return whole_level(row) <= RETRY_EMPTY_DB
+
+    def sdr(row: Mapping[str, Any]) -> float | None:
+        value = row.get("track_sdr_db")
+        return None if value is None else float(value)
+
+    by_stem: dict[str, dict[str, Any]] = {}
+    cases: list[dict[str, Any]] = []
+    for stem, (default, fallback) in chains.items():
+        counts = dict.fromkeys(("pairs", "empty", "stays_empty", "rescue", "wrong", "no_better"), 0)
+        for track_id in sorted({key[0] for key in joined if key[1] == stem}):
+            first = joined.get((track_id, stem, default))
+            second = joined.get((track_id, stem, fallback))
+            if first is None or second is None:
+                continue
+            counts["pairs"] += 1
+            if not empty(first):
+                continue
+            counts["empty"] += 1
+            if empty(second):
+                outcome = "stays_empty"
+            elif not in_song(first):
+                outcome = "wrong"
+            else:
+                a, b = sdr(first), sdr(second)
+                better = b is not None and b > 0 and (a is None or b > a)
+                outcome = "rescue" if better else "no_better"
+            counts[outcome] += 1
+            if outcome != "stays_empty":
+                cases.append(
+                    {
+                        "track_id": track_id,
+                        "stem": stem,
+                        "outcome": outcome,
+                        "default_sdr_db": sdr(first),
+                        "fallback_sdr_db": sdr(second),
+                        "fallback_level_db": round(whole_level(second), 1),
+                    }
+                )
+        if counts["pairs"]:
+            by_stem[stem] = {"default": default, "fallback": fallback, **counts}
+    total = {
+        key: sum(entry[key] for entry in by_stem.values())
+        for key in ("pairs", "empty", "stays_empty", "rescue", "wrong", "no_better")
+    }
+    return {
+        "by_stem": by_stem,
+        "total": total,
+        "cases": cases,
+        "decision": "retry" if total["rescue"] > total["wrong"] else "stop",
+    }
+
+
 def analyse(rows: Sequence[Mapping[str, Any]], config: Mapping[str, Any]) -> dict[str, Any]:
     """Everything the report states, from the scored rows and the configured thresholds.
 
@@ -934,6 +1027,8 @@ def render(analysis: Mapping[str, Any], run: Mapping[str, Any]) -> str:
         )
     if analysis.get("whole"):
         lines += ["", *_whole_section(analysis["whole"], crit, run)]
+    if analysis.get("retry"):
+        lines += ["", *_retry_section(analysis["retry"], run)]
     lines += [
         "",
         "## Limits",
@@ -1012,6 +1107,64 @@ def _whole_section(
     ]
     if whole["without_levels"]:
         lines += ["", f"{whole['without_levels']} scored outputs have no whole-song level yet."]
+    return lines
+
+
+def _retry_section(retry: Mapping[str, Any], run: Mapping[str, Any]) -> list[str]:
+    """The part of the report on whether a stem found empty should be tried again."""
+    added = run.get("retry_rules_commit")
+    when = f"at commit `{added[:12]}`" if added else "in the commit that adds this section"
+    total = retry["total"]
+    lines = [
+        "## Should a stem found empty be tried again?",
+        "",
+        "The gate tries an empty stem again with the fallback model and delivers the retry "
+        "if that is not empty. A real job (`docs/product-vs-benchmark.md`) showed how that "
+        "goes wrong: a song with no guitar, a silent first attempt, and a fallback model "
+        "whose leftovers were delivered as the guitar. This counts both sides on the "
+        "held-out outputs, for every track and stem where both the default model's output "
+        f"and the fallback's were kept. The counting rules and what follows from them were "
+        f"added to this file's code {when}, after that job and before these counts were made.",
+        "",
+        '"Empty" is the rule in force: at least '
+        f"{abs(RETRY_EMPTY_DB):g} dB under the mix over the whole song. A rescue is an "
+        "instrument that is in the song, where the fallback's output is not empty and its "
+        "measured SDR is above 0 dB and above the default model's. A wrong delivery is an "
+        "instrument that is not in the song, where the fallback's output is not empty.",
+        "",
+        "| Stem | Default, then fallback | Tracks | Default's output empty | Fallback's too | "
+        "Rescued | Wrongly delivered | No better |",
+        "|---|---|---:|---:|---:|---:|---:|---:|",
+    ]
+    for stem, entry in retry["by_stem"].items():
+        lines.append(
+            f"| {stem} | `{entry['default']}`, then `{entry['fallback']}` | {entry['pairs']} | "
+            f"{entry['empty']} | {entry['stays_empty']} | {entry['rescue']} | {entry['wrong']} | "
+            f"{entry['no_better']} |"
+        )
+    lines += [
+        f"| all | | {total['pairs']} | {total['empty']} | {total['stays_empty']} | "
+        f"{total['rescue']} | {total['wrong']} | {total['no_better']} |",
+        "",
+    ]
+    if retry["decision"] == "retry":
+        lines.append(
+            f"**The gate keeps retrying.** {total['rescue']} rescues against "
+            f"{total['wrong']} wrong deliveries."
+        )
+    else:
+        lines.append(
+            f"**The gate stops retrying empty stems.** {total['rescue']} rescues against "
+            f"{total['wrong']} wrong deliveries: a stem found empty is now delivered at once "
+            "with its note, and no other model is run for it."
+        )
+    lines += [
+        "",
+        "The stems here are the ones whose default and fallback models the benchmark kept "
+        "outputs for; the six-stem `other` is not among them. The gate also calls a stem "
+        "empty when it is silent for 98% of its length, which this count does not look at "
+        "separately.",
+    ]
     return lines
 
 
@@ -1138,10 +1291,33 @@ def cmd_report(args: argparse.Namespace) -> int:
     levels = read_rows(run_dir / "levels.jsonl")
     if levels:
         analysis["whole"] = analyse_whole(rows, levels)
+        # The chains as the product was configured when they were first counted.
+        chains_path = run_dir / "retry-chains.json"
+        if chains_path.is_file():
+            chains = json.loads(chains_path.read_text(encoding="utf-8"))
+        else:
+            from stems_models.registry import load_registry
+            from stems_worker.decision.plan import config_fallback
+
+            defaults, registry = load_defaults(), load_registry()
+            chains = {
+                stem: [
+                    defaults.ensembles.slots[stem].single_best,
+                    config_fallback(stem, defaults, registry),
+                ]
+                for stem in PRODUCT_STEMS
+            }
+            write_json(chains_path, chains)
+        analysis["retry"] = analyse_retry(rows, levels, chains)
     write_json(run_dir / "analysis.json", analysis)
     text = render(
         analysis,
-        {**run, "rules_commit": rules["rules_commit"], "whole_rules_commit": WHOLE_RULES_COMMIT},
+        {
+            **run,
+            "rules_commit": rules["rules_commit"],
+            "whole_rules_commit": WHOLE_RULES_COMMIT,
+            "retry_rules_commit": RETRY_RULES_COMMIT,
+        },
     )
     if args.out:
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)

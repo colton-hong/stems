@@ -421,6 +421,113 @@ def test_the_report_gains_the_whole_song_section_only_when_levels_exist() -> Non
     json.dumps(analysis)
 
 
+# -- retrying an empty stem --------------------------------------------------------------
+
+CHAINS = {"guitar": ["six", "solo"], "piano": ["six", "four"], "bass": ["four", "six"]}
+
+
+def attempt(track: str, stem: str, model: str, *, level: float, sounding: float, sdr) -> tuple:
+    """One kept output and its whole-song level: ``level`` dB against the mix."""
+    one = row("heldout", track, stem, model, present=sounding > 0)
+    one["track_sdr_db"] = sdr
+    return one, {
+        "id": one["id"],
+        "set": "heldout",
+        "whole_level_dbfs": -14.0 + level,
+        "whole_mix_level_dbfs": -14.0,
+        "reference_sounding_seconds": sounding,
+    }
+
+
+def retry_world() -> tuple[list, list]:
+    made = [
+        # No guitar in the song; the default is silent; the fallback finds "something".
+        attempt("a", "guitar", "six", level=-80.0, sounding=0.0, sdr=None),
+        attempt("a", "guitar", "solo", level=-12.0, sounding=0.0, sdr=None),
+        # No guitar; both models say so.
+        attempt("b", "guitar", "six", level=-80.0, sounding=0.0, sdr=None),
+        attempt("b", "guitar", "solo", level=-40.0, sounding=0.0, sdr=None),
+        # A guitar the default missed and the fallback found.
+        attempt("c", "guitar", "six", level=-30.0, sounding=90.0, sdr=-0.2),
+        attempt("c", "guitar", "solo", level=-9.0, sounding=90.0, sdr=4.0),
+        # A guitar the default missed; the fallback is louder and no better.
+        attempt("d", "guitar", "six", level=-30.0, sounding=90.0, sdr=0.3),
+        attempt("d", "guitar", "solo", level=-9.0, sounding=90.0, sdr=-1.0),
+        # A guitar the default found: nothing is retried.
+        attempt("e", "guitar", "six", level=-8.0, sounding=90.0, sdr=7.0),
+        attempt("e", "guitar", "solo", level=-9.0, sounding=90.0, sdr=4.0),
+        # Exactly on the threshold counts as empty; the fallback rescues it.
+        attempt("f", "piano", "six", level=-21.68, sounding=30.0, sdr=None),
+        attempt("f", "piano", "four", level=-10.0, sounding=30.0, sdr=1.5),
+        # The fallback's output was not kept for this track: not a pair.
+        attempt("g", "piano", "six", level=-80.0, sounding=0.0, sdr=None),
+    ]
+    return [m[0] for m in made], [m[1] for m in made]
+
+
+def test_the_retry_rules_are_what_the_report_says_they_are() -> None:
+    assert go.RETRY_EMPTY_DB == -21.68
+
+
+def test_each_empty_first_attempt_is_a_rescue_a_wrong_delivery_or_neither() -> None:
+    rows, levels = retry_world()
+    retry = go.analyse_retry(rows, levels, CHAINS)
+    assert retry["by_stem"]["guitar"] == {
+        "default": "six",
+        "fallback": "solo",
+        "pairs": 5,
+        "empty": 4,
+        "stays_empty": 1,
+        "rescue": 1,
+        "wrong": 1,
+        "no_better": 1,
+    }
+    assert retry["by_stem"]["piano"]["pairs"] == 1
+    assert retry["by_stem"]["piano"]["rescue"] == 1
+    assert "bass" not in retry["by_stem"]  # no outputs kept for its chain
+    assert retry["total"] == {
+        "pairs": 6, "empty": 5, "stays_empty": 1, "rescue": 2, "wrong": 1, "no_better": 1
+    }  # fmt: skip
+    assert [(c["track_id"], c["outcome"]) for c in retry["cases"]] == [
+        ("a", "wrong"),
+        ("c", "rescue"),
+        ("d", "no_better"),
+        ("f", "rescue"),
+    ]
+    assert retry["decision"] == "retry"  # two rescues against one wrong delivery
+
+
+def test_retrying_stops_unless_rescues_outnumber_wrong_deliveries() -> None:
+    rows, levels = retry_world()
+    keep = [i for i, one in enumerate(rows) if one["track_id"] != "f"]
+    tied = go.analyse_retry([rows[i] for i in keep], [levels[i] for i in keep], CHAINS)
+    assert (tied["total"]["rescue"], tied["total"]["wrong"], tied["decision"]) == (1, 1, "stop")
+    nothing = go.analyse_retry(rows[8:10], levels[8:10], CHAINS)
+    assert (nothing["total"]["empty"], nothing["decision"]) == (0, "stop")
+    # Calibration outputs are not counted: the question is asked of the held-out ones.
+    moved = [{**one, "set": "calibration"} for one in rows]
+    assert go.analyse_retry(moved, levels, CHAINS)["total"]["pairs"] == 0
+
+
+def test_the_report_states_the_counts_and_what_the_gate_does() -> None:
+    rows, levels = retry_world()
+    analysis = go.analyse(rows, LISTENING)
+    assert "tried again" not in go.render(analysis, RUN)
+    analysis["retry"] = go.analyse_retry(rows, levels, CHAINS)
+    text = go.render(analysis, {**RUN, "retry_rules_commit": "d" * 40})
+    assert "## Should a stem found empty be tried again?" in text
+    assert "at commit `dddddddddddd`" in text
+    assert "| guitar | `six`, then `solo` | 5 | 4 | 1 | 1 | 1 | 1 |" in text
+    assert "| all | | 6 | 5 | 1 | 2 | 1 | 1 |" in text
+    assert "**The gate keeps retrying.** 2 rescues against 1 wrong deliveries." in text
+    keep = [i for i, one in enumerate(rows) if one["track_id"] != "f"]
+    analysis["retry"] = go.analyse_retry([rows[i] for i in keep], [levels[i] for i in keep], CHAINS)
+    assert "**The gate stops retrying empty stems.** 1 rescues against 1" in go.render(
+        analysis, RUN
+    )
+    json.dumps(analysis)
+
+
 # -- the report --------------------------------------------------------------------------
 
 RUN = {
