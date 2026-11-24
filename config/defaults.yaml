@@ -111,18 +111,27 @@ gate:
     uncalibrated_confidence: 0.5
 
 # How tagger outputs (AudioSet class probabilities per 10-second window) become
-# track_features and per-stem signals. UNCALIBRATED: these values are first guesses, not
-# measurements. They are measured on labelled clean and bled stems in Phase 7 (P7.1), and
-# `calibrated` stays false until then.
+# track_features and per-stem signals. Measured on clean and deliberately bled MoisesDB
+# stems on 2026-11-24 (docs/gate-calibration.md, run gate-v1):
+#   - presence on a stem passed its check: 97.1% right when it commits, on held-out tracks;
+#   - bleed failed: the tagger ranks bled stems above clean ones only weakly (AUC 0.644)
+#     and flags half of the clean ones.
+# `calibrated` therefore stays false, and the gate does not act on what the tagger hears.
 listening:
   calibrated: false
   presence:
     # A stem's score for a track: the mean of its best quarter of audible windows, so an
     # instrument that plays in only part of the track still counts.
     top_fraction: 0.25
-    present_min: 0.5
-    absent_max: 0.2
+    # Chosen on the calibration tracks: the lowest score from which "present" was right
+    # 95% of the time, and the highest up to which "absent" was. Measured on stems. On a
+    # full mix they do not work: a playing instrument scores far lower there, so the
+    # detected_instruments of track_features are not to be relied on.
+    present_min: 0.6466
+    absent_max: 0.0207
   # Bleed on an output stem, by the tagger score of the strongest other source in it.
+  # Still first guesses: the calibration found no thresholds that separate clean stems
+  # from bled ones well enough to use, so these were left as they were.
   bleed:
     slight_min: 0.2
     moderate_min: 0.5

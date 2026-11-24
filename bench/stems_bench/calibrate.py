@@ -473,8 +473,14 @@ def trade_off(
     return table
 
 
-def analyse(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
-    """Choose on the calibration rows, check on the held-out rows."""
+def analyse(
+    rows: Sequence[Mapping[str, Any]], before: Mapping[str, float] | None = None
+) -> dict[str, Any]:
+    """Choose on the calibration rows, check on the held-out rows.
+
+    ``before`` is the set of thresholds in use until now; given, it is scored on the same
+    held-out rows, so the report can show what the calibration changed.
+    """
     calibration = [row for row in rows if row["set"] == "calibration"]
     heldout = [row for row in rows if row["set"] == "heldout"]
     if not calibration or not heldout:
@@ -498,6 +504,9 @@ def analyse(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     thresholds = {k: float(v) for k, v in chosen.items()}  # type: ignore[arg-type]
     result["calibration"] = evaluate(calibration, thresholds)
     result["heldout"] = evaluate(heldout, thresholds)
+    if before is not None:
+        result["before"] = dict(before)
+        result["before_heldout"] = evaluate(heldout, before)
     result["verdict"] = verdict(result["heldout"])
     grid = sorted({0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5, 0.8, thresholds["moderate_min"]})
     result["bleed_trade_off"] = {
@@ -642,6 +651,32 @@ def render(analysis: Mapping[str, Any], run: Mapping[str, Any], current: Mapping
             f"| {row['threshold']:.4f}{mark} | {_pct(row['caught'])} | {_pct(row['passed'])} | "
             f"{_pct(row['balanced_accuracy'])} |"
         )
+    if "before_heldout" in analysis:
+        lines += [
+            "",
+            "## Against the values used until now (held out)",
+            "",
+            "| Thresholds | Stems: committed | right | Mixes: committed | right "
+            "| Bleed balanced accuracy | Clean flagged |",
+            "|---|---:|---:|---:|---:|---:|---:|",
+        ]
+        for label, part in (
+            ("Until now", analysis["before_heldout"]),
+            ("Chosen", analysis["heldout"]),
+        ):
+            stems, mixes, b = part["presence_on_stems"], part["presence_on_mixes"], part["bleed"]
+            lines.append(
+                f"| {label} | {_pct(stems['coverage'])} | {_pct(stems['decided_accuracy'])} | "
+                f"{_pct(mixes['coverage'])} | {_pct(mixes['decided_accuracy'])} | "
+                f"{_pct(b['balanced_accuracy'])} | {_pct(b['clean_flagged'])} |"
+            )
+        lines += [
+            "",
+            "On mixes neither set of thresholds works: an instrument that is playing in a "
+            "full mix scores far lower than the same instrument on its own stem, so "
+            '"absent" is usually the wrong answer there. The thresholds were chosen on '
+            "stems, which is what the gate judges.",
+        ]
     verdict_ = analysis["verdict"]
     labels = {
         "presence_decided_accuracy_min": "Presence answers that are right, at least",
@@ -766,17 +801,24 @@ def cmd_report(args: argparse.Namespace) -> int:
         print(f"calibrate: {run_path} is missing; run `collect` first", file=sys.stderr)
         return 2
     run = json.loads(run_path.read_text(encoding="utf-8"))
-    run["rules_commit"] = _rules_commit()
-    analysis = analyse(read_rows(run_dir / "scores.jsonl"))
+    run["rules_commit"] = run.get("rules_commit") or _rules_commit()
+    # The thresholds in use when this run was first reported. Kept with the run, so that
+    # applying the chosen values to the config does not change what "until now" means.
+    before_path = run_dir / "before.json"
+    if before_path.is_file():
+        current = json.loads(before_path.read_text(encoding="utf-8"))
+    else:
+        listening = load_defaults().listening
+        current = {
+            "present_min": listening.presence.present_min,
+            "absent_max": listening.presence.absent_max,
+            "slight_min": listening.bleed.slight_min,
+            "moderate_min": listening.bleed.moderate_min,
+            "severe_min": listening.bleed.severe_min,
+        }
+        write_json(before_path, current)
+    analysis = analyse(read_rows(run_dir / "scores.jsonl"), current)
     write_json(run_dir / "analysis.json", analysis)
-    listening = load_defaults().listening
-    current = {
-        "present_min": listening.presence.present_min,
-        "absent_max": listening.presence.absent_max,
-        "slight_min": listening.bleed.slight_min,
-        "moderate_min": listening.bleed.moderate_min,
-        "severe_min": listening.bleed.severe_min,
-    }
     text = render(analysis, run, current)
     if args.out:
         Path(args.out).write_text(text, encoding="utf-8")

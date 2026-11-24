@@ -280,6 +280,20 @@ def test_report_states_every_threshold_check_and_the_verdict() -> None:
     assert "set to **true**" not in failing
 
 
+def test_report_compares_with_the_thresholds_used_until_now() -> None:
+    rows = separable("calibration") + separable("heldout")
+    analysis = cal.analyse(rows, CURRENT)
+    # The old guesses (moderate from 0.5) miss the bleed at 0.3 and 0.4 that the chosen
+    # threshold catches.
+    assert analysis["before_heldout"]["bleed"]["balanced_accuracy"] < 1.0
+    assert analysis["heldout"]["bleed"]["balanced_accuracy"] == 1.0
+    text = cal.render(analysis, RUN, CURRENT)
+    assert "## Against the values used until now (held out)" in text
+    assert "| Until now |" in text
+    assert "| Chosen |" in text
+    assert "Against the values used until now" not in cal.render(cal.analyse(rows), RUN, CURRENT)
+
+
 def test_report_says_so_when_no_thresholds_can_be_chosen() -> None:
     few = separable("calibration", tracks=1)[:3] + separable("heldout", tracks=1)
     analysis = cal.analyse(few)

@@ -18,7 +18,23 @@ from stems_worker.listening.features import (
 )
 
 SR = 44100
-SETTINGS = load_defaults().listening
+_SHIPPED = load_defaults()
+# The rules under test are the same whatever the thresholds are. The presence thresholds
+# are fixed here so that re-calibrating config/defaults.yaml does not change what the
+# scripted scores below mean.
+SETTINGS = _SHIPPED.listening.model_copy(
+    update={
+        "presence": _SHIPPED.listening.presence.model_copy(
+            update={"present_min": 0.5, "absent_max": 0.2}
+        )
+    }
+)
+
+
+@pytest.fixture(autouse=True)
+def fixed_thresholds(monkeypatch):
+    pinned = _SHIPPED.model_copy(update={"listening": SETTINGS})
+    monkeypatch.setattr(features, "load_defaults", lambda: pinned)
 
 
 class ScriptedTagger:
