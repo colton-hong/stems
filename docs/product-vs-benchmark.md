@@ -1,12 +1,10 @@
 # The product beside the benchmark
 
-Generated from `runs/product/product-v2/results/` (finished 2026-11-24T17:28:50+00:00, commit `ab6d0825b948`). Reproduce with `python -m stems_bench.product_check run --tracks 20 --device cpu` and then `report`; that needs MoisesDB and the model weights.
+Generated from `runs/product/product-v2/results/` (finished 2026-11-24T17:38:28+00:00, commit `bc53163d0f4e`). Reproduce with `python -m stems_bench.product_check run --tracks 20 --device cpu` and then `report`; that needs MoisesDB and the model weights.
 
 The benchmark runs each model directly on a track. This sends the same tracks down the road a user's upload takes (a file in storage, the worker, its plan, the gate and its retries, FLAC files back in storage) with the real models, and scores what comes out with the benchmark's own scorer against the same references. No Jev key was used, so the rules decided. The audio was deleted after each track was scored.
 
 Tracks: the first 20 of the frozen `moisesdb_subset` list. Device here: cpu; the benchmark's figures are from this Mac's GPU (`docs/benchmarks/moisesdb.md`), so a small difference between the two columns is expected (`docs/benchmarks/device-spread-synthetic.md`).
-
-**1 of 20 jobs did not finish.**
 
 ## Stem by stem
 
@@ -32,7 +30,12 @@ SDR in dB, the median over one-second windows, higher is better. "Benchmark" is 
 | `028c6f6a` | guitar | `bs_roformer_sw_6stem` | 1 | yes | 5.87 | 5.87 | 0.00 | not checked |
 | `028c6f6a` | piano | `bs_roformer_sw_6stem` | 1 | no | - | - | - | probably empty |
 | `028c6f6a` | other | `bs_roformer_sw_6stem` | 1 | yes | 2.63 | 2.63 | 0.00 | not checked |
-| `07c17c22` | - | - | - | - | - | - | - | job failed: The separation failed inside the server (FileNotFoundError). The details are in the server's log. |
+| `07c17c22` | vocals | `bs_roformer_sw_6stem` | 1 | yes | 9.10 | 9.10 | 0.00 | not checked |
+| `07c17c22` | drums | `bs_roformer_sw_6stem` | 1 | yes | 10.69 | 10.69 | 0.01 | not checked |
+| `07c17c22` | bass | `bs_roformer_sw_6stem` | 1 | yes | 12.38 | 12.37 | 0.01 | not checked |
+| `07c17c22` | guitar | `bs_roformer_sw_6stem` | 1 | yes | 9.89 | 9.89 | 0.00 | not checked |
+| `07c17c22` | piano | `bs_roformer_sw_6stem` | 1 | no | - | - | - | probably empty |
+| `07c17c22` | other | `bs_roformer_sw_6stem` | 1 | yes | 0.00 | 0.00 | 0.00 | probably empty |
 | `0f5fb60c` | vocals | `bs_roformer_sw_6stem` | 1 | yes | 12.83 | 12.73 | 0.10 | not checked |
 | `0f5fb60c` | drums | `bs_roformer_sw_6stem` | 1 | yes | 13.72 | 13.57 | 0.15 | not checked |
 | `0f5fb60c` | bass | `bs_roformer_sw_6stem` | 1 | yes | 13.93 | 13.92 | 0.01 | not checked |
@@ -134,11 +137,12 @@ A stem with no SDR has a reference that is silent throughout: there is nothing t
 
 ## Does the product deliver what the benchmark measured?
 
-95 delivered stems could be set beside a benchmark figure. 95 of them are within 0.5 dB of it. The median difference (product minus benchmark) is 0.00 dB and the largest 0.15 dB.
+100 delivered stems could be set beside a benchmark figure. 100 of them are within 0.5 dB of it. The median difference (product minus benchmark) is 0.00 dB and the largest 0.15 dB.
 
 ## Did the gate flag the right stems?
 
-Of 19 stems whose instrument is not in the song, the gate flagged 19 as probably empty. Of 95 stems whose instrument is in the song, it flagged 6.
+Of 20 stems whose instrument is not in the song, the gate flagged 20 as probably empty. Of 100 stems whose instrument is in the song, it flagged 7.
+- `07c17c22` other: in the song, flagged; its SDR is 0.00 dB.
 - `1ee489e8` piano: in the song, flagged; its SDR is 5.54 dB.
 - `1ee489e8` other: in the song, flagged; its SDR is 0.23 dB.
 - `24f8a652` piano: in the song, flagged; its SDR is -0.09 dB.
@@ -153,6 +157,7 @@ Of 19 stems whose instrument is not in the song, the gate flagged 19 as probably
 | `014f3712` | 344 s | 411 s | 395 s | 0 s | 16 s |
 | `01c8ba69` | 249 s | 303 s | 294 s | 0 s | 9 s |
 | `028c6f6a` | 240 s | 310 s | 296 s | 0 s | 14 s |
+| `07c17c22` | 256 s | 339 s | 326 s | 0 s | 13 s |
 | `0f5fb60c` | 242 s | 294 s | 284 s | 0 s | 10 s |
 | `11845abc` | 229 s | 322 s | 312 s | 0 s | 10 s |
 | `1921a83e` | 102 s | 132 s | 126 s | 0 s | 6 s |

@@ -51,7 +51,8 @@ Every figure is from a run in this repository; the report named beside it has th
 |---|---|---|
 | Best single model per stem, MoisesDB subset, SDR in dB | vocals 10.82, drums 12.95, bass 15.09, guitar 9.19, piano 5.80, other 2.97 | [docs/benchmarks/moisesdb.md](docs/benchmarks/moisesdb.md) |
 | Best single model per stem, MUSDB18-HQ test, SDR in dB | vocals 12.30, drums 13.35, bass 12.47 | [docs/benchmarks/musdb18hq.md](docs/benchmarks/musdb18hq.md) |
-| What a user downloads against what the benchmark scored | 15 of 15 stems of 3 real songs within 0.02 dB | [docs/product-vs-benchmark.md](docs/product-vs-benchmark.md) |
+| What a user downloads against what the benchmark scored | 100 of 100 stems of 20 real songs within 0.15 dB | [docs/product-vs-benchmark.md](docs/product-vs-benchmark.md) |
+| The gate's note on those 20 songs | all 20 stems whose instrument is not in the song flagged; 7 of 100 that are in it flagged too, 6 of them stems the model found almost nothing for | [docs/product-vs-benchmark.md](docs/product-vs-benchmark.md) |
 | The default model, chosen on 30 tuning tracks by a rule fixed first | one model for all six stems, `bs_roformer_sw_6stem`; against the models it replaced, on the test lists: drums +1.4 dB, bass +1.9 and +2.5 dB, vocals -0.27 and +0.34 dB | [docs/benchmarks/recommendation.md](docs/benchmarks/recommendation.md) |
 | Time for a 4-minute song, six stems, the default model, this Mac's GPU | 69 s | [docs/cost-per-song.md](docs/cost-per-song.md) |
 | Telling a stem whose instrument is not in the song, by its level | right 90.2% of the time, finds 92.2% | [docs/gate-on-real-output.md](docs/gate-on-real-output.md) |
@@ -74,8 +75,9 @@ They are not comparable with figures published elsewhere.
   training scores higher on them than it would on new music. Nothing here can tell.
 - **What it costs on a rented GPU.** Nothing has run on one.
 - **Anything beyond one machine.** No bucket, no Modal, no real proxy, no real phone.
-- **How often things go wrong on real songs.** Three have been through the product's own
-  path; a person has not yet uploaded one in the browser and listened.
+- **How it does on songs outside one dataset.** Twenty MoisesDB tracks have been through
+  the product's own path; a person has not yet uploaded a song in the browser and
+  listened.
 
 ## Waiting on the owner
 
