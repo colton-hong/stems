@@ -49,6 +49,35 @@ and not changed, with the reason.
 - **Secrets.** Keys come from the environment or `.env`, which git ignores; the Jev and
   Clef-omni clients scrub them from logs; the committed recordings were checked for them.
 
+## Dependency audit (2026-11-24, task P8.6)
+
+Both package sets were checked against the public advisory databases. Neither tool is
+part of `make check` or CI; these are two runs on one day.
+
+| What | Command | When (UTC) | Result |
+|---|---|---|---|
+| Python packages installed in `.venv` | `pip-audit --path .venv/lib/python3.14/site-packages` (pip-audit 2.10.1, installed in a separate environment so that auditing changed nothing in `.venv`) | 2026-11-24 11:32 | 137 packages listed. 136 checked: no known vulnerability. 1 skipped: this project itself, which is not on PyPI. |
+| npm packages of the web app | `npm audit` in `web/`, which reads `package-lock.json` | 2026-11-24 11:09 | 402 packages (19 runtime, 345 development, 60 optional). No known vulnerability at any severity. |
+
+**Changed:** nothing. There was nothing to fix.
+
+**Left, and why:**
+
+- **A clean result on one day.** An advisory published tomorrow is not in it. Nothing
+  reruns the audit; to repeat it, run the two commands above (pip-audit from outside
+  `.venv`).
+- **Known advisories only.** No package's code was read, and a flaw nobody has reported
+  is not found this way. The media decoders (FFmpeg inside the PyAV wheel, libsndfile
+  inside soundfile) are the packages most exposed to hostile files; they are covered as
+  packages, and their decoding of an upload is confined as finding 5 describes.
+- **Model files are not packages** and neither tool looks at them. They are downloaded
+  from the URLs in `models/registry.yaml`; the SHA-256 of each is recorded in
+  `models/checksums.lock.json` the first time it is fetched, and a file that later
+  differs is refused. Every `torch.load` in the worker passes `weights_only=True`, so
+  loading a checkpoint does not run code stored in it. That the files were what their
+  authors published when first fetched is taken on trust.
+- **Python, Node.js and the operating system** are outside both audits.
+
 ## Left as it is, and why
 
 - **A download link is all anyone needs.** Whoever has a link can fetch that file until
@@ -72,7 +101,7 @@ and not changed, with the reason.
   that job, not the API.
 - **API documentation is served** at `/api/docs`. It describes the routes and nothing
   private.
-- **Dependencies were not audited.** No vulnerability scan of the Python or npm packages
-  was run.
+- **Dependencies** were checked for known advisories on 2026-11-24 (next section) and
+  nothing else: their code was not read.
 - **Cloud storage.** The S3 and Azure backends have never run against a real bucket
   (BLOCKED.md B7). Bucket policy, encryption at rest and CORS there are unreviewed.
