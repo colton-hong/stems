@@ -75,6 +75,7 @@ python -m stems_bench.clef.run      # run the Clef-omni test; --report FILE writ
 .venv/bin/python -m stems_bench.cost --out docs/cost-per-song.md   # cost per song from measured usage and config/prices.yaml
 .venv/bin/python -m stems_bench.product_check run --tracks 3 --device cpu   # real songs through the worker's own path, scored (long; resumable)
 .venv/bin/python -m stems_bench.product_check report --out docs/product-vs-benchmark.md   # the product beside the benchmark
+.venv/bin/python -m stems_bench.product_check report --run-id product-gpu-v1 --beside product-v2 --out docs/product-on-gpu.md   # the GPU run, with the CPU run's times beside it
 .venv/bin/python -m stems_bench.listening_kit build MANIFEST.yaml --out KIT --key KEY.json   # blind listening-test kit
 .venv/bin/python -m stems_bench.listening_kit score KIT --key KEY.json --sheets DIR   # unblind returned sheets
 .venv/bin/python -m stems_worker.decision.live   # one real Jev request per decision type, recorded as fixtures (needs the key)

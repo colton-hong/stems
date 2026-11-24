@@ -250,6 +250,22 @@ def test_the_summary_counts_agreement_flags_and_time() -> None:
     assert "| `aaaaaaaa` | 200 s | 100 s | 60 s | 12 s | 28 s |" in text
 
 
+def test_another_run_of_the_same_songs_can_be_shown_beside_this_one() -> None:
+    gpu = {**record("aaaaaaaa-1", {"vocals": made(10.0, bench=10.0)}, wall=30.0), "device": "mps"}
+    lonely = {**record("cccccccc-3", {"vocals": made(9.0)}, wall=40.0), "device": "mps"}
+    cpu = record("aaaaaaaa-1", {"vocals": made(10.0, bench=10.0)}, wall=100.0)
+    run = {"run_id": "g", "finished": "now", "tracks": 2, "device": "mps", "git": {"commit": "c"}}
+    text = pc.render([gpu, lonely], run, {"run_id": "c-run", "records": [cpu]})
+    assert "Device here: mps; the benchmark's figures are from this Mac's GPU" in text
+    assert "the same device." in text
+    assert "| Everything else | Wall time on cpu |" in text
+    assert "| `aaaaaaaa` | 200 s | 30 s | 60 s | 12 s | -42 s | 100 s |" in text
+    assert "| `cccccccc` | 200 s | 40 s | 60 s | 12 s | -32 s | - |" in text
+    assert "The last column is the same songs in run `c-run`" in text
+    alone = pc.render([gpu], run)
+    assert "Wall time on" not in alone
+
+
 def test_a_difference_that_rounds_to_zero_is_not_shown_as_minus_zero() -> None:
     assert pc._num(-0.001) == "0.00"
     assert pc._num(-0.006) == "-0.01"

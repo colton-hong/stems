@@ -324,7 +324,13 @@ def _num(value: float | None, digits: int = 2) -> str:
     return "-" if value is None else f"{round(value, digits) + 0.0:.{digits}f}"
 
 
-def render(records: Sequence[Mapping[str, Any]], run: Mapping[str, Any]) -> str:
+def render(
+    records: Sequence[Mapping[str, Any]],
+    run: Mapping[str, Any],
+    beside: Mapping[str, Any] | None = None,
+) -> str:
+    """The report. ``beside`` is another run of the same tracks (``run_id``, ``records``),
+    whose wall times are shown next to this one's: the same songs on another device."""
     summary = summarise(records)
     git = run.get("git") or {}
     commit = str(git.get("commit") or "unknown")[:12] + (
@@ -347,8 +353,13 @@ def render(records: Sequence[Mapping[str, Any]], run: Mapping[str, Any]) -> str:
         "",
         f"Tracks: the first {run['tracks']} of the frozen `{DATASET}` list. Device here: "
         f"{', '.join(devices) or 'unknown'}; the benchmark's figures are from this Mac's GPU "
-        "(`docs/benchmarks/moisesdb.md`), so a small difference between the two columns is "
-        "expected (`docs/benchmarks/device-spread-synthetic.md`).",
+        "(`docs/benchmarks/moisesdb.md`), "
+        + (
+            "the same device."
+            if devices == ["mps"]
+            else "so a small difference between the two columns is expected "
+            "(`docs/benchmarks/device-spread-synthetic.md`)."
+        ),
         "",
         "## Stem by stem",
         "",
@@ -433,8 +444,17 @@ def render(records: Sequence[Mapping[str, Any]], run: Mapping[str, Any]) -> str:
         "",
         "## Time",
         "",
-        "| Track | Audio | Wall time | Models | Tagger | Everything else |",
-        "|---|---:|---:|---:|---:|---:|",
+    ]
+    other = {
+        record["track_id"]: record
+        for record in (beside or {}).get("records", [])
+        if record["state"] == "ready"
+    }
+    other_devices = sorted({str(record["device"]) for record in other.values()})
+    extra_head = f" Wall time on {', '.join(other_devices)} |" if other else ""
+    lines += [
+        f"| Track | Audio | Wall time | Models | Tagger | Everything else |{extra_head}",
+        "|---|---:|---:|---:|---:|---:|" + ("---:|" if other else ""),
     ]
     for record in records:
         if record["state"] != "ready":
@@ -443,10 +463,21 @@ def render(records: Sequence[Mapping[str, Any]], run: Mapping[str, Any]) -> str:
         listening = stages.get("listening", 0.0)
         models = round(sum(v for stage, v in stages.items() if stage != "listening"), 1)
         rest = round(record["wall_seconds"] - models - listening, 1)
+        extra = ""
+        if other:
+            same = other.get(record["track_id"])
+            extra = f" {same['wall_seconds']:.0f} s |" if same else " - |"
         lines.append(
             f"| `{record['track_id'][:8]}` | {record['audio_seconds']:.0f} s | "
             f"{record['wall_seconds']:.0f} s | {models:.0f} s | {listening:.0f} s | {rest:.0f} s |"
+            f"{extra}"
         )
+    if other:
+        lines += [
+            "",
+            f"The last column is the same songs in run `{beside['run_id']}` "
+            f"(`runs/product/{beside['run_id']}/results/`).",
+        ]
     lines += [
         "",
         f"All on {', '.join(devices) or 'an unknown device'}, on a machine that was also "
@@ -543,7 +574,10 @@ def cmd_report(args: argparse.Namespace) -> int:
         raise ProductCheckError(f"{run_path} is missing: the run has not finished")
     run_info = json.loads(run_path.read_text(encoding="utf-8"))
     records = read_results(run_dir)[: run_info["tracks"]]
-    text = render(records, run_info)
+    beside = None
+    if args.beside:
+        beside = {"run_id": args.beside, "records": read_results(PRODUCT_DIR / args.beside)}
+    text = render(records, run_info, beside)
     write_json(run_dir / "summary.json", summarise(records))
     if args.out:
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)
@@ -568,6 +602,9 @@ def main(argv: list[str] | None = None) -> int:
     report_parser = sub.add_parser("report", help="write the report from a finished run")
     report_parser.add_argument("--run-id", default=DEFAULT_RUN)
     report_parser.add_argument("--out")
+    report_parser.add_argument(
+        "--beside", help="another run of the same tracks, to show its wall times next to these"
+    )
     report_parser.set_defaults(run=cmd_report)
     args = parser.parse_args(argv)
     try:
