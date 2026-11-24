@@ -10,7 +10,9 @@ quality open models can give, shown with reproducible benchmarks.
 3. Implement it, run `make check`, commit with a clear message, tick the task with a
    one-line note. Tick only when the acceptance check passes.
 4. If the phase has no unticked unblocked tasks left, write the phase summary in
-   `PROGRESS.md` and stop. Never start the next phase on your own.
+   `PROGRESS.md`, then start the next phase. If no phase is left, add one to `PROGRESS.md`
+   with tasks and acceptance checks, and work it. (The owner asked for this on 2026-11-24;
+   before that the rule was to stop and wait for a go-ahead.)
 5. If the same task fails three iterations in a row, write what you tried in `BLOCKED.md`
    and move on.
 

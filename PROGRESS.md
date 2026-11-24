@@ -2,7 +2,7 @@
 
 Single source of truth for where the build is. Read this first, every iteration.
 
-**Current phase: 6 (web app), finished 2026-11-24.** P6.1 to P6.9 are ticked. Phases 0, 1, 4 and 5 are complete apart from live checks that need the owner's accounts (S3 and Azure, B7; Modal, B4). Still open from earlier phases: P3.11 (optional); Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done, the tuning stage on MoisesDB started 2026-11-24T04:53Z; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task). Do not start Phase 7 without the owner's go-ahead.
+**Current phase: 7 (calibration and hardening), started 2026-11-24.** The owner asked on 2026-11-24 for each phase to follow the last without waiting. Phases 0, 1, 4, 5 and 6 are complete apart from live checks that need the owner's accounts (S3 and Azure, B7; Modal, B4). Still open from earlier phases: P3.11 (optional); Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done, the tuning stage on MoisesDB started 2026-11-24T04:53Z; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task).
 
 ## How to use this file
 
@@ -14,7 +14,9 @@ Single source of truth for where the build is. Read this first, every iteration.
 5. If a task fails three iterations in a row, write what was tried in `BLOCKED.md`, mark it
    `BLOCKED`, move on.
 6. When the current phase has no unticked unblocked tasks, write the phase summary at the
-   bottom of this file and stop. Never start the next phase without the owner saying so.
+   bottom of this file, then start the next phase. If no phase is left, add one here with
+   tasks and acceptance checks, and work it. (Owner's instruction of 2026-11-24. Until then
+   the rule was to stop and wait for a go-ahead.)
 
 Long jobs (downloads, benchmark runs) start in the background, write a log and a
 `status.json` under `runs/<kind>/<run-id>/`, and are checked by a later iteration.
