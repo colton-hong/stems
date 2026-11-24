@@ -55,6 +55,8 @@ bench = ["museval==0.4.1"]
 api = [
   # The S3-compatible storage backend. Imported only when STEMS_STORAGE_BACKEND=s3.
   "boto3==1.44.10",
+  # The Azure Blob storage backend. Imported only when STEMS_STORAGE_BACKEND=azure_blob.
+  "azure-storage-blob==12.31.1",
 ]
 
 [project.scripts]

@@ -78,8 +78,10 @@ def storage_from_env(getenv: Getter = get_env, *, base_url: str = "/api/files") 
         from stems_api.storage.s3 import s3_from_env
 
         return s3_from_env(getenv)
-    if backend in BACKENDS:
-        raise StorageConfigError(f"the {backend!r} storage backend is not built yet")
+    if backend == "azure_blob":
+        from stems_api.storage.azure_blob import azure_from_env
+
+        return azure_from_env(getenv)
     raise StorageConfigError(
         f"{BACKEND_ENV}={backend!r} is not a storage backend; choose one of {', '.join(BACKENDS)}"
     )

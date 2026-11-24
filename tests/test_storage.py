@@ -25,7 +25,7 @@ from stems_api.storage import (
 from stems_api.storage.s3 import S3Storage
 
 SECRET = b"0123456789abcdef0123456789abcdef-test-only"
-BACKENDS = ["local", "s3"]
+BACKENDS = ["local", "s3", "azure_blob"]
 
 BAD_KEYS = [
     "",
@@ -51,6 +51,18 @@ def make_storage(backend: str, tmp_path) -> Storage:
     if backend == "s3":
         # A small page size so that listing a job's folder takes more than one page.
         return S3Storage(storage_fakes.FakeS3Client(page_size=3), "stems-test")
+    if backend == "azure_blob":
+        # The real SDK client, answered from memory (tests/azure_fake.py).
+        pytest.importorskip("azure.storage.blob")
+        import azure_fake
+
+        from stems_api.storage.azure_blob import azure_from_env
+
+        settings = {
+            "AZURE_STORAGE_CONNECTION_STRING": azure_fake.CONNECTION_STRING,
+            "AZURE_STORAGE_CONTAINER": "stems-test",
+        }
+        return azure_from_env(settings.get, transport=azure_fake.FakeBlobTransport(), retry_total=0)
     raise AssertionError(f"no test double for the {backend!r} backend")
 
 
