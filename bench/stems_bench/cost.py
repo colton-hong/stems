@@ -123,6 +123,79 @@ def separation_seconds(
     return sum(rates[m]["seconds_per_audio_minute"] for m in models) * minutes, []
 
 
+# What the gate's rules say about a stem that is far below the mix, attempt after attempt.
+_EMPTY = {
+    "score": 0.0,
+    "score_label": "unusable",
+    "pass_probability": 0.0,
+    "confidence": 1.0,
+    "reason_code": "mostly_silent",
+}
+# Songs that lack an instrument, and the stems the gate then keeps finding empty.
+ABSENT_CASES: dict[str, tuple[str, ...]] = {
+    "no guitar": ("guitar",),
+    "no piano": ("piano",),
+    "neither": ("guitar", "piano"),
+}
+
+
+def empty_attempts(stem: str, defaults: Defaults, registry: Any, mode: str) -> list[list[str]]:
+    """The models of each attempt the gate makes at a stem it finds empty every time.
+
+    Played out with the gate's own retry machine and the rules' fallback model, with no
+    Jev: the first attempt, then each retry until the cap or until nothing is left to try.
+    """
+    from stems_worker.decision import gate, retry
+    from stems_worker.decision.plan import config_fallback
+
+    slots = defaults.ensembles.slots
+    machine = retry.StemGate(
+        retry.Spec(stem, tuple(slots[stem].for_mode(mode)), mode),
+        settings=defaults.gate,
+        fallback_model=config_fallback(stem, defaults, registry),
+        blends={m: slots[stem].for_mode(m) for m in retry.BLEND_MODES},
+    )
+    attempts: list[list[str]] = []
+    while machine.state == retry.RUNNING:
+        attempts.append(list(machine.current.models))
+        verdict = gate.verdict(
+            _EMPTY,
+            settings=defaults.gate,
+            suggested="retry_fallback_model",
+            available=machine.available(),
+            retries_used=machine.retries_used,
+        )
+        machine.step({"assessment": _EMPTY, "verdict": verdict})
+    return attempts
+
+
+def absent_costs(
+    defaults: Defaults,
+    registry: Any,
+    rates: Mapping[str, Mapping[str, Any]],
+    minutes: float,
+    mode: str,
+) -> dict[str, dict[str, Any]]:
+    """Per case of ``ABSENT_CASES``: the models the retries add to a six-stem job in
+    ``mode`` and the seconds they take. A model the job has already run costs nothing."""
+    base = models_for(defaults, mode)
+    out: dict[str, dict[str, Any]] = {}
+    for label, stems in ABSENT_CASES.items():
+        attempts = {stem: empty_attempts(stem, defaults, registry, mode) for stem in stems}
+        extra: list[str] = []
+        for stem in stems:
+            for attempt in attempts[stem][1:]:
+                extra += [m for m in attempt if m not in base and m not in extra]
+        seconds, missing = separation_seconds(extra, rates, minutes)
+        out[label] = {
+            "attempts": attempts,
+            "extra_models": extra,
+            "seconds": seconds,
+            "unmeasured": missing,
+        }
+    return out
+
+
 def storage_gb(stems: int, minutes: float) -> float:
     """Upper bound on what one job stores: the upload, each stem, and a zip of the stems,
     all taken as 24-bit WAV. By arithmetic from the format, not measured."""
@@ -138,7 +211,9 @@ def build(
     *,
     benchmark_file: str,
     minutes: float = SONG_MINUTES,
+    registry: Any = None,
 ) -> dict[str, Any]:
+    """``registry`` (the model registry) adds what the empty-stem retries cost."""
     stems = len(PRODUCT_STEMS)
     rates = model_rates(benchmark)
     decisions = {}
@@ -156,7 +231,16 @@ def build(
         separation[mode] = {"models": models, "seconds": seconds, "unmeasured": missing}
     gigabytes = storage_gb(stems, minutes)
     r2 = prices["r2"]
+    default_mode = defaults.decision.mode_for_quality["balanced"]
+    absent = None
+    if registry is not None and defaults.gate.rules.empty_below_mix_db is not None:
+        absent = {
+            "mode": default_mode,
+            "base_seconds": separation[default_mode]["seconds"],
+            "cases": absent_costs(defaults, registry, rates, minutes, default_mode),
+        }
     return {
+        "absent": absent,
         "checked": str(prices["checked"]),
         "minutes": minutes,
         "usage": usage,
@@ -265,6 +349,45 @@ def render(report: Mapping[str, Any], prices: Mapping[str, Any]) -> str:
             "These are the provisional defaults of `config/defaults.yaml`. The benchmark's "
             "recommendation (P2.13) will change which models run, and with them these times.",
         ]
+    if report.get("absent"):
+        absent = report["absent"]
+        base = absent["base_seconds"]
+        lines += [
+            "",
+            "### When the song lacks an instrument",
+            "",
+            "A stem far below the mix is treated as probably empty and tried again "
+            "(`gate.rules.empty_below_mix_db`): first with the fallback model, then as a blend. "
+            "So asking for an instrument the song does not have costs extra model runs. The "
+            f"rows are for a job in the default mode (`{absent['mode']}`), played out with the "
+            "gate's own retry rules and no Jev; a model the job has already run is reused and "
+            "costs nothing more. Same timings and device as the table above.",
+            "",
+            "| The song has | Attempts at the missing stem | Extra models run | Extra seconds | "
+            "Added to the job |",
+            "|---|---|---|---:|---:|",
+        ]
+        for label, case in absent["cases"].items():
+            attempts = "; ".join(
+                f"{stem}: " + ", then ".join(" + ".join(f"`{m}`" for m in a) for a in tried)
+                for stem, tried in case["attempts"].items()
+            )
+            extra = ", ".join(f"`{m}`" for m in case["extra_models"]) or "none"
+            if case["seconds"] is None:
+                missing = ", ".join(f"`{m}`" for m in case["unmeasured"])
+                lines.append(
+                    f"| {label} | {attempts} | {extra} | not known: no timing for {missing} | |"
+                )
+            else:
+                share = f"{100 * case['seconds'] / base:.0f}%" if base else "not known"
+                lines.append(
+                    f"| {label} | {attempts} | {extra} | {case['seconds']:.0f} | {share} |"
+                )
+        lines += [
+            "",
+            "This is arithmetic on measured model times, not a measured job. The tagger "
+            "listens to every attempt as well, which is not counted here.",
+        ]
     t4, l4 = modal["usd_per_second"]["T4"], modal["usd_per_second"]["L4"]
     lines += [
         "",
@@ -315,6 +438,8 @@ def main(argv: list[str] | None = None) -> int:
         benchmark = json.loads(args.benchmark.read_text(encoding="utf-8"))
         name = args.benchmark.resolve()
         shown = str(name.relative_to(REPO_ROOT)) if name.is_relative_to(REPO_ROOT) else str(name)
+        from stems_models.registry import load_registry
+
         report = build(
             prices,
             recorded_usage(),
@@ -322,6 +447,7 @@ def main(argv: list[str] | None = None) -> int:
             load_defaults(),
             benchmark_file=shown,
             minutes=args.minutes,
+            registry=load_registry(),
         )
     except (CostError, FileNotFoundError) as exc:
         print(f"cost: {exc}", file=sys.stderr)

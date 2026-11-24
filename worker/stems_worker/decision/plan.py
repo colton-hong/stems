@@ -247,6 +247,11 @@ def _config_fallback(stem: str, primary: str, defaults: Defaults, registry: Regi
     return NONE
 
 
+def config_fallback(stem: str, defaults: Defaults, registry: Registry) -> str:
+    """The model the rules name as the fallback for ``stem``'s configured default."""
+    return _config_fallback(stem, defaults.ensembles.slots[stem].single_best, defaults, registry)
+
+
 def plan_ensemble(
     parsed: Mapping[str, Any],
     track_features: Mapping[str, Any],

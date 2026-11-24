@@ -47,6 +47,18 @@ Time to separate a 4-minute song into six stems on this machine, from the median
 
 These are the provisional defaults of `config/defaults.yaml`. The benchmark's recommendation (P2.13) will change which models run, and with them these times.
 
+### When the song lacks an instrument
+
+A stem far below the mix is treated as probably empty and tried again (`gate.rules.empty_below_mix_db`): first with the fallback model, then as a blend. So asking for an instrument the song does not have costs extra model runs. The rows are for a job in the default mode (`single_best`), played out with the gate's own retry rules and no Jev; a model the job has already run is reused and costs nothing more. Same timings and device as the table above.
+
+| The song has | Attempts at the missing stem | Extra models run | Extra seconds | Added to the job |
+|---|---|---|---:|---:|
+| no guitar | guitar: `bs_roformer_sw_6stem`, then `mel_roformer_guitar_becruily`, then `bs_roformer_sw_6stem` + `mel_roformer_guitar_becruily` | `mel_roformer_guitar_becruily` | 26 | 11% |
+| no piano | piano: `bs_roformer_sw_6stem`, then `htdemucs_6s`, then `bs_roformer_sw_6stem` + `htdemucs_6s` | `htdemucs_6s` | 11 | 5% |
+| neither | guitar: `bs_roformer_sw_6stem`, then `mel_roformer_guitar_becruily`, then `bs_roformer_sw_6stem` + `mel_roformer_guitar_becruily`; piano: `bs_roformer_sw_6stem`, then `htdemucs_6s`, then `bs_roformer_sw_6stem` + `htdemucs_6s` | `mel_roformer_guitar_becruily`, `htdemucs_6s` | 36 | 16% |
+
+This is arithmetic on measured model times, not a measured job. The tagger listens to every attempt as well, which is not counted here.
+
 **What this costs on a rented GPU is not known.** Modal charges $0.000164 per second for a T4 and $0.000222 for an L4 (https://modal.com/pricing, read 2026-11-24; CPU and memory are charged on top, and non-preemptible runs at three times the list price). The cost of a song is that price times the seconds a T4 or L4 takes. Those seconds have not been measured: every timing in this repo is from Apple MPS or CPU, and a different GPU can be faster or slower by an amount nobody here has observed. One job on Modal (BLOCKED.md B4) gives the number.
 
 ## Storage and downloads
