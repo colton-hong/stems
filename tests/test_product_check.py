@@ -217,6 +217,9 @@ def test_the_summary_counts_agreement_flags_and_time() -> None:
     assert summary["median_difference_db"] == -0.6
     assert summary["largest_difference_db"] == -1.0
     assert (summary["not_in_song"], summary["not_in_song_flagged"]) == (2, 1)
+    assert summary["not_in_song_unflagged"] == [
+        {"track_id": "aaaaaaaa-1", "name": "other", "attempts": 1, "model_ids": ["m"]}
+    ]
     assert summary["in_song"] == 4
     assert summary["in_song_flagged"] == [
         {"track_id": "aaaaaaaa-1", "name": "guitar", "sdr_db": 0.1}
@@ -235,6 +238,15 @@ def test_the_summary_counts_agreement_flags_and_time() -> None:
     assert "2 delivered stems could be set beside a benchmark figure. 1 of them are within" in text
     assert "Of 2 stems whose instrument is not in the song, the gate flagged 1" in text
     assert "- `aaaaaaaa` guitar: in the song, flagged; its SDR is 0.10 dB." in text
+    assert (
+        "- `aaaaaaaa` other: not in the song, not flagged: the first attempt, by `m`, was not "
+        "found empty." in text
+    )
+    retried = pc.render(
+        [record("cccccccc-3", {"guitar": {**made(None, in_song=False), "attempts": 2}})],
+        {"run_id": "r", "finished": "now", "tracks": 1, "device": "cpu", "git": {"commit": "c"}},
+    )
+    assert "an earlier attempt was found empty, the retry with `m` was not" in retried
     assert "| `aaaaaaaa` | 200 s | 100 s | 60 s | 12 s | 28 s |" in text
 
 

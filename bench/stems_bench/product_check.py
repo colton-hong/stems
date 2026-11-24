@@ -298,6 +298,16 @@ def summarise(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         "largest_difference_db": max(differences, key=abs) if differences else None,
         "not_in_song": len(absent),
         "not_in_song_flagged": sum(1 for s in absent if s["flagged_empty"]),
+        "not_in_song_unflagged": [
+            {
+                "track_id": s["track_id"],
+                "name": s["name"],
+                "attempts": s["attempts"],
+                "model_ids": list(s["model_ids"]),
+            }
+            for s in absent
+            if not s["flagged_empty"]
+        ],
         "in_song": len(present),
         "in_song_flagged": [
             {"track_id": s["track_id"], "name": s["name"], "sdr_db": s["sdr_db"]}
@@ -401,6 +411,18 @@ def render(records: Sequence[Mapping[str, Any]], run: Mapping[str, Any]) -> str:
         f"flagged {summary['not_in_song_flagged']} as probably empty. Of {summary['in_song']} "
         f"stems whose instrument is in the song, it flagged {len(summary['in_song_flagged'])}.",
     ]
+    for missed in summary["not_in_song_unflagged"]:
+        made_by = " + ".join(f"`{m}`" for m in missed["model_ids"])
+        how = (
+            f"an earlier attempt was found empty, the retry with {made_by} was not, and the "
+            "retry is what was delivered, without the note. The song has no such instrument, "
+            "so what the retry found is something else"
+            if missed["attempts"] > 1
+            else f"the first attempt, by {made_by}, was not found empty"
+        )
+        lines.append(
+            f"- `{missed['track_id'][:8]}` {missed['name']}: not in the song, not flagged: {how}."
+        )
     for flagged in summary["in_song_flagged"]:
         lines.append(
             f"- `{flagged['track_id'][:8]}` {flagged['name']}: in the song, flagged; its SDR "
@@ -427,7 +449,8 @@ def render(records: Sequence[Mapping[str, Any]], run: Mapping[str, Any]) -> str:
     lines += [
         "",
         f"All on {', '.join(devices) or 'an unknown device'}, on a machine that was also "
-        'running a benchmark; these are single runs, not speed measurements. "Models" '
+        "running a benchmark and at times this project's tests; these are single runs, not "
+        'speed measurements. "Models" '
         "counts each model once (a blend that reuses an output costs nothing more). "
         '"Everything else" is decoding, the gate\'s level checks, writing FLAC and peaks, '
         "and the zip. Scoring is not included.",
