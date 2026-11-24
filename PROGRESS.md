@@ -2,7 +2,7 @@
 
 Single source of truth for where the build is. Read this first, every iteration.
 
-**Current phase: 8 (the gate on real output, and real jobs end to end), started 2026-11-24.** The owner asked on 2026-11-24 for each phase to follow the last without waiting, and for new phases to be added when none is left; Phase 8 was added that way. Phases 0, 1, 4, 5, 6 and 7 are complete apart from checks that need the owner's accounts (S3 and Azure, B7; Modal, B4; the listening test, B8). Still open from earlier phases: P3.11 (optional); Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done, the tuning stage on MoisesDB started 2026-11-24T04:53Z; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task).
+**Current phase: 9 (the product against the benchmark), started 2026-11-24.** The owner asked on 2026-11-24 for each phase to follow the last without waiting, and for new phases to be added when none is left; Phases 8 and 9 were added that way. Phases 0, 1 and 4 to 8 are complete apart from checks that need the owner's accounts (S3 and Azure, B7; Modal, B4; the listening test, B8). Still open from earlier phases: P3.11 (optional); Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done, the tuning stage on MoisesDB started 2026-11-24T04:53Z; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task).
 
 ## How to use this file
 
@@ -162,6 +162,20 @@ whatever passes, and puts real models through the API and the browser.
 - [x] P8.6 Dependency audit. **Accept:** `pip-audit` and `npm audit` are run and their dated results are in `docs/security-review.md`, with what was changed and what was left and why. — Done: both run on 2026-11-24 and written into `docs/security-review.md` with their commands and times. `pip-audit` 2.10.1 over the packages installed in `.venv` (run from a separate environment, so nothing in `.venv` changed): 136 packages checked, no known vulnerability; the project itself skipped as not on PyPI. `npm audit` in `web/`: 402 packages, none with an advisory at any severity. Nothing needed changing. Left and said so: it is one day of known advisories, not a reading of anyone's code, and nothing reruns it; model files are outside both tools (their hashes are pinned at first download and every `torch.load` uses `weights_only=True`, which I checked at each call).
 - [x] P8.7 The web app at phone width. **Accept:** upload to download, and the axe checks, pass at 375 px wide with no sideways scrolling, inside `make web-e2e`. — Done: `web/e2e/mobile.spec.ts`, two tests as Chrome emulates a phone held upright (375 by 812, touch). The first goes from upload to download by touch and checks on the upload, job, jobs, terms and privacy pages that nothing lies beyond the right edge, that every stem row is inside the screen, and that no button, menu or link-button showing is smaller than 24 by 24 pixels (with a count, so the check cannot pass on an empty page). The second runs axe on the upload, job and jobs pages. Both passed without any change to the app: the narrow-screen rule written in Phase 6 holds. `make web-e2e`: 16 passed. It is desktop Chrome at a phone's size, not a phone; Safari on iOS is untested.
 - [x] P8.8 Rate limits behind a reverse proxy (BLOCKED.md D7). **Accept:** a setting names the proxies to trust; the forwarded address is used only when the connection comes from one of them; with the setting empty nothing changes; tests for a trusted proxy, an untrusted one and a forged header; `docs/deployment.md` says how to set it. — Done: `python -m stems_api --trusted-proxies 10.0.0.5,10.1.0.0/16` (or `STEMS_TRUSTED_PROXIES`). From those addresses, and no others, uvicorn takes the visitor's address from `X-Forwarded-For` and HTTPS from `X-Forwarded-Proto`; with nothing named the headers are ignored. That closes a small hole too: uvicorn's default, which the API had been running with, believes those headers from this machine. `*` and host names are refused. 7 tests in `tests/test_api_proxy.py`, through uvicorn's own middleware built from the same options: no proxy named (headers change nothing, even from 127.0.0.1); a trusted proxy by address, by network and in a list (each visitor has their own allowance); a visitor writing the header themselves, directly or through the proxy (the entry the proxy appended is the one used); and the Secure cookie only when a trusted proxy says HTTPS. `docs/deployment.md`, `.env.example` and the security review say how to set it. Not run behind a real proxy. Limits are still counted in one process (D7).
+
+## Phase 9: the product against the benchmark
+
+Added on 2026-11-24 under rule 6 (no phase was left). Phase 8 switched on one gate rule,
+measured on one minute per track, and put real models through the API on a signal that
+is not music. This phase checks that rule against whole songs, runs real songs through
+the product's own path and sets the result beside the benchmark's, and says what the
+tagger costs now that the gate acts on nothing it hears.
+
+- [ ] P9.1 The empty-stem rule against whole songs. **Accept:** with the rule for comparing fixed first, `docs/gate-on-real-output.md` gains a section from the kept outputs: for each output, whether the instrument is in the song at all (not only in the loudest minute), and how "far below the mix in the loudest minute" and "far below the mix over the whole song" each do against that; the config keeps or changes the rule by the result.
+- [ ] P9.2 Real songs through the product, beside the benchmark. **Accept:** a resumable command runs tracks of the frozen MoisesDB subset through the worker's storage entry point with the real models (no stand-ins, no audio committed), scores the delivered stems against the references with the benchmark's own scorer, and writes `docs/product-vs-benchmark.md` from the run: per stem the product's SDR beside the benchmark's for the same model and track, which stems the gate flagged and whether that was right, and the wall time, labelled by device.
+- [ ] P9.3 What the tagger costs a job. **Accept:** the worker's timing log records the seconds spent listening; `docs/cost-per-song.md` states them from a run; a setting turns the tagger off; the default is chosen by what was measured and listed in BLOCKED.md as a decision the owner can overrule.
+- [ ] P9.4 What an absent instrument costs. **Accept:** `docs/cost-per-song.md` states, from measured model times, the extra seconds the empty-stem retries add for a song without guitar, without piano and without both.
+- [ ] P9.5 A page for the owner. **Accept:** `README.md` says in one screen what works, how to run it, what has been measured (with the report for each figure) and what waits on the owner; every command in it is run on the day it is written.
 
 ---
 
@@ -687,3 +701,71 @@ benchmarks is running; a later iteration commits its report and continues) and P
 
 **Next:** Phase 8, added under rule 6: measure the listening layer on real separator
 output, switch on the signals that pass, and run real models through the API.
+
+## Phase 8 summary (2026-11-24)
+
+Done: P8.1 to P8.8.
+
+- **The listening layer on real separator output** (P8.1, P8.2,
+  `docs/gate-on-real-output.md`). 1,060 outputs the benchmark had kept were scored by the
+  tagger and set against the SDR and SIR the benchmark measured for them, with the two
+  questions and their pass bars committed first.
+- **One gate rule switched on** (P8.3): a stem 19.81 dB or more under the mix in the
+  mix's loudest minute is treated as probably empty, retried, and delivered with a note
+  of its own. The tagger's switch became one per signal; both are off.
+- **Presence in a full mix** (P8.4): measured, and no instrument holds up, so a mix now
+  reports no instruments and an unknown vocal presence instead of guesses.
+- **A real job end to end** (P8.5): `make web-e2e-real` puts the real models through the
+  API, the local worker and Chrome. 103.3 s on CPU for six stems of a 12-second synthetic
+  signal.
+- **Dependency audit** (P8.6): no known vulnerability in 136 Python or 402 npm packages
+  on 2026-11-24.
+- **Phone width** (P8.7): the flow and the axe checks pass at 375 px with no change to
+  the app.
+- **Reverse proxies** (P8.8): forwarded headers are believed only from proxies named in
+  `STEMS_TRUSTED_PROXIES`, and from nobody by default.
+
+What the phase found:
+
+- **An empty stem shows in its level, not in what the tagger hears.** "At least 19.8 dB
+  under the mix" was right for 95.1% of the held-out outputs it called empty and found
+  88.3% of the empty ones. The five it got wrong were pianos the model failed to find,
+  which are empty outputs too.
+- **Nothing the tagger says is a reason to act.** Its bleed score preferred the better of
+  two outputs in 64.8% of pairs (80% needed), after failing on hand-mixed stems in
+  Phase 7; its "absent" answer was right 87.9% of the time on real outputs (90% needed);
+  in a full mix it cannot name instruments. The tagger still runs in every job and its
+  scores go into the notes and to Jev, but the gate acts on none of them. Whether it is
+  worth its time is P9.3.
+- **uvicorn's default believed forwarded headers from this machine.** The API had been
+  running with that. It is now off unless a proxy is named.
+
+Mistakes of mine in this phase, and how they were caught:
+
+- P8.3 changed what the gate sends to Jev, which left the recorded live gate request
+  stale. Its replay test skipped itself, and I did not look at the skip count until two
+  commits later. Re-recorded with one live request; the cost report was regenerated.
+- The first `make web-e2e-real` failed after the job had finished, because the test
+  looked for the result file in the wrong folder.
+- Two older tests fed the stand-in models audio whose requested band was 21 dB under the
+  mix; the new rule retried it, correctly, and `make check` stopped the commit until the
+  tests had other audio.
+
+Not verified, and why:
+
+- **A real song through the product.** Tests may only use the synthetic signal, so the
+  one real-models job ran on tones. Real songs through the product's path, scored
+  against references, are P9.2.
+- **The empty-stem rule on whole songs.** It was measured on the loudest minute of each
+  track, with "empty" meaning the reference is absent in that minute. An instrument that
+  plays only elsewhere in the song would be flagged. P9.1.
+- **What the retries cost** for a song that lacks an instrument. P9.4.
+- **A real proxy, a real phone, Safari.** The proxy tests use uvicorn's middleware; the
+  phone tests are desktop Chrome at a phone's size.
+- **Jev as planner or judge.** Still unmeasured beyond single live calls.
+- As before: S3 and Azure (B7), Modal and any GPU price (B4), the listening test (B8).
+
+Still open from earlier phases: P2.12, P2.13 and P2.14b (the tuning stage of the real
+benchmarks is running: 347 of 900 jobs at 12:21Z) and P3.11 (optional).
+
+**Next:** Phase 9, added under rule 6.
