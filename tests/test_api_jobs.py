@@ -469,6 +469,7 @@ def test_delete_removes_every_object_and_the_links_stop_working(client, deps) ->
         [],
     )
     assert count(deps, Stem, job_id) == count(deps, JobEvent, job_id) == 0
+    assert count(deps, DecisionCall, job_id) == 0  # its answers were about this audio
     assert [j["id"] for j in client.get("/api/jobs").json()["jobs"]] == [keep["id"]]
     # The other job is whole, and deleting twice is a 404.
     assert len([k for k in h.stored_keys(deps) if k.startswith(f"jobs/{keep['id']}/")]) == 9

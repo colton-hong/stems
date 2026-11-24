@@ -56,11 +56,13 @@ def find_owner(session: Session, token: str | None, now: datetime) -> Owner | No
     return owner
 
 
-def scrub(job: Job, status: str, now: datetime) -> None:
+def scrub(session: Session, job: Job, status: str, now: datetime) -> None:
     """Mark a job ``deleted`` or ``expired`` and drop what described its audio.
 
-    The row stays so that the job's page can say what happened; the file name, the
-    request, the analysis and the per-stem rows go.
+    The row stays so that the job's page can say what happened. The file name, the
+    analysis, the plan, the per-stem rows, the event history and the decision log (whose
+    answers are about the request and the audio) all go. Timings stay: a model, a device
+    and two durations, kept for the cost figures.
     """
     job.status = status
     job.stage = status
@@ -72,6 +74,8 @@ def scrub(job: Job, status: str, now: datetime) -> None:
     job.updated_at = now
     job.deleted_at = job.deleted_at or now
     job.stems.clear()
+    session.execute(delete(JobEvent).where(JobEvent.job_id == job.id))
+    session.execute(delete(DecisionCall).where(DecisionCall.job_id == job.id))
 
 
 class JobStore:
@@ -150,8 +154,7 @@ class JobStore:
         job = self.get(job_id, include_ended=False)
         if job is None:
             return None
-        scrub(job, "deleted", now)
-        self._session.execute(delete(JobEvent).where(JobEvent.job_id == job.id))
+        scrub(self._session, job, "deleted", now)
         return job
 
     def forget_everything(self) -> list[str]:

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import delete, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from stems_api.db.models import Job, JobEvent
@@ -42,8 +42,7 @@ def jobs_ended_since(session: Session, since: datetime) -> list[Job]:
 
 
 def mark_expired(session: Session, job: Job, now: datetime) -> None:
-    scrub(job, "expired", now)
-    session.execute(delete(JobEvent).where(JobEvent.job_id == job.id))
+    scrub(session, job, "expired", now)
 
 
 def add_event(
