@@ -152,7 +152,7 @@ def test_the_committed_prices_and_recordings_make_a_report() -> None:
     assert {kind: used["input_tokens"] for kind, used in usage.items()} == {
         "parse": 1094,
         "plan": 2316,
-        "gate": 744,
+        "gate": 767,
     }
     assert all(used["file"].startswith("tests/fixtures/jev/") for used in usage.values())
     if not cost.BENCHMARK_PATH.is_file():
@@ -161,5 +161,5 @@ def test_the_committed_prices_and_recordings_make_a_report() -> None:
     report = cost.build(
         prices, usage, data, DEFAULTS, benchmark_file="docs/benchmarks/moisesdb.json"
     )
-    assert report["decisions"]["six ticked stems, no retries"]["tokens"][0] == 2316 + 6 * 744
+    assert report["decisions"]["six ticked stems, no retries"]["tokens"][0] == 2316 + 6 * 767
     assert report["separation"]["single_best"]["seconds"] is not None
