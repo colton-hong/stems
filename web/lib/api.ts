@@ -19,6 +19,10 @@ export interface Config {
   formats: OutputFormat[];
   default_format: OutputFormat;
   quality_modes: QualityMode[];
+  /** The ensemble mode each quality setting gives when the rules plan a job. */
+  quality_gives: Partial<Record<QualityMode, string>>;
+  /** Who plans a job: "jev" may give some settings a blend whatever quality_gives says. */
+  decided_by: "jev" | "rules";
   uploads: { max_bytes: number; max_duration_seconds: number; allowed_extensions: string[] };
   retention_days: number;
   link_ttl_seconds: number;

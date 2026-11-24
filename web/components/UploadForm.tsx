@@ -22,6 +22,7 @@ import {
   formatLabel,
   formatRemaining,
   qualityLabel,
+  qualityMatters,
   stemLabel,
 } from "@/lib/format";
 
@@ -323,21 +324,29 @@ export function UploadForm() {
               ))}
             </select>
           </div>
-          <div className="field">
-            <label htmlFor={`${ids}-quality`}>Speed or quality</label>
-            <select
-              id={`${ids}-quality`}
-              value={quality}
-              onChange={(event) => setQuality(event.target.value as QualityMode)}
-            >
-              {config.quality_modes.map((option) => (
-                <option key={option} value={option}>
-                  {qualityLabel(option)}
-                </option>
-              ))}
-            </select>
-          </div>
+          {qualityMatters(config) ? (
+            <div className="field">
+              <label htmlFor={`${ids}-quality`}>Speed or quality</label>
+              <select
+                id={`${ids}-quality`}
+                value={quality}
+                onChange={(event) => setQuality(event.target.value as QualityMode)}
+              >
+                {config.quality_modes.map((option) => (
+                  <option key={option} value={option}>
+                    {qualityLabel(option)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
         </div>
+        {qualityMatters(config) ? null : (
+          <p className="hint" data-testid="one-model">
+            There is no speed or quality setting for now: one model does the separating, and
+            nothing measured so far does better.
+          </p>
+        )}
         <div className="checks">
           <label className="check">
             <input

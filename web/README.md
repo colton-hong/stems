@@ -51,6 +51,10 @@ real jobs or keys.
 Locally it uses the Chrome already installed. Elsewhere, install Playwright's browser
 (`npx playwright install chromium`) and set `STEMS_E2E_CHANNEL=chromium`.
 
+The "Speed or quality" menu is shown only when the choice can change what a job does. The
+API says what each setting gives (`quality_gives` in `/api/config`); when the rules plan
+the job and every setting gives the same thing, the page shows a line saying so instead.
+
 `e2e/mobile.spec.ts` repeats the flow and the axe checks as Chrome emulates a phone held
 upright (375 by 812, touch): nothing may run off the side of the screen, and no button,
 menu or link-button may be smaller than 24 by 24 pixels.

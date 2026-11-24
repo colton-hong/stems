@@ -90,6 +90,23 @@ export function qualityLabel(mode: string): string {
   return QUALITY_LABELS[mode] ?? mode;
 }
 
+/**
+ * Whether choosing a quality setting can change what a job does. It cannot when the
+ * rules plan the job and every setting gives the same thing; then the menu is not shown.
+ * If the API does not say (an older one), the menu is shown.
+ */
+export function qualityMatters(config: {
+  quality_modes: string[];
+  quality_gives?: Partial<Record<string, string>>;
+  decided_by?: string;
+}): boolean {
+  if (!config.quality_gives || config.decided_by !== "rules") {
+    return true;
+  }
+  const given = config.quality_modes.map((mode) => config.quality_gives?.[mode]);
+  return given.some((mode) => mode === undefined) || new Set(given).size > 1;
+}
+
 export function extensionOf(filename: string): string {
   const dot = filename.lastIndexOf(".");
   return dot < 0 ? "" : filename.slice(dot + 1).toLowerCase();

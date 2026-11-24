@@ -369,3 +369,40 @@ test("a stem far quieter than the song says the instrument may not be in it", as
   await playerReady(page);
   await expect(page.getByRole("button", { name: "Download Piano" })).toBeEnabled();
 });
+
+test("the quality menu is shown only when the choice changes something", async ({ page }) => {
+  // As the test API is set up, the rules plan every job and each setting gives the same
+  // single model: no menu, and a line saying so.
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Upload and separate" })).toBeVisible();
+  await expect(page.getByLabel("File format")).toBeVisible();
+  await expect(page.getByLabel("Speed or quality")).toHaveCount(0);
+  await expect(page.getByTestId("one-model")).toContainText("one model does the separating");
+  // A request in words that asks for the best quality still goes through.
+  await chooseFile(page, "Test Tone.wav", toneWav());
+  await page.getByLabel("Or describe it in words (optional)").fill("vocals, best quality");
+  await page.getByRole("button", { name: "Fill in from my words" }).click();
+  await expect(page.getByRole("checkbox", { name: "Vocals", exact: true })).toBeChecked();
+  await page.getByRole("button", { name: "Upload and separate" }).click();
+  await page.waitForURL(/\/jobs\/[0-9a-f-]{36}$/);
+  await expect(page.getByTestId("status")).toHaveText("Ready", { timeout: 120_000 });
+
+  // An API whose settings differ: the menu is there, with every setting, and no such line.
+  await page.route("**/api/config", async (route) => {
+    const response = await route.fetch();
+    const config = await response.json();
+    config.quality_gives = { ...config.quality_gives, best_quality: "full_ensemble" };
+    await route.fulfill({ response, json: config });
+  });
+  await page.goto("/");
+  const menu = page.getByLabel("Speed or quality");
+  await expect(menu).toBeVisible();
+  await expect(menu.locator("option")).toHaveText([
+    "Fastest",
+    "Balanced",
+    "Best quality (slowest)",
+    "Default",
+  ]);
+  await expect(menu).toHaveValue("unspecified");
+  await expect(page.getByTestId("one-model")).toHaveCount(0);
+});

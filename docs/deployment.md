@@ -77,6 +77,12 @@ tries an empty stem again, and the tagger is off. Four models ran and nothing el
 (126.4 seconds from upload to ready, on a busier machine); guitar and piano were delivered
 at once with the "silent or very quiet" note.
 
+And once more at 15:58 UTC with the default model chosen that afternoon
+(`docs/benchmarks/recommendation.md`): one model, `bs_roformer_sw_6stem`, for all six
+stems, 28.5 seconds for the 12 seconds of audio on CPU and 35.8 seconds from upload to
+ready. Vocals, guitar and piano carried the "silent or very quiet" note: on this signal,
+which is tones and noise, the model puts almost nothing in those stems.
+
 What this does not show: a real song in the browser, a long one, the GPU path through the
 API, or a first run that has to download its checkpoints (about 16.7 GB for all of them). On a
 24 GB Mac do not run a real job on the GPU while a benchmark is running.

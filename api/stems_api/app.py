@@ -407,6 +407,17 @@ def create_app(deps: Deps | None = None, *, background: bool = True) -> FastAPI:
             "formats": list(FORMATS),
             "default_format": defaults.audio.output_format,
             "quality_modes": list(QUALITY_MODES),
+            # What each setting gives when the rules plan a job: a quality named by no one
+            # is planned as "balanced". With Jev planning ("decided_by": "jev") a setting
+            # other than "fastest" may also be given a blend, so the settings can differ
+            # even when these are all the same.
+            "quality_gives": {
+                mode: defaults.decision.mode_for_quality[
+                    "balanced" if mode == "unspecified" else mode
+                ]
+                for mode in QUALITY_MODES
+            },
+            "decided_by": "jev" if deps.parse_client is not None else "rules",
             "uploads": {
                 "max_bytes": defaults.uploads.max_bytes,
                 "max_duration_seconds": defaults.uploads.max_duration_seconds,

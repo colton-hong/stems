@@ -7,6 +7,7 @@ import {
   formatBytes,
   formatClock,
   formatRemaining,
+  qualityMatters,
   secondsUntil,
   stemLabel,
 } from "./format.ts";
@@ -59,4 +60,43 @@ test("a file is checked against the API's limits before it is sent", () => {
   assert.equal(fileProblem({ name: "a.mp3", size: 0 }, limits), "This file is empty.");
   assert.equal(extensionOf("archive.tar.FLAC"), "flac");
   assert.equal(extensionOf("none"), "");
+});
+
+test("the quality menu matters only when the settings can differ", () => {
+  const modes = ["unspecified", "fastest", "balanced", "best_quality"];
+  const same = {
+    unspecified: "single_best",
+    fastest: "single_best",
+    balanced: "single_best",
+    best_quality: "single_best",
+  };
+  // The rules plan the job and every setting gives one thing: nothing to choose.
+  assert.equal(
+    qualityMatters({ quality_modes: modes, quality_gives: same, decided_by: "rules" }),
+    false,
+  );
+  // One setting gives something else.
+  assert.equal(
+    qualityMatters({
+      quality_modes: modes,
+      quality_gives: { ...same, best_quality: "full_ensemble" },
+      decided_by: "rules",
+    }),
+    true,
+  );
+  // Jev plans the job: it may give a setting a blend, whatever the table says.
+  assert.equal(
+    qualityMatters({ quality_modes: modes, quality_gives: same, decided_by: "jev" }),
+    true,
+  );
+  // An API that does not say, or does not say for every setting: show the menu.
+  assert.equal(qualityMatters({ quality_modes: modes }), true);
+  assert.equal(
+    qualityMatters({
+      quality_modes: modes,
+      quality_gives: { fastest: "single_best" },
+      decided_by: "rules",
+    }),
+    true,
+  );
 });

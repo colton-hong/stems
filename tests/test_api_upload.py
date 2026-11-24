@@ -48,6 +48,16 @@ def test_health_and_config(client, deps) -> None:
     assert "mp3" in config["uploads"]["allowed_extensions"]
     assert config["retention_days"] == deps.defaults.retention.days == 7
     assert config["link_ttl_seconds"] == 900
+    # What each quality setting gives, so the page can tell whether the choice matters.
+    mapping = deps.defaults.decision.mode_for_quality
+    assert config["quality_gives"] == {
+        "unspecified": mapping["balanced"],
+        "fastest": mapping["fastest"],
+        "balanced": mapping["balanced"],
+        "best_quality": mapping["best_quality"],
+    }
+    assert set(config["quality_gives"]) == set(config["quality_modes"])
+    assert config["decided_by"] == "rules"  # no key in a test
     # Neither route makes an owner or sets a cookie.
     assert OWNER_COOKIE not in client.cookies
     with deps.sessions() as session:
