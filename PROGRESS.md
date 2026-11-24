@@ -2,7 +2,7 @@
 
 Single source of truth for where the build is. Read this first, every iteration.
 
-**Current phase: 5 (API and worker), started 2026-11-24 on the owner's go-ahead.** Still open from earlier phases: P4.9 (the live check against Jev) needs `TYPESAFE_API_KEY` (B6); P3.9 to P3.11 need `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_AUTH_TOKEN` (B5); Phase 2's real benchmarks are running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done, the tuning stages started 2026-11-24T04:53Z; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task). Do not start Phase 6 without the owner's go-ahead.
+**Current phase: 5 (API and worker), finished 2026-11-24 except for three live checks that need the owner's accounts.** P5.1 to P5.14 are ticked; the live checks of S3 and Azure Blob (B7) and of Modal (B4) are recorded as not done inside P5.2, P5.3 and P5.12. Still open from earlier phases: P4.9 (the live check against Jev) needs `TYPESAFE_API_KEY` (B6); P3.9 to P3.11 need `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_AUTH_TOKEN` (B5); Phase 2's real benchmarks are running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done, the tuning stage on MoisesDB started 2026-11-24T04:53Z; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task). Do not start Phase 6 without the owner's go-ahead.
 
 ## How to use this file
 
@@ -119,7 +119,7 @@ Format: `- [ ] Pn.m Task. **Accept:** how to tell it is done.`
 - [x] P5.11 Rate limits per owner and per IP. **Accept:** limits come from config and return 429 with `Retry-After`. — Done: `stems_api.ratelimit.RateLimiter`: a sliding window per key, all-or-nothing across the limits a request falls under, so a request refused by one does not use up another. The numbers are `rate_limits` in `config/defaults.yaml`: per browser 20 uploads an hour, 20 parses a minute and 3 jobs in progress; per address 40 uploads an hour and 40 parses a minute. These are proposals (BLOCKED.md D7), not measurements. A refusal is 429 with `Retry-After` in whole seconds until the oldest counted request leaves the window; tested with the limits overridden to small values, so the tests show the numbers come from config. Refused uploads count. The per-address limit holds when cookies are cleared (five fresh browsers from one address with a limit of 3: 201, 201, 201, 429, 429). Counted in memory in one process, and the address is the connection's: behind a proxy all users share it. 10 tests.
 - [x] P5.12 Modal provider. **Accept:** unit-tested against a stub; live run of the fixture on Modal noted as done or **BLOCKED (B4)**. — Done: `stems_api.providers.modal.ModalProvider`: `submit` spawns a call of the deployed function `run_job` in the Modal app `stems-worker` and keeps the call id; `status` asks for the call's result with a zero timeout, so it never waits on a job; `cancel` cancels the call. `worker/stems_worker/modal_app.py` defines that app: the same `stems_worker.jobs` entry point the local provider runs, a T4, weights on a Modal Volume, storage settings from a Modal Secret. Unit-tested against a stub: the installed Modal SDK (1.6.4) with its two network entry points (`Function.from_name`, `FunctionCall.from_id`) replaced, and the SDK's own exception classes for still-running, not-found and failed calls. Selecting it needs `MODAL_TOKEN_ID`, `MODAL_TOKEN_SECRET` and a shared storage backend (s3 or azure_blob), and says so otherwise. 7 tests. **Live run of the fixture on Modal: BLOCKED (B4), not done.** Nothing here has touched Modal: the app has never been deployed, its image has never been built, and the GPU type and timeout are first choices.
 - [x] P5.13 Azure Container Apps seam. **Accept:** a documented class with the two methods to implement and a test that selecting it fails with a clear message. — Done: `stems_api.providers.azure_aca.AzureContainerAppsProvider`: `submit`, `status` and `cancel` are written in terms of two methods that raise `NotImplementedError`, `_start_job(job_id)` and `_execution_state(execution_name)`, and the module's docstring says what each must do and with which Azure calls. Selecting it (`STEMS_WORKER_PROVIDER=azure_container_apps`) fails at startup with a message that names the two methods, the file and the alternatives (tested). A test finds exactly those two unwritten methods in the class, and another fills them in with stand-ins and gets a working provider, which shows the two are all that is missing. 3 tests. No Azure call exists or was made.
-- [ ] P5.14 End-to-end API test with the local provider on the fixture. **Accept:** upload to download works in one test, using the fake separator so it runs in CI.
+- [x] P5.14 End-to-end API test with the local provider on the fixture. **Accept:** upload to download works in one test, using the fake separator so it runs in CI. — Done: `tests/test_api_e2e.py`: one test through the real pieces wired as in production: the HTTP app with its maintenance thread, the local provider starting `python -m stems_worker.jobs` in a subprocess, local storage on disk and a SQLite file. Only the separator is a stand-in (`STEMS_WORKER_FAKE_MODELS=1`: band-splitting models with no weights, on CPU), so it runs in CI. It uploads a 2-second WAV asking for vocals and bass as FLAC, polls the job to `ready`, checks the event history is in stage order, downloads both stems and the zip through signed links and decodes them (44.1 kHz stereo, 2 s, not silent, different from each other), reads the peaks, then deletes the job and checks all 9 objects are gone and the links answer 404. It passed three times in a row here, about 2 seconds each. Separately, on 2026-11-24, the same path was driven by hand against `python -m stems_api` on a real port with `curl` (see the phase summary).
 
 ## Phase 6: web app
 
@@ -436,3 +436,78 @@ get a warning, not retries) and D6 (de-reverb is never added unasked).
 
 For the owner: a TypeSafe key with credit (B6) unblocks P4.9. Phase 5 (API and worker)
 waits for a go-ahead.
+
+## Phase 5 summary (2026-11-24)
+
+Done: P5.1 to P5.14. The system now runs from an HTTP upload to signed downloads.
+
+- **Storage** (`stems_api.storage`): one interface, three backends. Local disk with
+  HMAC-signed expiring links, S3-compatible with presigned URLs, Azure Blob with SAS
+  tokens. All three pass the same 29 contract tests.
+- **Database** (`stems_api.db`): the six tables of PLAN.md section 7, migrations, and
+  queries that are bound to one owner.
+- **Contract** (`stems_common.jobs`): `spec.json`, `status.json` and `result.json`, with
+  schemas and validators that the API and the worker both call.
+- **Worker** (`stems_worker.jobs`): a job from storage to storage, with stage reporting,
+  waveform peaks and a zip. A finished job run again does no work.
+- **Providers** (`stems_api.providers`): local (subprocess, one job at a time), Modal, and
+  the Azure Container Apps seam.
+- **API** (`stems_api.app`, `make api`): every route of PLAN.md section 8, the owner
+  cookie, upload checks by decoding, status sync from storage, the retention sweeper and
+  rate limits.
+
+331 tests were added (1,200 fast tests in all, `make check`).
+
+One run outside the test suite, on this machine, 2026-11-24: `python -m stems_api --port
+8765` with `STEMS_WORKER_FAKE_MODELS=1` and its database and storage in a scratch folder,
+driven with `curl`. A 4-second synthetic fixture was uploaded asking for vocals, drums
+and bass as `mp3_192`. Polling four times a second saw `queued`, `transcoding`,
+`separating`, `packaging`, `ready`. The three links each returned 200 `audio/mpeg` and a
+file that decodes as 44.1 kHz, 4.0 s; a range request returned 206; the zip returned 200;
+the job without the cookie returned 404; `DELETE` returned 204 and left 0 objects. The
+server log had no traceback. The stems in that run are frequency bands from the stand-in
+models, not separated music.
+
+What the tests found that was then fixed:
+
+- boto3 adds a checksum algorithm to uploads, and presigned links are only SigV4 when the
+  client is configured for it. Both showed up only against the real boto3 client.
+- A first upload that failed to start left a job its browser could not see, because the
+  error reply did not carry the new cookie. It does now, and a refused upload no longer
+  creates an owner at all.
+- Deleting or expiring a job left its decision log, whose answers describe the request
+  and the audio. Deletion and expiry now remove it.
+
+Not verified, and why:
+
+- **Real models through the API.** Every job in the tests and in the run above used the
+  stand-in models. The worker entry point with real checkpoints has not been run: the
+  machine's memory is taken by the benchmark (P2.12).
+- **S3 and Azure Blob against a real bucket** (B7) and **Modal** (B4). The S3 and Azure
+  code was exercised through the real client libraries with the network replaced, which
+  checks request building and link signing but not that a service accepts them. The
+  Modal app file has never been deployed and its image has never been built.
+- **Postgres.** Every database test ran on SQLite.
+- **A real browser.** Cookies, CORS and server-sent events were tested with an HTTP test
+  client and with `curl`, not in a browser. Phase 6 does that.
+- **Large uploads and load.** The size limit was tested at 1.5 MB, not at the shipped
+  250 MiB; nothing measured memory or speed with a large file, or several users at once.
+- **CI.** The workflow now installs the `api` extra. Whether it passes on Linux for
+  these commits has not been checked from here.
+- The rate-limit numbers are proposals, not measurements (BLOCKED.md D7).
+
+How it behaves that the owner may want to change (BLOCKED.md D7 to D9):
+
+- Rate limits are counted in memory in one process and by the connection's address.
+  Behind a proxy, or with several API processes, they need a shared store and the
+  proxy's forwarded address.
+- A job whose request text names no stem ends as `failed` with the parse attached,
+  because the job table has no review state. The web app is expected to call
+  `POST /requests/parse` first and confirm with the user (Phase 6).
+- After a job is deleted or expires, its row stays as a marker, with the file name,
+  analysis, plan, stems, events and decision log removed, and its timing rows kept.
+  `DELETE /me` removes every row.
+
+For the owner: nothing is needed to use this locally (`make api`). Bucket credentials
+(B7) and a Modal token (B4) unblock the three live checks. Phase 6 (web app) waits for a
+go-ahead.
