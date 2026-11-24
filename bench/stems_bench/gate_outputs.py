@@ -1,6 +1,7 @@
 """Can the listening layer judge real separator output? Measured against the benchmark (P8).
 
     python -m stems_bench.gate_outputs collect            # score the kept outputs (resumable)
+    python -m stems_bench.gate_outputs levels             # their levels over whole songs
     python -m stems_bench.gate_outputs report --out docs/gate-on-real-output.md
 
 P7.1 (``stems_bench.calibrate``) measured the tagger on reference stems with another stem
@@ -102,6 +103,34 @@ CRITERIA: dict[str, float] = {
     # Fewer pairs than this prove nothing either way.
     "pair_support_min": 30,
 }
+
+
+# The commit at which everything above was fixed, before any output was scored.
+RULES_COMMIT = "5b63f0807f6ecab7c12c710954cfe4b38afb4ef4"
+
+# -- whole songs (added in Phase 9) --------------------------------------------------------
+# Question 1 called an output empty when its reference is absent in the loudest minute,
+# and the gate's note for such a stem says the instrument "may not be in the song". This
+# checks the rule against the whole song. The block was written after the results above
+# were known and before any whole-song level or whole-song truth was computed.
+#
+# Truth: the instrument is in the song if its reference sounds (is above the silence level
+# of stems_common.levels) for at least this many seconds in total, anywhere in the track.
+IN_SONG_SECONDS = 5.0
+# Two rules, each "empty when the output's level against the mix is at or below a
+# threshold":
+#   minute  the rule in force: over the mix's loudest minute, at the configured threshold
+#   whole   over the whole song, with a threshold chosen on the calibration outputs
+#           against the whole-song truth, by the same choosing rule as before
+WHOLE_RULES = ("minute", "whole")
+IN_FORCE_DB = -19.81
+# What is done with the result, on the held-out outputs, against the whole-song truth and
+# by the same bar (CRITERIA, MIN_SUPPORT):
+#   keep     the rule in force passes: it stays, whatever the other does
+#   replace  it fails and "whole" passes: "whole" takes its place
+#   off      both fail: the rule is switched off
+# The commit that added this block. Filled in by the commit after it.
+WHOLE_RULES_COMMIT: str | None = None
 
 
 class OutputsError(ValueError):
@@ -324,6 +353,66 @@ def collect(
     return added
 
 
+def collect_levels(
+    set_name: str,
+    dataset: Any,
+    rows: Sequence[Mapping[str, Any]],
+    out_path: Path,
+    *,
+    bench_dir: Path = BENCH_DIR,
+    progress: Callable[[str], None] | None = None,
+) -> int:
+    """For every scored output of one set, its level over the whole song. No tagger.
+
+    A row per output: the output's level and the mix's over the whole track, and for how
+    many seconds the reference stem sounds anywhere in it. Outputs already in
+    ``out_path`` are skipped. Returns how many were new.
+    """
+    done = {row["id"] for row in read_rows(out_path)}
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    by_track: dict[str, list[Mapping[str, Any]]] = {}
+    for row in rows:
+        if row["set"] == set_name and row["id"] not in done:
+            by_track.setdefault(row["track_id"], []).append(row)
+    added = 0
+    track_ids = [t for t in dataset.track_ids() if t in by_track]
+    for number, track_id in enumerate(track_ids, start=1):
+        track = dataset.load(track_id)
+        rate = track.sample_rate
+        mix = track.inputs["mix"]
+        seconds = mix.shape[-1] / rate
+        mix_level = round(rms_dbfs(mix), 2)
+        sounding: dict[str, float] = {}
+        for row in by_track[track_id]:
+            stem = row["stem"]
+            if stem not in sounding:
+                silent = silence_fraction(track.references[stem], rate)
+                sounding[stem] = round((1.0 - silent) * seconds, 2)
+            path = (
+                bench_dir
+                / "estimates"
+                / dataset.name
+                / row["model_id"]
+                / row["job_key"]
+                / f"{stem}.npy"
+            )
+            estimate = np.load(path, mmap_mode="r")
+            level = {
+                "id": row["id"],
+                "set": set_name,
+                "track_seconds": round(seconds, 2),
+                "whole_level_dbfs": round(rms_dbfs(estimate), 2),
+                "whole_mix_level_dbfs": mix_level,
+                "reference_sounding_seconds": sounding[stem],
+            }
+            with out_path.open("a", encoding="utf-8") as handle:
+                handle.write(json.dumps(level) + "\n")
+            added += 1
+        if progress:
+            progress(f"{set_name}: levels of {number} of {len(track_ids)} tracks")
+    return added
+
+
 # -- analysis (pure) -----------------------------------------------------------------------
 
 
@@ -532,6 +621,64 @@ def by_stem(rows: Sequence[Mapping[str, Any]], config: Mapping[str, Any]) -> lis
             }
         )
     return table
+
+
+def in_song(row: Mapping[str, Any]) -> bool:
+    return float(row["reference_sounding_seconds"]) >= IN_SONG_SECONDS
+
+
+def whole_level(row: Mapping[str, Any]) -> float:
+    return float(row["whole_level_dbfs"]) - float(row["whole_mix_level_dbfs"])
+
+
+WHOLE_SIGNALS: dict[str, Callable[[Mapping[str, Any]], float]] = {
+    "minute": relative_level,
+    "whole": whole_level,
+}
+
+
+def analyse_whole(
+    rows: Sequence[Mapping[str, Any]], levels: Sequence[Mapping[str, Any]]
+) -> dict[str, Any]:
+    """The empty-stem rule against whole-song truth. ``levels`` are ``collect_levels`` rows."""
+    by_id = {level["id"]: level for level in levels}
+    joined = [{**row, **by_id[row["id"]]} for row in rows if row["id"] in by_id]
+    calibration = [row for row in joined if row["set"] == "calibration"]
+    heldout = [row for row in joined if row["set"] == "heldout"]
+
+    def pairs(part: Sequence[Mapping[str, Any]], rule: str) -> list[tuple[float, bool]]:
+        return [(round(WHOLE_SIGNALS[rule](row), 6), in_song(row)) for row in part]
+
+    thresholds = {
+        "minute": IN_FORCE_DB,
+        "whole": choose_empty_max(pairs(calibration, "whole")),
+    }
+    rules: dict[str, Any] = {}
+    for rule in WHOLE_RULES:
+        outcome = empty_outcome(pairs(heldout, rule), thresholds[rule])
+        rules[rule] = {
+            "calibration": empty_outcome(pairs(calibration, rule), thresholds[rule]),
+            "heldout": outcome,
+            **empty_verdict(outcome),
+        }
+    decision = (
+        "keep" if rules["minute"]["passed"] else "replace" if rules["whole"]["passed"] else "off"
+    )
+    # Outputs the first measurement counted as empty although the instrument is in the song.
+    elsewhere = [row for row in heldout if not row["reference_present"] and in_song(row)]
+    return {
+        "outputs": {"calibration": len(calibration), "heldout": len(heldout)},
+        "without_levels": len(rows) - len(joined),
+        "not_in_song": sum(1 for row in heldout if not in_song(row)),
+        "absent_in_minute": sum(1 for row in heldout if not row["reference_present"]),
+        "elsewhere": len(elsewhere),
+        "elsewhere_called_empty": sum(1 for row in elsewhere if relative_level(row) <= IN_FORCE_DB),
+        "in_minute_not_in_song": sum(
+            1 for row in heldout if row["reference_present"] and not in_song(row)
+        ),
+        "rules": rules,
+        "decision": decision,
+    }
 
 
 def analyse(rows: Sequence[Mapping[str, Any]], config: Mapping[str, Any]) -> dict[str, Any]:
@@ -785,6 +932,8 @@ def render(analysis: Mapping[str, Any], run: Mapping[str, Any]) -> str:
             f"({_pct(crit['pair_accuracy_min'])} needed). A retry chosen on the tagger's word "
             "would not reliably pick the better stem, so the gate keeps not acting on it."
         )
+    if analysis.get("whole"):
+        lines += ["", *_whole_section(analysis["whole"], crit, run)]
     lines += [
         "",
         "## Limits",
@@ -798,6 +947,72 @@ def render(analysis: Mapping[str, Any], run: Mapping[str, Any]) -> str:
         "",
     ]
     return "\n".join(lines)
+
+
+WHOLE_NAMES = {
+    "minute": "In force: level against the mix over the mix's loudest minute",
+    "whole": "Level against the mix over the whole song",
+}
+DECISIONS = {
+    "keep": "**The rule in force stays.** It clears the bar against the whole song too.",
+    "replace": (
+        "**The rule is replaced.** Measured over the loudest minute it fails against the "
+        "whole song; measured over the whole song it passes, and that is what the gate "
+        "now uses."
+    ),
+    "off": (
+        "**The rule is switched off.** Neither way of measuring the level clears the bar "
+        "against the whole song."
+    ),
+}
+
+
+def _whole_section(
+    whole: Mapping[str, Any], crit: Mapping[str, float], run: Mapping[str, Any]
+) -> list[str]:
+    """The part of the report that checks the empty-stem rule against whole songs."""
+    added = run.get("whole_rules_commit")
+    when = f"at commit `{added[:12]}`" if added else "in the commit that adds this section"
+    lines = [
+        "## The empty-stem rule against the whole song",
+        "",
+        "Question 1 called an output empty when its reference is absent in the loudest "
+        "minute, and the gate's note for such a stem says the instrument may not be in the "
+        "song. Here the truth is the whole song: the instrument is in it if its reference "
+        f"sounds for at least {IN_SONG_SECONDS:g} seconds in total, anywhere. The rules "
+        f"below and what is done with the result were added to this file's code {when}, "
+        "after the results above were known and before any whole-song figure was computed. "
+        "No tagger is involved; the levels were read from the same kept outputs.",
+        "",
+        f"Of the {whole['outputs']['heldout']} held-out outputs, {whole['absent_in_minute']} "
+        f"have a reference that is absent in the loudest minute, and {whole['not_in_song']} "
+        f"have an instrument that is not in the song at all. The difference, "
+        f"{whole['elsewhere']} outputs, is instruments that play only outside the loudest "
+        f"minute; the rule in force calls {whole['elsewhere_called_empty']} of them empty.",
+        "",
+        "| Rule | Threshold | AUC | Called empty | Right | Found | Result |",
+        "|---|---:|---:|---:|---:|---:|---|",
+    ]
+    for rule in WHOLE_RULES:
+        entry = whole["rules"][rule]
+        held = entry["heldout"]
+        result = "pass" if entry["passed"] else "fail" if entry["enough"] else "too few to say"
+        lines.append(
+            f"| {WHOLE_NAMES[rule]} | {_threshold('level', held['threshold'])} | "
+            f"{_num(held['auc'])} | {_count(held['called_empty'])} | {_pct(held['precision'])} | "
+            f"{_pct(held['recall'])} | {result} |"
+        )
+    lines += [
+        "",
+        f'"Right" and "found" are against the whole-song truth. Needed, as before: right '
+        f"at least {_pct(crit['empty_precision_min'])}, found at least "
+        f"{_pct(crit['empty_recall_min'])}.",
+        "",
+        DECISIONS[whole["decision"]],
+    ]
+    if whole["without_levels"]:
+        lines += ["", f"{whole['without_levels']} scored outputs have no whole-song level yet."]
+    return lines
 
 
 # -- command line --------------------------------------------------------------------------
@@ -865,19 +1080,33 @@ def cmd_collect(args: argparse.Namespace) -> int:
     return 0
 
 
-def _rules_commit() -> str:
-    import subprocess
+def cmd_levels(args: argparse.Namespace) -> int:
+    from stems_bench.datasets import get_dataset
 
-    from stems_common.paths import REPO_ROOT
+    run_dir = _run_dir(args.run_id)
+    rows = read_rows(run_dir / "scores.jsonl")
+    if not rows:
+        raise OutputsError(f"{run_dir / 'scores.jsonl'} is missing or empty: run `collect` first")
+    status_path = run_dir / "levels-status.json"
+    started = datetime.now(UTC).isoformat(timespec="seconds")
 
-    out = subprocess.run(
-        ["git", "log", "-1", "--format=%H", "--", "bench/stems_bench/gate_outputs.py"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    return out.stdout.strip() or "unknown"
+    def progress(message: str) -> None:
+        write_json(status_path, {"state": "running", "started": started, "now": message})
+        print(message, flush=True)
+
+    try:
+        for name, dataset_name in SETS.items():
+            collect_levels(
+                name, get_dataset(dataset_name), rows, run_dir / "levels.jsonl", progress=progress
+            )
+    except BaseException as error:
+        write_json(
+            status_path, {"state": "failed", "started": started, "error": type(error).__name__}
+        )
+        raise
+    finished = datetime.now(UTC).isoformat(timespec="seconds")
+    write_json(status_path, {"state": "done", "started": started, "finished": finished})
+    return 0
 
 
 def cmd_report(args: argparse.Namespace) -> int:
@@ -896,7 +1125,7 @@ def cmd_report(args: argparse.Namespace) -> int:
         defaults = load_defaults()
         listening = defaults.listening.model_dump()
         rules = {
-            "rules_commit": _rules_commit(),
+            "rules_commit": RULES_COMMIT,
             "config": {
                 "presence": listening["presence"],
                 "bleed": listening["bleed"],
@@ -906,8 +1135,14 @@ def cmd_report(args: argparse.Namespace) -> int:
         write_json(rules_path, rules)
     rows = read_rows(run_dir / "scores.jsonl")
     analysis = analyse(rows, rules["config"])
+    levels = read_rows(run_dir / "levels.jsonl")
+    if levels:
+        analysis["whole"] = analyse_whole(rows, levels)
     write_json(run_dir / "analysis.json", analysis)
-    text = render(analysis, {**run, "rules_commit": rules["rules_commit"]})
+    text = render(
+        analysis,
+        {**run, "rules_commit": rules["rules_commit"], "whole_rules_commit": WHOLE_RULES_COMMIT},
+    )
     if args.out:
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)
         Path(args.out).write_text(text, encoding="utf-8")
@@ -930,6 +1165,11 @@ def main(argv: list[str] | None = None) -> int:
         help="the P7.1 run whose excerpts are reused when it covers the same tracks",
     )
     collect_parser.set_defaults(run=cmd_collect)
+    levels_parser = sub.add_parser(
+        "levels", help="measure each scored output's level over the whole song (no tagger)"
+    )
+    levels_parser.add_argument("--run-id", default=DEFAULT_RUN)
+    levels_parser.set_defaults(run=cmd_levels)
     report_parser = sub.add_parser("report", help="write the report from a finished run")
     report_parser.add_argument("--run-id", default=DEFAULT_RUN)
     report_parser.add_argument("--out")

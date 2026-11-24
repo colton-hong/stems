@@ -291,6 +291,136 @@ def test_rank_correlation() -> None:
     assert go.spearman([1, 1, 1], [1, 2, 3]) is None
 
 
+# -- the empty-stem rule against whole songs ---------------------------------------------
+
+
+def test_the_whole_song_rules_are_what_the_report_says_they_are() -> None:
+    assert go.IN_SONG_SECONDS == 5.0
+    assert go.WHOLE_RULES == ("minute", "whole")
+    assert go.IN_FORCE_DB == -19.81
+    assert go.RULES_COMMIT.startswith("5b63f0807f6e")
+
+
+def songs(set_name: str, *, elsewhere: int, whole_works: bool = True) -> tuple[list, list]:
+    """Twenty-four piano outputs and their whole-song levels.
+
+    Eight songs have a piano throughout, eight have none, and ``elsewhere`` of the other
+    eight have one that plays only outside the loudest minute (the rest of them have it
+    throughout): in that minute its output is leftovers, over the whole song it is not.
+    """
+    rng = np.random.default_rng(8 if set_name == "calibration" else 9)
+    rows, levels = [], []
+    for n in range(24):
+        kind = (
+            "there" if n < 8 else "absent" if n < 16 else "late" if n - 16 < elsewhere else "there"
+        )
+        one = row(
+            set_name,
+            f"{set_name}-{n:02d}",
+            "piano",
+            "six",
+            present=kind == "there",
+            level=-22.0 if kind == "there" else -60.0,
+        )
+        over_song = {"there": -8.0, "late": -14.0, "absent": -46.0}[kind]
+        if not whole_works:
+            over_song = float(rng.uniform(-50.0, -5.0))
+        rows.append(one)
+        levels.append(
+            {
+                "id": one["id"],
+                "set": set_name,
+                "whole_level_dbfs": -14.0 + over_song,
+                "whole_mix_level_dbfs": -14.0,
+                "reference_sounding_seconds": 0.0 if kind == "absent" else 40.0,
+            }
+        )
+    return rows, levels
+
+
+def both_sets(**options) -> tuple[list, list]:
+    first, second = songs("calibration", **options), songs("heldout", **options)
+    return first[0] + second[0], first[1] + second[1]
+
+
+def test_truth_is_the_whole_song_and_levels_are_against_the_mix() -> None:
+    rows, levels = songs("heldout", elsewhere=1)
+    joined = {**rows[16], **levels[16]}  # plays only outside the loudest minute
+    assert joined["reference_present"] is False
+    assert go.in_song(joined) is True
+    assert go.in_song({**joined, "reference_sounding_seconds": 4.9}) is False
+    assert go.whole_level(joined) == -14.0
+    assert go.relative_level(joined) == -46.0
+
+
+def test_too_few_calls_decide_nothing_in_the_rules_favour() -> None:
+    # Eight empty songs per set is under the ten the bar asks for. A rule that is never
+    # wrong still does not pass on that, and only a pass keeps it.
+    whole = go.analyse_whole(*both_sets(elsewhere=0))
+    minute = whole["rules"]["minute"]
+    assert (minute["heldout"]["threshold"], minute["heldout"]["called_empty"]) == (-19.81, 8)
+    assert minute["heldout"]["right"] == 8
+    assert (minute["enough"], minute["passed"]) == (False, False)
+    assert (whole["absent_in_minute"], whole["not_in_song"], whole["elsewhere"]) == (8, 8, 0)
+    assert whole["decision"] == "off"
+
+
+def many(**options) -> tuple[list, list]:
+    """Three copies of each set under other track names, to have enough of every kind."""
+    rows, levels = both_sets(**options)
+    out_rows, out_levels = [], []
+    for copy in "abc":
+        for one, level in zip(rows, levels, strict=True):
+            out_rows.append({**one, "id": one["id"] + copy, "track_id": one["track_id"] + copy})
+            out_levels.append({**level, "id": level["id"] + copy})
+    return out_rows, out_levels
+
+
+def test_the_three_outcomes() -> None:
+    kept = go.analyse_whole(*many(elsewhere=0))
+    assert kept["decision"] == "keep"
+    assert kept["rules"]["minute"]["passed"] is True
+
+    # A quarter of the songs have a piano that the loudest minute does not show.
+    replaced = go.analyse_whole(*many(elsewhere=8))
+    minute, whole = replaced["rules"]["minute"], replaced["rules"]["whole"]
+    assert (replaced["elsewhere"], replaced["elsewhere_called_empty"]) == (24, 24)
+    assert minute["heldout"]["precision"] == 0.5  # half of what it calls empty has a piano
+    assert minute["passed"] is False
+    assert whole["heldout"]["threshold"] == -46.0
+    assert (whole["heldout"]["precision"], whole["heldout"]["recall"]) == (1.0, 1.0)
+    assert replaced["decision"] == "replace"
+
+    off = go.analyse_whole(*many(elsewhere=8, whole_works=False))
+    assert off["rules"]["whole"]["passed"] is False
+    assert off["decision"] == "off"
+
+
+def test_outputs_without_a_whole_song_level_are_counted_and_left_out() -> None:
+    rows, levels = many(elsewhere=0)
+    whole = go.analyse_whole(rows, levels[:-5])
+    assert whole["without_levels"] == 5
+    assert whole["outputs"] == {"calibration": 72, "heldout": 67}
+
+
+def test_the_report_gains_the_whole_song_section_only_when_levels_exist() -> None:
+    rows, levels = many(elsewhere=8)
+    analysis = go.analyse(rows, LISTENING)
+    assert "against the whole song" not in go.render(analysis, RUN)
+    analysis["whole"] = go.analyse_whole(rows, levels)
+    text = go.render(analysis, {**RUN, "whole_rules_commit": "a" * 40})
+    assert "## The empty-stem rule against the whole song" in text
+    assert "at commit `aaaaaaaaaaaa`" in text
+    assert "Of the 72 held-out outputs, 48 have a reference that is absent" in text
+    assert "24 have an instrument that is not in the song at all" in text
+    assert "the rule in force calls 24 of them empty" in text
+    assert "| -19.8 dB | " in text
+    assert "| -46.0 dB | " in text
+    assert "**The rule is replaced.**" in text
+    assert text.index("against the whole song") < text.index("## Limits")
+    json.dumps(analysis)
+
+
 # -- the report --------------------------------------------------------------------------
 
 RUN = {
@@ -440,6 +570,28 @@ def test_collect_scores_each_kept_output_once_and_resumes(tmp_path) -> None:
     # The benchmark finishes the missing track later: the models that count do not change.
     fake_bench(bench, dataset, {"late": ["drums"]})
     assert go.collect(*args, bench_dir=bench) == 0
+
+    # Whole-song levels of the same outputs: no tagger, a row each, and resumable.
+    calls = tagger.calls
+    levels_path = tmp_path / "run" / "levels.jsonl"
+    rows = go.read_rows(out)
+    assert go.collect_levels("heldout", dataset, rows, levels_path, bench_dir=bench) == len(rows)
+    assert go.collect_levels("calibration", dataset, rows, levels_path, bench_dir=bench) == 0
+    levels = go.read_rows(levels_path)
+    assert {level["id"] for level in levels} == {row["id"] for row in rows}
+    assert tagger.calls == calls
+    one_level = levels[0]
+    assert one_level["track_seconds"] == 12.0
+    assert one_level["whole_level_dbfs"] < one_level["whole_mix_level_dbfs"]
+    assert 0.0 <= one_level["reference_sounding_seconds"] <= 12.0
+    # The synthetic track is shorter than a minute, so the minute is the whole song.
+    assert one_level["whole_level_dbfs"] == rows[0]["level_dbfs"]
+    assert go.collect_levels("heldout", dataset, rows, levels_path, bench_dir=bench) == 0
+    whole = go.analyse_whole(rows, levels)
+    assert whole["outputs"] == {"calibration": 0, "heldout": len(rows)}
+    # A stem of the synthetic set that sounds for under five seconds is not "in the song".
+    brief = sum(1 for level in levels if level["reference_sounding_seconds"] < go.IN_SONG_SECONDS)
+    assert whole["not_in_song"] == brief
 
 
 def test_excerpts_of_an_earlier_run_are_reused_only_for_the_same_tracks(tmp_path) -> None:
