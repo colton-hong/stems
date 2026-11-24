@@ -298,3 +298,50 @@ test("every page is sent with the headers that keep it out of frames and caches"
   expect(api.headers()["cache-control"]).toBe("no-store");
   expect(api.headers()["x-content-type-options"]).toBe("nosniff");
 });
+
+test("the vocal split and the de-reverbed vocal come back as extra stems", async ({ page }) => {
+  await page.goto("/");
+  await chooseFile(page, "Test Tone.wav", toneWav());
+  await page.getByRole("checkbox", { name: "Vocals", exact: true }).check();
+  await page.getByRole("checkbox", { name: "Also split vocals into lead and backing" }).check();
+  await page.getByRole("checkbox", { name: "Also make a de-reverbed vocal" }).check();
+  await page.getByRole("button", { name: "Upload and separate" }).click();
+  await page.waitForURL(/\/jobs\/[0-9a-f-]{36}$/);
+  await expect(page.getByTestId("status")).toHaveText("Ready", { timeout: 120_000 });
+  await expect(
+    page.getByText("Asked for: Vocals, plus lead and backing vocals and de-reverbed vocal"),
+  ).toBeVisible();
+
+  const rows = page.locator("ul.stems > li");
+  await expect(rows.locator(".stem-name")).toHaveText([
+    "Vocals",
+    "Lead vocals",
+    "Backing vocals",
+    "Vocals, de-reverbed",
+  ]);
+  // Only the stem the gate looked at carries a note; the extras are not gated and show none.
+  await expect(page.getByText("1 of 4 stems have a note.")).toBeVisible();
+  await expect(rows.nth(0).locator(".stem-warning")).toContainText(UNCHECKED);
+  for (const index of [1, 2, 3]) {
+    await expect(rows.nth(index).locator(".stem-warning")).toHaveCount(0);
+  }
+
+  // All four play from one clock, and each downloads under its own name.
+  await playerReady(page);
+  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await expect
+    .poll(() => page.evaluate(() => window.__stemsEngine?.schedule.length ?? 0))
+    .toBe(4);
+  const schedule = await page.evaluate(() => window.__stemsEngine?.schedule ?? []);
+  expect(schedule.map((entry) => entry.name)).toEqual([
+    "vocals",
+    "lead_vocals",
+    "backing_vocals",
+    "vocals_dry",
+  ]);
+  expect(new Set(schedule.map((entry) => entry.when)).size).toBe(1);
+  await page.getByRole("button", { name: "Pause", exact: true }).click();
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download Lead vocals" }).click();
+  expect((await download).suggestedFilename()).toBe("Test Tone (lead_vocals).wav");
+});
