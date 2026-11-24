@@ -42,11 +42,12 @@ PAGE = """<!doctype html>
 <progress id="progress" value="0" max="1" aria-label="How far through the test"></progress>
 
 <section class="card" id="intro" hidden>
-  <p>Each step is one stem of one song, made in several ways. The versions are called
-  A, B, C and so on; which is which is hidden, and changes from step to step. One of them
+  <p>Each step is one stem of one song, in two or three versions. The versions are called
+  A, B and C; which is which is hidden, and changes from step to step. One of them
   may be the true stem from the recording session.</p>
   <p>Press play, switch between the versions as often as you like (they stay in time),
-  and give each one a mark. "Song" plays the full mix, for reference; it is not marked.
+  and give each one a mark. "Song" plays the same half minute of the full mix, for
+  reference; it is not marked.
   Overall quality is needed for every version; the other two marks are optional.</p>
   <p>Keys: <kbd>Space</kbd> play or pause, <kbd>A</kbd> <kbd>B</kbd> <kbd>C</kbd> … choose
   a version, <kbd>S</kbd> the song. Your marks are saved after every step, so you can stop
@@ -167,9 +168,7 @@ async function loadAudio(item) {
   $("play").disabled = true;
   const wanted = names(item);
   const decoded = await Promise.all(wanted.map(async (name) => {
-    const url = name === "song"
-      ? `/audio/${item.track}/mix.wav`
-      : `/audio/${item.track}/${item.stem}/${name}.wav`;
+    const url = `/audio/${item.track}/${item.stem}/${name}.wav`;
     const response = await fetch(url);
     if (!response.ok) throw new Error(`${url}: ${response.status}`);
     return context.decodeAudioData(await response.arrayBuffer());

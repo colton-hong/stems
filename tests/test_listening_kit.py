@@ -139,6 +139,104 @@ def test_the_kit_holds_the_same_excerpt_from_every_system_under_letters(material
     assert abs(np.corrcoef(clip.mean(axis=0), first.mean(axis=0))[0, 1]) < 0.9
 
 
+@pytest.fixture
+def late_song(tmp_path):
+    """A minute-long song that is loud from 25 s on; its piano plays in the first 20 s only."""
+    samples = 60 * SR
+    t = np.arange(samples) / SR
+
+    def tone(freq: float, gain: float):
+        return (gain * np.sin(2 * np.pi * freq * t)).astype(np.float32)[None, :].repeat(2, axis=0)
+
+    drums = tone(110.0, 0.4)
+    drums[:, : 25 * SR] *= 0.05
+    piano = tone(440.0, 0.1)
+    piano[:, 20 * SR :] = 0.0
+    mix_path = tmp_path / "late.wav"
+    save_audio(mix_path, drums + piano, SR, "wav")
+    rng = np.random.default_rng(5)
+    folders = {}
+    for system, noise in (("true", 0.0), ("a", 0.002), ("b", 0.004)):
+        folder = tmp_path / system / "late"
+        for stem, audio in (("drums", drums), ("piano", piano)):
+            noisy = audio + rng.standard_normal(audio.shape).astype(np.float32) * noise
+            save_audio(folder / f"{stem}.wav", noisy, SR, "wav")
+        folders[system] = str(folder)
+    return {
+        "systems": ["true", "a", "b"],
+        "ours": "a",
+        "free_reference": "b",
+        "paid_references": [],
+        "stems": ["drums", "piano"],
+        "tracks": [{"id": "late", "mix": str(mix_path), "systems": folders}],
+    }
+
+
+def clip_levels(out, key, item_id: str) -> dict[str, float]:
+    labels = key["items"][item_id]["labels"]
+    return {
+        system: rms_dbfs(load_audio(out / "audio" / item_id / f"{label}.wav").samples)
+        for label, system in labels.items()
+    }
+
+
+def test_each_stem_can_be_cut_where_one_system_has_it_loudest(late_song, tmp_path):
+    # Cut where the song is loudest, the piano's true stem is silence: nothing to judge.
+    out = tmp_path / "by-song"
+    key = kit_tool.build_kit(late_song, out, tmp_path / "k1.json", listeners=1)
+    assert key["items"]["T01/piano"]["start_seconds"] == key["items"]["T01/drums"]["start_seconds"]
+    assert key["items"]["T01/drums"]["start_seconds"] >= 24.0
+    assert clip_levels(out, key, "T01/piano")["true"] < kit_tool.SILENT_DBFS
+    # Cut where the true stem is loudest, every step has its instrument playing.
+    out = tmp_path / "by-stem"
+    key = kit_tool.build_kit(late_song, out, tmp_path / "k2.json", listeners=1, window_by="true")
+    assert key["items"]["T01/piano"]["start_seconds"] == 0.0
+    assert key["items"]["T01/drums"]["start_seconds"] >= 24.0
+    for item_id in ("T01/piano", "T01/drums"):
+        levels = clip_levels(out, key, item_id)
+        assert min(levels.values()) > -40.0, (item_id, levels)
+        assert max(levels.values()) - min(levels.values()) < 0.2
+    with pytest.raises(KitError, match="not one of the systems"):
+        kit_tool.build_kit(late_song, tmp_path / "x", tmp_path / "kx.json", window_by="nobody")
+
+
+def test_a_version_that_is_another_ones_audio_is_played_once(late_song, tmp_path):
+    out = tmp_path / "kit"
+    key = kit_tool.build_kit(
+        late_song,
+        out,
+        tmp_path / "key.json",
+        listeners=1,
+        window_by="true",
+        same_as={"piano": {"b": "a"}, "drums": {}},
+    )
+    kit = json.loads((out / "kit.json").read_text())
+    samples = {item["stem"]: item["samples"] for item in kit["items"]}
+    assert samples == {"drums": ["A", "B", "C"], "piano": ["A", "B"]}
+    assert sorted(key["items"]["T01/piano"]["labels"].values()) == ["a", "true"]
+    assert key["items"]["T01/piano"]["same_as"] == {"b": "a"}
+    assert "same_as" not in key["items"]["T01/drums"]
+    assert sorted(p.name for p in (out / "audio" / "T01" / "piano").iterdir()) == ["A.wav", "B.wav"]
+    # The sheet asks for two rows there, and nothing in the kit says why.
+    with (out / "sheets" / "listener-01.csv").open(newline="") as f:
+        rows = [row for row in csv.DictReader(f) if row["stem"] == "piano"]
+    assert [row["sample"] for row in rows] == ["A", "B"]
+    assert "same" not in (out / "kit.json").read_text()
+    for number, (bad, options) in enumerate(
+        [
+            ({"piano": {"b": "nobody"}}, {}),
+            ({"piano": {"b": "b"}}, {}),
+            ({"piano": {"a": "b", "b": "a"}}, {}),
+            ({"piano": {"true": "a"}}, {"window_by": "true"}),
+        ]
+    ):
+        with pytest.raises(KitError):
+            kit_tool.build_kit(
+                late_song, tmp_path / f"bad{number}", tmp_path / f"bad{number}.json",
+                same_as=bad, **options,
+            )  # fmt: skip
+
+
 def test_levels_are_matched_so_loudness_cannot_give_a_system_away(material, tmp_path):
     out, _, key = build(material, tmp_path)
     kit = json.loads((out / "kit.json").read_text())

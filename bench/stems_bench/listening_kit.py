@@ -174,8 +174,24 @@ def build_kit(
     listeners: int = MIN_LISTENERS,
     seed: int = 0,
     seconds: float = EXCERPT_SECONDS,
+    window_by: str | None = None,
+    same_as: Mapping[str, Mapping[str, str]] | None = None,
 ) -> dict[str, Any]:
-    """Write the kit to ``out_dir`` and the key to ``key_path``. Returns the key."""
+    """Write the kit to ``out_dir`` and the key to ``key_path``. Returns the key.
+
+    The excerpt is the song's loudest ``seconds``, the same for every stem, unless
+    ``window_by`` names a system: then each stem's excerpt is where that system's version
+    of the stem is loudest. A stem that plays only in a quiet part of a song is silent in
+    the song's loudest half minute, and three silent clips cannot be judged.
+
+    ``same_as`` says, per stem, which systems make it exactly as another one does
+    (``{"guitar": {"old": "new"}}``). Such a version is not put in the kit a second time:
+    two identical clips would tell the listener which one the third is. The key records
+    what stands for what.
+
+    A track in the manifest may carry its own ``stems`` list; it is then judged on those
+    only.
+    """
     from stems_worker.audio import load_audio, save_audio
 
     out_dir, key_path = Path(out_dir), Path(key_path)
@@ -186,13 +202,27 @@ def build_kit(
     if listeners < 1:
         raise KitError("at least one listener is needed")
     systems: list[str] = manifest["systems"]
+    same_as = {stem: dict(twins) for stem, twins in (same_as or {}).items() if twins}
+    if window_by is not None and window_by not in systems:
+        raise KitError(f"window_by is {window_by!r}, which is not one of the systems")
+    for stem, twins in same_as.items():
+        for name, other in twins.items():
+            if name not in systems or other not in systems or other in twins or name == other:
+                raise KitError(
+                    f"{stem}: {name!r} cannot stand in for {other!r}; both must be systems, "
+                    "and the one that is played must be played"
+                )
+        if window_by in twins:
+            raise KitError(f"{stem}: {window_by!r} chooses the excerpt, so it must be played")
     items: list[dict[str, Any]] = []
     key_items: dict[str, Any] = {}
     for number, track in enumerate(manifest["tracks"], start=1):
         track_id, code = str(track["id"]), f"T{number:02d}"
         mix = load_audio(track["mix"], SAMPLE_RATE)
-        window = loudest_window(mix.samples, SAMPLE_RATE, seconds)
+        song_window = loudest_window(mix.samples, SAMPLE_RATE, seconds)
         for stem in manifest["stems"]:
+            if "stems" in track and stem not in track["stems"]:
+                continue  # this track is judged on fewer stems than the others
             files = {name: find_stem(Path(track["systems"][name]), stem) for name in systems}
             if not any(files.values()):
                 continue  # nobody made this stem for this track
@@ -202,8 +232,11 @@ def build_kit(
                     f"track {track_id}: {stem} is missing for {', '.join(missing)}; a stem "
                     "is compared across every system or not at all"
                 )
-            excerpts = {}
+            twins = same_as.get(stem, {})
+            whole_stems = {}
             for name, file in files.items():
+                if name in twins:
+                    continue  # the same audio as another system's: played once
                 audio = load_audio(file, SAMPLE_RATE).samples
                 if abs(audio.shape[1] - mix.samples.shape[1]) > SAMPLE_RATE // 10:
                     theirs, whole = audio.shape[1] / SAMPLE_RATE, mix.samples.shape[1] / SAMPLE_RATE
@@ -212,9 +245,16 @@ def build_kit(
                         f"long but the mix is {whole:.1f} s; the same "
                         "excerpt cannot be cut from both"
                     )
-                excerpts[name] = window.cut(audio)
+                whole_stems[name] = audio
+            window = (
+                loudest_window(whole_stems[window_by], SAMPLE_RATE, seconds)
+                if window_by
+                else song_window
+            )
+            excerpts = {name: window.cut(audio) for name, audio in whole_stems.items()}
+            del whole_stems
             matched, gains = match_levels(excerpts)
-            order = list(systems)
+            order = list(excerpts)
             _order(seed, track_id, stem).shuffle(order)
             labels = {LABELS[i]: name for i, name in enumerate(order)}
             for label, name in labels.items():
@@ -225,7 +265,10 @@ def build_kit(
             key_items[f"{code}/{stem}"] = {
                 "labels": labels,
                 "gains_db": {label: gains[name] for label, name in labels.items()},
+                "start_seconds": round(window.start / SAMPLE_RATE, 6),
             }
+            if twins:
+                key_items[f"{code}/{stem}"]["same_as"] = twins
     if not items:
         raise KitError("no stem was found for any track")
     kit = {

@@ -19,10 +19,13 @@ product delivers now with what it delivered before and with the true stems.
 ``make`` runs the songs (the first N of the frozen MoisesDB test subset) through the
 product's own job code for ``new`` and ``old``, and builds a kit with the existing kit
 builder: the same 30 seconds of every version, matched in level, under letters whose
-meaning differs from stem to stem. The key that says which letter is which stays outside
-the folder the page is served from. ``serve`` shows one stem at a time, plays the versions
-in step so that switching does not lose the place, and saves the marks after every step.
-``report`` unblinds them.
+meaning differs from stem to stem. Each stem's 30 seconds are where its true recording is
+loudest, so the instrument is playing in every step. Where the product makes a stem with
+the same model now as before, ``new`` and ``old`` are the same audio and it is played
+once: the step then has two versions, not three. The key that says which letter is which
+stays outside the folder the page is served from. ``serve`` shows one stem at a time,
+plays the versions in step so that switching does not lose the place, and saves the marks
+after every step. ``report`` unblinds them.
 
 The audio is real music. It lives only in the run's folder under ``runs/``, which is not
 in the repository, and nothing here uploads anything: the server listens on this machine
@@ -45,11 +48,13 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+
 from stems_bench import listening_kit as kit_tools
 from stems_bench.gate_outputs import IN_SONG_SECONDS
 from stems_bench.listen_page import PAGE
 from stems_bench.run import write_json
-from stems_common.levels import silence_fraction
+from stems_common.levels import level_below_mix_db, rms_dbfs, silence_fraction
 from stems_common.paths import REPO_ROOT, RUNS_DIR
 from stems_common.stems import PRODUCT_STEMS
 
@@ -61,6 +66,9 @@ OLD_MODELS_PATH = REPO_ROOT / "docs" / "benchmarks" / "defaults-before-recommend
 DEFAULT_PORT = 8765
 MAX_BODY_BYTES = 64 * 1024
 MAX_NOTE = 2000
+# Two versions are "the same audio" when what differs between them is at least this far
+# below the stem itself: the same model run twice, give or take arithmetic.
+SAME_AUDIO_DB = 60.0
 RATINGS = kit_tools.RATINGS
 REQUIRED = "overall"
 
@@ -135,13 +143,94 @@ def make_track(
     return made
 
 
-def build_kit(run_dir: Path, tracks: Sequence[Mapping[str, Any]], *, seed: int = 0) -> None:
-    """The kit the page is served from, and the key beside it (never inside it)."""
+def same_models(configs: Mapping[str, Any]) -> dict[str, dict[str, str]]:
+    """The stems the product makes with the same single model now as before."""
+    new, old = configs["new"].ensembles.slots, configs["old"].ensembles.slots
+    return {
+        stem: {"old": "new"}
+        for stem in PRODUCT_STEMS
+        if new[stem].single_best == old[stem].single_best
+    }
+
+
+def same_audio(a: Path, b: Path) -> bool:
+    """Whether two files hold the same audio, give or take arithmetic."""
+    from stems_worker.audio import load_audio
+
+    first = load_audio(a, kit_tools.SAMPLE_RATE).samples
+    second = load_audio(b, kit_tools.SAMPLE_RATE).samples
+    if first.shape != second.shape:
+        return False
+    if np.array_equal(first, second):
+        return True
+    return rms_dbfs(first - second) <= max(rms_dbfs(first), rms_dbfs(second)) - SAME_AUDIO_DB
+
+
+def build_kit(
+    run_dir: Path,
+    tracks: Sequence[Mapping[str, Any]],
+    *,
+    same_as: Mapping[str, Mapping[str, str]] | None = None,
+    empty_below_mix_db: float | None = None,
+    seed: int = 0,
+) -> list[dict[str, Any]]:
+    """The kit the page is served from, and the key beside it (never inside it).
+
+    ``same_as`` names the stems that two versions make with the same model. It is believed
+    only where the files agree for every song: otherwise both versions are played.
+
+    ``empty_below_mix_db`` is the level, against the whole song, under which the product
+    itself calls a stem empty (``gate.rules.empty_below_mix_db``). A stem whose true
+    recording is that quiet is left out of the kit: there is next to nothing to hear, and a
+    mark for "silence" against "a little bleed" would say nothing about quality. Returns
+    what was left out, which is also written beside the key.
+    """
+    from stems_bench.clef.clips import Window
     from stems_worker.audio import load_audio, save_audio
 
     stems_dir, kit_dir = run_dir / "stems", run_dir / "kit"
+    if (run_dir / "ratings.json").exists():
+        raise ListenError(
+            f"{run_dir / 'ratings.json'} holds marks for the kit that is there; a new kit "
+            "would change what the letters mean. Move the marks away first, or use another "
+            "--run-id"
+        )
     if kit_dir.exists():
         shutil.rmtree(kit_dir)
+    judged: dict[str, list[str]] = {}
+    left_out: list[dict[str, Any]] = []
+    for number, track in enumerate(tracks, start=1):
+        track_id = track["track_id"]
+        judged[track_id] = list(track["stems"])
+        if empty_below_mix_db is None:
+            continue
+        mix = load_audio(stems_dir / "mix" / f"{track_id}.wav", kit_tools.SAMPLE_RATE).samples
+        for stem in track["stems"]:
+            true = load_audio(
+                stems_dir / "reference" / track_id / f"{stem}.flac", kit_tools.SAMPLE_RATE
+            ).samples
+            below = level_below_mix_db(true, mix)
+            if below < empty_below_mix_db:
+                judged[track_id].remove(stem)
+                left_out.append(
+                    {"track": f"T{number:02d}", "stem": stem, "below_song_db": round(below, 2)}
+                )
+    write_json(
+        run_dir / "left_out.json", {"empty_below_mix_db": empty_below_mix_db, "steps": left_out}
+    )
+    played_once = {
+        stem: dict(twins)
+        for stem, twins in (same_as or {}).items()
+        if all(
+            same_audio(
+                stems_dir / name / track["track_id"] / f"{stem}.flac",
+                stems_dir / other / track["track_id"] / f"{stem}.flac",
+            )
+            for track in tracks
+            if stem in judged[track["track_id"]]
+            for name, other in twins.items()
+        )
+    }
     manifest = {
         "systems": list(SYSTEMS),
         "ours": "new",
@@ -153,21 +242,37 @@ def build_kit(run_dir: Path, tracks: Sequence[Mapping[str, Any]], *, seed: int =
                 "id": track["track_id"],
                 "mix": str(stems_dir / "mix" / f"{track['track_id']}.wav"),
                 "systems": {name: str(stems_dir / name / track["track_id"]) for name in SYSTEMS},
+                "stems": judged[track["track_id"]],
             }
             for track in tracks
         ],
     }
-    kit_tools.build_kit(manifest, kit_dir, run_dir / "key.json", listeners=1, seed=seed)
-    # The same excerpt of the full song, for reference while listening. Not marked.
-    for number, _track in enumerate(tracks, start=1):
-        mix = load_audio(manifest["tracks"][number - 1]["mix"], kit_tools.SAMPLE_RATE).samples
-        window = kit_tools.loudest_window(mix, kit_tools.SAMPLE_RATE, kit_tools.EXCERPT_SECONDS)
-        save_audio(
-            kit_dir / "audio" / f"T{number:02d}" / "mix.wav",
-            window.cut(mix),
-            kit_tools.SAMPLE_RATE,
-            "wav",
-        )
+    key = kit_tools.build_kit(
+        manifest,
+        kit_dir,
+        run_dir / "key.json",
+        listeners=1,
+        seed=seed,
+        window_by="reference",
+        same_as=played_once,
+    )
+    # The same half minute of the full song beside each step's versions. Not marked.
+    length = round(kit_tools.EXCERPT_SECONDS * kit_tools.SAMPLE_RATE)
+    for number, entry in enumerate(manifest["tracks"], start=1):
+        code = f"T{number:02d}"
+        mix = load_audio(entry["mix"], kit_tools.SAMPLE_RATE).samples
+        for item_id, item in key["items"].items():
+            track_code, stem = item_id.split("/")
+            if track_code != code:
+                continue
+            window = Window(round(item["start_seconds"] * kit_tools.SAMPLE_RATE), length)
+            save_audio(
+                kit_dir / "audio" / code / stem / "song.wav",
+                window.cut(mix),
+                kit_tools.SAMPLE_RATE,
+                "wav",
+            )
+    return left_out
 
 
 def make(
@@ -198,7 +303,12 @@ def make(
         )
     if progress:
         progress("building the kit")
-    build_kit(run_dir, made)
+    build_kit(
+        run_dir,
+        made,
+        same_as=same_models(configs),
+        empty_below_mix_db=configs["new"].gate.rules.empty_below_mix_db,
+    )
     return made
 
 
@@ -386,9 +496,17 @@ def analyse(
         if marks is None:
             continue
         labels = key["items"][item["id"]]["labels"]
-        entry = {"id": item["id"], "stem": item["stem"], "note": marks.get("note") or ""}
+        twins = key["items"][item["id"]].get("same_as", {})
+        entry = {
+            "id": item["id"],
+            "stem": item["stem"],
+            "note": marks.get("note") or "",
+            "twins": twins,
+        }
         for label, system in labels.items():
             entry[system] = marks["ratings"][label]
+        for system, other in twins.items():
+            entry[system] = entry[other]  # the same audio: one clip, one mark
         rows.append(entry)
     systems = list(key["systems"])
 
@@ -410,14 +528,19 @@ def analyse(
     }
 
     def versus(a: str, b: str) -> dict[str, Any]:
-        wins = sum(1 for row in rows if row[a][REQUIRED] > row[b][REQUIRED])
-        losses = sum(1 for row in rows if row[a][REQUIRED] < row[b][REQUIRED])
+        # Only the steps where the two were two clips: one clip cannot differ from itself.
+        mine = [row for row in rows if row["twins"].get(a) != b and row["twins"].get(b) != a]
+        wins = sum(1 for row in mine if row[a][REQUIRED] > row[b][REQUIRED])
+        losses = sum(1 for row in mine if row[a][REQUIRED] < row[b][REQUIRED])
         return {
+            "steps": len(mine),
             "higher": wins,
             "lower": losses,
-            "same": len(rows) - wins - losses,
+            "same": len(mine) - wins - losses,
             "p": sign_test(wins, losses),
         }
+
+    one_clip = [row for row in rows if row["twins"].get("old") == "new"]
 
     top = sum(
         1
@@ -432,6 +555,10 @@ def analyse(
         "by_system": by_system,
         "by_stem": by_stem,
         "new_vs_old": versus("new", "old") if {"new", "old"} <= set(systems) else None,
+        "same_model": {
+            "steps": len(one_clip),
+            "stems": [stem for stem in PRODUCT_STEMS if any(r["stem"] == stem for r in one_clip)],
+        },
         "new_vs_reference": versus("new", "reference") if "reference" in systems else None,
         "reference_top": top,
         "notes": [{"id": row["id"], "note": row["note"]} for row in rows if row["note"].strip()],
@@ -480,6 +607,15 @@ def render(analysis: Mapping[str, Any], run: Mapping[str, Any]) -> str:
         "given. Higher is better in every column.",
         "",
     ]
+    same = analysis["same_model"]
+    if same["steps"]:
+        lines += [
+            f"In {same['steps']} of the marked steps ({', '.join(same['stems'])}) the product "
+            "makes the stem with the same model now as before. The two are then the same "
+            "audio; it was played once, and its mark counts for both versions above and in "
+            "the table by stem.",
+            "",
+        ]
     if marked == 0:
         return "\n".join([*lines, "Nothing has been marked yet.", ""])
     versus = analysis["new_vs_old"]
@@ -493,7 +629,8 @@ def render(analysis: Mapping[str, Any], run: Mapping[str, Any]) -> str:
         lines += [
             "## Now against before",
             "",
-            f"Over {marked} steps the version the product makes now was marked higher than the "
+            f"Over the {versus['steps']} steps where the two come from different models, the "
+            f"version the product makes now was marked higher than the "
             f"one it made before in {versus['higher']}, lower in {versus['lower']} and the same "
             f"in {versus['same']} ({chance}, by a sign test on the steps that differ).",
             "",
@@ -532,7 +669,22 @@ def render(analysis: Mapping[str, Any], run: Mapping[str, Any]) -> str:
         "",
         "- One listener, who knows the project and what was being compared, though not which "
         "letter was which.",
-        "- Songs from one dataset; 30 seconds of each, chosen where the song is loudest.",
+        "- Songs from one dataset; 30 seconds of each stem, chosen where its true recording "
+        "is loudest.",
+        *(
+            [
+                "- Left out, because the true recording is so quiet that the product itself "
+                f"would call such a stem empty (more than {-run['empty_below_mix_db']:g} dB "
+                "under the song): "
+                + "; ".join(
+                    f"`{step['track']}/{step['stem']}` ({-step['below_song_db']:.1f} dB under)"
+                    for step in run["left_out"]
+                )
+                + "."
+            ]
+            if run.get("left_out")
+            else []
+        ),
         "- Not the test the research report describes (five listeners, two paid tools). "
         "That one still waits (BLOCKED.md B8).",
         "",
@@ -575,6 +727,7 @@ def cmd_make(args: argparse.Namespace) -> int:
         )
         raise
     finished = datetime.now(UTC).isoformat(timespec="seconds")
+    left = json.loads((run_dir / "left_out.json").read_text(encoding="utf-8"))
     write_json(
         run_dir / "run.json",
         {
@@ -583,10 +736,17 @@ def cmd_make(args: argparse.Namespace) -> int:
             "tracks": len(made),
             "device": args.device,
             "old_models": old_models,
-            "steps": sum(len(track["stems"]) for track in made),
+            "steps": len(load_kit(run_dir / "kit")["items"]),
+            "left_out": left["steps"],
+            "empty_below_mix_db": left["empty_below_mix_db"],
         },
     )
     write_json(status_path, {"state": "done", "started": started, "finished": finished})
+    for step in left["steps"]:
+        print(
+            f"left out: {step['track']} {step['stem']} (its true recording is "
+            f"{-step['below_song_db']:.1f} dB under the song)"
+        )
     print(
         f"the kit is in {run_dir / 'kit'}; start the page with: python -m stems_bench.listen serve"
     )
