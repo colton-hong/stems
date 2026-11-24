@@ -2,7 +2,7 @@
 
 Single source of truth for where the build is. Read this first, every iteration.
 
-**Current phase: 9 (the product against the benchmark), started 2026-11-24.** The owner asked on 2026-11-24 for each phase to follow the last without waiting, and for new phases to be added when none is left; Phases 8 and 9 were added that way. Phases 0, 1 and 4 to 8 are complete apart from checks that need the owner's accounts (S3 and Azure, B7; Modal, B4; the listening test, B8). Still open from earlier phases: P3.11 (optional); Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done, the tuning stage on MoisesDB started 2026-11-24T04:53Z; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task).
+**Current phase: 10 (the default models, chosen on the tuning tracks), started 2026-11-24.** The owner asked on 2026-11-24 for each phase to follow the last without waiting, and for new phases to be added when none is left; Phases 8, 9 and 10 were added that way. Phases 0, 1 and 4 to 9 are complete apart from checks that need the owner's accounts (S3 and Azure, B7; Modal, B4; the listening test, B8). Still open from earlier phases: P3.11 (optional); Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done; the MoisesDB tuning run finished its 900 jobs at 13:39Z on 2026-11-24 and the tuner is searching; the MUSDB18-HQ tuning stage follows; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task).
 
 ## How to use this file
 
@@ -176,7 +176,23 @@ tagger costs now that the gate acts on nothing it hears.
 - [x] P9.3 What the tagger costs a job. **Accept:** the worker's timing log records the seconds spent listening; `docs/cost-per-song.md` states them from a run; a setting turns the tagger off; the default is chosen by what was measured and listed in BLOCKED.md as a decision the owner can overrule. — Done: each job now records what the tagger cost (lines with stage `listening` in its timings: the mix, then every attempt at every stem), and `docs/cost-per-song.md` has a section on it from the three real jobs of run `product-v1`: 44 s, 30 s and 36 s for songs of 344 s, 249 s and 240 s (8 or 9 listens each, on CPU), a median of 7.7 s per minute of audio. For a 4-minute song that is 31 s, 13% on top of the 230 s the default models take on this Mac's GPU; the machine was busy, so it may be on the high side. What it buys today is nothing a user sees: the gate acts on neither of the tagger's signals, so a stem carries the same note with the tagger or without. **So `listening.enabled` is now false** (BLOCKED.md D13, for the owner to overrule): the worker and the `decision.job` command load no tagger unless it is switched on. With it on, its scores still go into each stem's notes and to Jev. 3 tests (the timing lines, the switch, the report section).
 - [x] P9.4 What an absent instrument costs. **Accept:** `docs/cost-per-song.md` states, from measured model times, the extra seconds the empty-stem retries add for a song without guitar, without piano and without both. — Done: `docs/cost-per-song.md` has a section "When the song lacks an instrument", written by `python -m stems_bench.cost`. It plays the gate's own retry machine (`retry.StemGate`, the rules' fallback model, no Jev) on a stem that is found empty every time, and prices the models that adds with the per-model times of benchmark run `moisesdb-v1` (this Mac's GPU). For a 4-minute song in the default mode: no guitar adds `mel_roformer_guitar_becruily`, 26 s (11% of the job's 230 s); no piano adds `htdemucs_6s`, 11 s (5%); neither adds both, 36 s (16%). The third attempt, a blend of the first two, reuses their outputs and runs nothing. The chains are the ones the real-models job of P8.5 made. This is arithmetic on measured model times, not a measured job, and leaves out the tagger listening to each attempt. 3 tests.
 - [x] P9.6 Should a stem found empty be retried? **Accept:** from the kept benchmark outputs and with the rule for deciding fixed first, `docs/gate-on-real-output.md` states how often a retry with the fallback model rescues an instrument that is in the song, and how often it replaces a rightly empty stem with something that is not; the gate retries or stops by the result. *Added 2026-11-24 from what P9.2 found.* — Done: no: the gate no longer retries a stem it finds empty. The counting rules and the consequence were committed first (`a537158b22f8`); `docs/gate-on-real-output.md` has the section. On the 50 held-out tracks, for the five stems whose default and fallback models both have kept outputs (250 track-and-stem pairs), the default model's output was empty by the rule in force 42 times. The fallback's was empty too in 38. In the other 4, all guitar, the song has no guitar and `mel_roformer_guitar_becruily` returned something 15 to 21 dB under the mix: leftovers that the gate would have delivered as the guitar, as it did in the real job of P9.2. **Rescues: 0. Wrong deliveries: 4.** So `gate.rules.retry_empty` is false: a silent or empty stem is delivered at once with its note and no other model runs for it (`true` brings the retry back; BLOCKED.md D12). This also removes the cost P9.4 priced; the cost report now says "nothing extra" and keeps the old figures as history. The silent-stem retry had been in the gate since Phase 4, where it was designed against a model that fails outright, which is not what real models did here. Tests: 4 for the counting, and the gate, job and cost tests now cover both settings of the switch (a job as shipped makes one attempt and never runs the fallback). `make web-e2e` 16 passed. Limits: 42 cases, one dataset, the fallback models of today's config; the six-stem `other` has no kept outputs to count; a stem that is 98% silent but loud in the rest was not counted separately.
-- [ ] P9.5 A page for the owner. **Accept:** `README.md` says in one screen what works, how to run it, what has been measured (with the report for each figure) and what waits on the owner; every command in it is run on the day it is written.
+- [x] P9.5 A page for the owner. **Accept:** `README.md` says in one screen what works, how to run it, what has been measured (with the report for each figure) and what waits on the owner; every command in it is run on the day it is written. — Done: `README.md` rewritten (it still said there was no web app and no quality number): what works, how to run it, a table of what has been measured with the report behind each figure, what is not known, and what waits on the owner. Every command on it was run on 2026-11-24: `make setup`, `make node-setup` (already installed, nothing fetched), `make web-setup`, `make api` and the new `make web-dev` (both answered and were stopped), `separate` on the synthetic fixture, `make check` (1,326 passed), `make web-check`, `make web-e2e` (16 passed), `make web-e2e-real` (passed again at 14:34Z with the new defaults: four models, no retries, no tagger, 126.4 s on a busy CPU) and `bench status`. Each figure in its table was read from the committed report it names.
+
+## Phase 10: the default models, chosen on the tuning tracks
+
+Added on 2026-11-24 under rule 6 (no phase was left). The models the product uses by
+default are still the provisional ones picked before any benchmark existed, and the two
+test-list reports show that at least drums and bass are served by a weaker model than
+the best one measured. P2.13 was to settle this after blend tuning; the tuning run has
+now scored every single model on the 30 MoisesDB tuning tracks, which is what a choice
+of single models needs. This phase makes that choice on the tuning tracks only, by a
+rule fixed first, checks it on the test lists, and puts real songs through the result.
+Blends, and with them the rest of P2.13, still wait for the tuner.
+
+- [ ] P10.1 The single models on the tuning tracks. **Accept:** `docs/benchmarks/tuning-models-moisesdb.md` generated by `bench report` from run `moisesdb-tuning-v1`: every model's score per stem on the tuning list, with its time.
+- [ ] P10.2 A default single model per stem, chosen by a rule fixed first. **Accept:** the rule (what is compared, on which tracks, how ties and time are weighed) is committed before the choice is computed; `docs/benchmarks/recommendation.md` states the choice per stem from the tuning list and what the two test lists then show for it, beside the model in use; `config/defaults.yaml` names the chosen models for `single_best`; `make check` and `make web-e2e` pass.
+- [ ] P10.3 Real songs through the product with the chosen defaults. **Accept:** `python -m stems_bench.product_check` run again under a new run id on the same three tracks, and `docs/product-vs-benchmark.md` regenerated from it; the six-stem `other`, which the first run could not compare, is set beside a benchmark figure or the report says why not.
+- [ ] P10.4 The figures that follow from the defaults. **Accept:** `docs/cost-per-song.md` and the table in `README.md` regenerated or corrected from the new config and reports, each figure traced to its file.
 
 ---
 
@@ -770,3 +786,70 @@ Still open from earlier phases: P2.12, P2.13 and P2.14b (the tuning stage of the
 benchmarks is running: 347 of 900 jobs at 12:21Z) and P3.11 (optional).
 
 **Next:** Phase 9, added under rule 6.
+
+## Phase 9 summary (2026-11-24)
+
+Done: P9.1 to P9.6 (P9.6 was added during the phase, from what P9.2 found).
+
+- **The empty-stem rule against whole songs** (P9.1). The rule of P8.3 looked at the
+  mix's loudest minute and failed against the whole song: right for 82.5% of what it
+  called empty, because it also caught instruments that play elsewhere. The level over
+  the whole song passed (90.2% right, finds 92.2%) and replaced it.
+- **Real songs through the product** (P9.2, `docs/product-vs-benchmark.md`). Three
+  MoisesDB tracks through the worker's own path with the real models: all 12 stems that
+  can be compared are within 0.07 dB of the benchmark's figure for the same model and
+  track. The audio was deleted after scoring.
+- **What the tagger costs** (P9.3). 31 s for a 4-minute song at the median of those
+  three jobs, 13% on top of the separation, for nothing a user sees. It is now off by
+  default (BLOCKED.md D13).
+- **What an absent instrument costs** (P9.4): 11 to 36 s of retries for a 4-minute song,
+  by arithmetic on measured model times. P9.6 then removed the retries.
+- **Should an empty stem be retried?** (P9.6). No. In 42 cases on held-out tracks the
+  fallback model rescued nothing and 4 times it would have delivered leftovers as a
+  guitar the song does not have. An empty stem is now delivered at once with its note.
+- **The README** (P9.5) says what works, how to run it and what has been measured.
+
+What the phase found:
+
+- **The product delivers what the benchmark measured.** That had never been checked: the
+  benchmark calls the models directly, a job goes through storage, planning, the gate and
+  FLAC. On three songs the two agree to within 0.07 dB.
+- **The gate was making stems worse.** Its oldest rule, in place since Phase 4, sent a
+  silent stem round again with another model. On real music a silent stem from the best
+  model usually means the instrument is not there, and the second model's answer is
+  leftovers. A real job showed it; the kept benchmark outputs confirmed it, 4 to 0.
+- **After three phases of measuring, the gate does one thing:** it tells the user when a
+  stem is silent or far below the song. It retries nothing and vouches for nothing. The
+  tagger, the bleed levels and the retry machinery are all still in the code, switched
+  off by measured results, each with a config value that turns it back on.
+- **The default models are not the best measured ones.** The three real songs used
+  `scnet_xl_ihf` for drums and `htdemucs_ft` for bass, as the provisional config says;
+  both test-list reports put `bs_roformer_sw_6stem` ahead on those stems. Phase 10.
+
+Mistakes of mine in this phase:
+
+- The loudest-minute rule (P8.3) was switched on from a measurement whose "truth" was
+  also the loudest minute. I wrote that limit down at the time and still shipped the
+  rule; an hour later the whole-song check showed it wrong about one flagged stem in six.
+- A scripted edit to the product report failed half-way and I regenerated the report
+  before noticing; the next command applied it properly. Nothing wrong was committed.
+
+Not verified, and why:
+
+- **More than three songs, and any song in the browser by a person.** Three tracks show
+  the road works. Tests may not use real music, and the browser run is the owner's.
+- **The GPU path of the product.** All three real jobs ran on CPU because the benchmark
+  holds the GPU; the benchmark's figures are from the GPU. They agreed anyway.
+- **The six-stem `other` in the product.** It is made from a four-stem model and has no
+  benchmark figure to stand beside. It scored 1.46 to 3.40 dB on the three songs.
+- **A stem that is in the song but very quiet throughout.** The rule would flag it. Nine
+  of the 92 held-out outputs it called empty had an instrument in the song; whether those
+  were quiet parts or parts the model missed was not looked at.
+- As before: Jev as planner or judge, S3 and Azure (B7), Modal and any GPU price (B4),
+  the listening test (B8), a real proxy, a real phone.
+
+Still open from earlier phases: P2.12, P2.13 and P2.14b (the tuner is searching on the
+finished MoisesDB tuning run; the MUSDB18-HQ tuning stage follows) and P3.11 (optional).
+
+**Next:** Phase 10, added under rule 6: choose the default single models on the tuning
+tracks.

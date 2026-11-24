@@ -72,8 +72,13 @@ Each time includes whatever the benchmark was taking from the machine at that mo
 is one run; they are not speed measurements (those are in `docs/benchmarks/`). The
 blends of the second retry reused the outputs above and ran no model again.
 
-What this does not show: a real song, a long one, the GPU path through the API, or a
-first run that has to download its checkpoints (about 16.7 GB for all of them). On a
+Run again the same day at 14:34 UTC, after two changes to the defaults: the gate no longer
+tries an empty stem again, and the tagger is off. Four models ran and nothing else
+(126.4 seconds from upload to ready, on a busier machine); guitar and piano were delivered
+at once with the "silent or very quiet" note.
+
+What this does not show: a real song in the browser, a long one, the GPU path through the
+API, or a first run that has to download its checkpoints (about 16.7 GB for all of them). On a
 24 GB Mac do not run a real job on the GPU while a benchmark is running.
 
 ## 2. Settings
