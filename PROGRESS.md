@@ -978,3 +978,29 @@ Not verified, and why:
 Still open from earlier phases: P2.12, P2.13 and P2.14b (the tuner is still scoring).
 
 **Next:** Phase 12, added under rule 6.
+
+## A correction about CI (2026-11-24)
+
+Several summaries above say that CI "has never run" (Phases 5 and 6) or list CI on Linux
+as unverified. That was wrong in one way that matters: I had never seen its results, and
+wrote that as if nothing had run. The workflow has run on every push since the repository
+got its remote on 2026-11-22.
+
+What is known now, read from GitHub's public API on 2026-11-24 at 19:40Z, after the owner
+made the repository public: 88 runs, 84 of them successful, 4 failed. All four jobs pass
+on Linux in the successful runs: the Python checks on 3.12 and 3.14, the web checks, and
+the browser tests in Chromium. The failures were on commits `17a0ae3` and `844a74d`
+(2026-11-22), `96b0304` (2026-11-24, 07:37Z) and `bc53163` (2026-11-24, 17:37Z). In the
+last of these the test step failed on Python 3.12 and passed on 3.14, and the next push
+passed on both; I have not read its log (logs need a login), so the cause is not known.
+The three earlier ones I have not looked into either.
+
+Why it came up: each push runs four jobs, the repository was private, and GitHub told the
+owner that 1,804 of the month's 2,000 free minutes were used. About 130 pushes in three
+days did that. The owner made the repository public, where the minutes are not metered,
+and asked for pushes to go on as before.
+
+Checked the same day, because the whole history became public with that: no key or token
+from `.env` is in any commit, `.env` was never committed, and the one string that looks
+like a key is a made-up one in a test. The commit author lines carry the owner's name and
+email address, as they always did.
