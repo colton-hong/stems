@@ -121,7 +121,7 @@ MIX_CRITERIA: dict[str, float] = {
     "coverage_min": 0.50,
 }
 # The commit that added the block above. Filled in by the commit after it.
-MIX_RULES_COMMIT: str | None = None
+MIX_RULES_COMMIT: str | None = "7f6c21e1a87d1b5704a06ddd98b254407bba9158"
 
 
 class CalibrationError(ValueError):
@@ -853,6 +853,21 @@ def _mix_section(analysis: Mapping[str, Any], run: Mapping[str, Any]) -> list[st
         lines += [
             f"Cannot be judged: {', '.join(unjudged)}. Too few of these mixes are without "
             "them (or with them) to choose a threshold or to check one.",
+            "",
+        ]
+    unchosen = [
+        stem
+        for stem, entry in mix.items()
+        if entry["judged"] and (entry["present_min"] is None or entry["absent_max"] is None)
+    ]
+    if unchosen:
+        lines += [
+            f"No thresholds could be chosen for {', '.join(unchosen)}: on the calibration "
+            f"mixes no cut-off gave at least {MIN_SUPPORT} answers of which "
+            f'{_pct(PRESENCE_RELIABILITY)} were right, for "present" and for "absent" '
+            "both. An AUC well above 0.5 there means the score does carry something about "
+            "that instrument in a mix; these mixes were too few, or the scores too mixed, to "
+            "turn it into a rule.",
             "",
         ]
     if passed:

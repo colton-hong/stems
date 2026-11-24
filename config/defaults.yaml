@@ -133,6 +133,9 @@ listening:
   # only those that held up on held-out mixes are listed (docs/gate-calibration.md). An
   # instrument not listed here is never named in track_features, and with no entry for
   # vocals the vocal_presence stays "unknown".
+  # Measured 2026-11-24 on the mixes of run gate-v1: none held up. Piano and "other" could
+  # be judged and no reliable thresholds were found for either; vocals, drums, bass and
+  # guitar are in nearly every mix, so there was nothing to tell apart.
   mix_presence: {}
   # Bleed on an output stem, by the tagger score of the strongest other source in it.
   # Still first guesses: the calibration found no thresholds that separate clean stems

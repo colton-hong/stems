@@ -386,6 +386,9 @@ def test_the_report_says_which_instruments_can_be_named_in_a_mix() -> None:
     bad = report(False, None)
     assert "in the commit that adds this section" in bad
     assert "**Passed: bass.**" in bad
+    # Guitar scores the same with and without it: judged, and no cut-off is reliable.
+    assert "| guitar | 24, 24 | 0.792 | none found | none found | n/a | n/a | fail |" in good
+    assert "No thresholds could be chosen for guitar:" in good
     assert "| piano | 24, 24 |" in bad
     assert "| fail |" in bad
     nothing = cal.render(
@@ -394,6 +397,7 @@ def test_the_report_says_which_instruments_can_be_named_in_a_mix() -> None:
         CURRENT,
     )
     assert "**No instrument passed.**" in nothing
+    assert "No thresholds could be chosen for" not in nothing
 
 
 # -- collecting, with a stand-in tagger --------------------------------------------------

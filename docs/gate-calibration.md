@@ -86,3 +86,26 @@ On mixes neither set of thresholds works: an instrument that is playing in a ful
 ## Verdict
 
 3 of 5 checks failed. `listening.calibrated` stays **false**: the gate keeps delivering stems it cannot vouch for with a note, and does not retry on the tagger's word.
+
+## Presence in a full mix, with thresholds of its own
+
+The thresholds above were chosen on stems and do not work on a mix. This part gives a mix its own thresholds, one pair per instrument, chosen by the same two rules on the 30 calibration mixes and checked on the 50 held-out mixes. Its rules and its bar were added to `bench/stems_bench/calibrate.py` at commit `7f6c21e1a87d`: after the results above were known, and before any threshold for a mix was computed. The scores are those of the same run; nothing was scored again.
+
+An instrument is judged only if at least 10 mixes have it and at least 10 lack it, in each set. AUC is the chance that a mix with the instrument scores above a mix without it.
+
+| Instrument | Mixes without it (calibration, held out) | AUC | `present_min` | `absent_max` | Answered | Right | Result |
+|---|---:|---:|---:|---:|---:|---:|---|
+| vocals | 1, 3 | - | - | - | - | - | cannot be judged |
+| drums | 0, 2 | - | - | - | - | - | cannot be judged |
+| bass | 0, 2 | - | - | - | - | - | cannot be judged |
+| guitar | 3, 6 | - | - | - | - | - | cannot be judged |
+| piano | 17, 36 | 0.883 | none found | none found | n/a | n/a | fail |
+| other | 11, 28 | 0.700 | none found | none found | n/a | n/a | fail |
+
+Needed on the held-out mixes: AUC at least 0.80, right at least 90.0% of the times it answers, and an answer at least 50.0% of the time.
+
+Cannot be judged: vocals, drums, bass, guitar. Too few of these mixes are without them (or with them) to choose a threshold or to check one.
+
+No thresholds could be chosen for piano, other: on the calibration mixes no cut-off gave at least 10 answers of which 95.0% were right, for "present" and for "absent" both. An AUC well above 0.5 there means the score does carry something about that instrument in a mix; these mixes were too few, or the scores too mixed, to turn it into a rule.
+
+**No instrument passed.** `listening.mix_presence` is empty: `track_features` names no instrument in a mix and leaves the vocal presence "unknown", instead of guessing.
