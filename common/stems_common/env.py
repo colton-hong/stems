@@ -1,6 +1,10 @@
 """Read settings the owner supplies: environment variables first, then the ``.env`` file.
 
 Values read here are paths and secrets. They are returned to the caller and never logged.
+
+``STEMS_DOTENV_PATH`` names another file to read in place of the repository's ``.env``.
+The test suites point it at a file that does not exist, so that no test, and no process a
+test starts, ever picks up the owner's real keys.
 """
 
 from __future__ import annotations
@@ -11,6 +15,13 @@ from pathlib import Path
 from stems_common.paths import REPO_ROOT
 
 DOTENV_PATH = REPO_ROOT / ".env"
+DOTENV_ENV = "STEMS_DOTENV_PATH"
+
+
+def dotenv_file() -> Path:
+    """The ``.env`` file in use: ``STEMS_DOTENV_PATH`` if set, else the repository's."""
+    override = os.environ.get(DOTENV_ENV)
+    return Path(override) if override else DOTENV_PATH
 
 
 def parse_dotenv(text: str) -> dict[str, str]:
@@ -34,7 +45,7 @@ def get_env(name: str, *, dotenv_path: Path | None = None) -> str | None:
     if value:
         return value
     try:
-        text = (dotenv_path or DOTENV_PATH).read_text(encoding="utf-8")
-    except FileNotFoundError:
+        text = (dotenv_path or dotenv_file()).read_text(encoding="utf-8")
+    except (FileNotFoundError, IsADirectoryError):
         return None
     return parse_dotenv(text).get(name) or None

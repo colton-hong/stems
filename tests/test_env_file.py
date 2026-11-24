@@ -41,3 +41,22 @@ def test_environment_wins_then_dotenv_then_none(tmp_path, monkeypatch) -> None:
     assert get_env("STEMS_TEST_EMPTY", dotenv_path=dotenv) is None
     assert get_env("STEMS_TEST_MISSING", dotenv_path=dotenv) is None
     assert get_env("STEMS_TEST_MISSING", dotenv_path=tmp_path / "absent") is None
+
+
+def test_another_dotenv_file_can_be_named_and_the_tests_name_one_that_is_absent(
+    tmp_path, monkeypatch
+) -> None:
+    from stems_common import env
+
+    # tests/conftest.py points every test at a file that does not exist.
+    assert not env.dotenv_file().exists()
+    assert env.dotenv_file() != env.DOTENV_PATH
+    for name in ("TYPESAFE_API_KEY", "CLOUDFLARE_AUTH_TOKEN", "MUSDB18HQ_PATH"):
+        assert get_env(name) is None
+    other = tmp_path / "other.env"
+    other.write_text("STEMS_TEST_VALUE=from-other\n")
+    monkeypatch.setenv("STEMS_DOTENV_PATH", str(other))
+    monkeypatch.delenv("STEMS_TEST_VALUE", raising=False)
+    assert get_env("STEMS_TEST_VALUE") == "from-other"
+    monkeypatch.delenv("STEMS_DOTENV_PATH")
+    assert env.dotenv_file() == env.DOTENV_PATH

@@ -54,3 +54,8 @@ runs/*
 
 # Project-local toolchains (tools/install_node.sh)
 .tools/
+
+# Browser-test output (web/.e2e)
+web/.e2e/
+web/test-results/
+web/playwright-report/

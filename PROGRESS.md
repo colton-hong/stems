@@ -2,7 +2,7 @@
 
 Single source of truth for where the build is. Read this first, every iteration.
 
-**Current phase: 6 (web app), started 2026-11-24 on the owner's go-ahead.** Phases 0, 1, 4 and 5 are complete apart from live checks that need the owner's accounts (S3 and Azure, B7; Modal, B4). Still open from earlier phases: P3.11 (optional); Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done, the tuning stage on MoisesDB started 2026-11-24T04:53Z; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task). Do not start Phase 7 without the owner's go-ahead.
+**Current phase: 6 (web app), finished 2026-11-24.** P6.1 to P6.9 are ticked. Phases 0, 1, 4 and 5 are complete apart from live checks that need the owner's accounts (S3 and Azure, B7; Modal, B4). Still open from earlier phases: P3.11 (optional); Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done, the tuning stage on MoisesDB started 2026-11-24T04:53Z; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task). Do not start Phase 7 without the owner's go-ahead.
 
 ## How to use this file
 
@@ -124,14 +124,14 @@ Format: `- [ ] Pn.m Task. **Accept:** how to tell it is done.`
 ## Phase 6: web app
 
 - [x] P6.1 App shell, typed API client, error states. **Accept:** `make web-check` passes. — Done: The app shell (`web/app/layout.tsx`: skip link, header, navigation, footer with Terms and Privacy on every page; one stylesheet, light and dark), the typed client (`web/lib/api.ts`: every route of PLAN.md section 8, the owner cookie sent on each call, uploads through XMLHttpRequest so progress can be shown), and error states: the API's own message is shown when it gives one, an unreachable server and a 404 each get their own wording, and a 429 says how long to wait. `make web-check` passes: ESLint, TypeScript, 21 unit tests run with Node's own test runner (formatting, the stage list, and the player engine's scheduling), and the Next.js build. The pages for P6.2 to P6.8 are written in the same commit; each is ticked once the browser test shows its acceptance check.
-- [ ] P6.2 Upload page: file drop, stem choices, optional free-text request with confirmation when `needs_review`, format and quality mode. **Accept:** in the browser test a chosen file with ticked stems becomes a job; a request in words fills the ticks from `POST /requests/parse`, and when the parse says `needs_review` the page says so and will not upload until stems are ticked; a file of the wrong type or over the size limit is refused in the page from the API's own limits; a refusal by the API is shown in the API's words.
-- [ ] P6.3 Job page: named stages with per-stem progress, live via server-sent events. **Accept:** the job page names every stage as done, current or to come, with each stem's state, and follows the events stream to Ready without a reload (browser test); a failed job shows its error.
-- [ ] P6.4 Stem player: waveform, solo and mute, all stems sample-synchronised. **Accept:** each stem's waveform is drawn from its peaks; play, pause and seek act on every stem from one audio clock (every source is started at the same context time and offset: unit-tested, and checked in the browser test); solo and mute change gains only and never restart a source.
-- [ ] P6.5 Quality warnings where the gate was unsure. **Accept:** a stem delivered with a warning shows that warning beside it and the page says how many stems carry one; a stem without one shows none (browser test, where the stand-in models give the not-checked warning).
-- [ ] P6.6 Download per stem and as a zip, in the chosen format. **Accept:** each stem and the zip download through freshly signed links, named after the upload and in the format chosen; the browser test downloads a stem and the zip and checks they are audio and a zip.
-- [ ] P6.7 Deletion countdown, delete now, delete everything. **Accept:** the job page shows the time left before automatic deletion, from `expires_at`; Delete now removes the job after a second, confirming click and the page says so; Delete everything on the jobs page empties it (browser test).
-- [ ] P6.8 Terms and Privacy placeholder pages that say they are placeholders. **Accept:** `/terms` and `/privacy` exist, are linked from every page, and each starts by saying it is a placeholder and not legal text.
-- [ ] P6.9 Browser test of the whole flow against the API with the fake separator; keyboard and screen-reader pass on the player. **Accept:** `make web-e2e` runs the browser tests against the real API with `STEMS_WORKER_FAKE_MODELS=1` and they pass; one test works the player with the keyboard alone; axe reports no violations on the upload and job pages; every player control is found by role with a name and state. A real screen reader is not run, and the note says so.
+- [x] P6.2 Upload page: file drop, stem choices, optional free-text request with confirmation when `needs_review`, format and quality mode. **Accept:** in the browser test a chosen file with ticked stems becomes a job; a request in words fills the ticks from `POST /requests/parse`, and when the parse says `needs_review` the page says so and will not upload until stems are ticked; a file of the wrong type or over the size limit is refused in the page from the API's own limits; a refusal by the API is shown in the API's words. — Done: `web/components/UploadForm.tsx`. Browser test: a chosen file with Vocals and Bass ticked and FLAC selected becomes a job. "just the vocals and the drums please, as flac" ticks Vocals and Drums and sets FLAC through `POST /requests/parse`; "make it sound nicer" gives the could-not-tell notice with nothing ticked, and the upload button stays disabled until a stem is ticked by hand. A `.pdf` is refused in the page with the allowed types listed, and a file over the size limit with both sizes named (the limit is taken from `/config`; the test lowers it in the API's reply, since a browser test cannot hand over 250 MB); in both cases no upload request is sent. A PDF renamed to .mp3 is refused by the API and its own sentence is shown. Drag and drop is written but only the file picker is tested.
+- [x] P6.3 Job page: named stages with per-stem progress, live via server-sent events. **Accept:** the job page names every stage as done, current or to come, with each stem's state, and follows the events stream to Ready without a reload (browser test); a failed job shows its error. — Done: `JobView` with `lib/useJob.ts`: nine named stages, each done, current or to come, said in words for a screen reader, with each stem's state while the job runs. The page follows the events stream and falls back to asking every two seconds if the stream breaks. In the browser test the page goes from upload to Ready with all nine stages done and no reload. A failed job shows the error and has no current stage; that test replaces the API's answer for one job, because the stand-in models do not fail.
+- [x] P6.4 Stem player: waveform, solo and mute, all stems sample-synchronised. **Accept:** each stem's waveform is drawn from its peaks; play, pause and seek act on every stem from one audio clock (every source is started at the same context time and offset: unit-tested, and checked in the browser test); solo and mute change gains only and never restart a source. — Done: `lib/player.ts` and `StemPlayer`: every stem is decoded and started with one `when` and one `offset` on one AudioContext clock, so nothing can drift; pause and seek stop and restart all of them together; solo and mute move gains only. 9 unit tests of the engine against a stand-in audio context. In Chrome: after Play the two sources had the same start time and offset; solo and mute changed the states and started no new source; a seek to 2 s started both again at offset 2 with one start time. Waveforms are drawn from the peaks files. Not judged: how it sounds. The test tone and band-split stems prove the wiring, not that real stems line up audibly, though they are scheduled the same way.
+- [x] P6.5 Quality warnings where the gate was unsure. **Accept:** a stem delivered with a warning shows that warning beside it and the page says how many stems carry one; a stem without one shows none (browser test, where the stand-in models give the not-checked warning). — Done: A stem's warning is shown in its row, and above the player the page says how many stems carry one and what a note means. In the browser test both stems show "could not be quality-checked automatically" and the page says every stem has a note, which is what the stand-in models give. A stem with no warning renders no note (the row only adds it when the API sends one); with stand-in models no such stem exists to show in a browser.
+- [x] P6.6 Download per stem and as a zip, in the chosen format. **Accept:** each stem and the zip download through freshly signed links, named after the upload and in the format chosen; the browser test downloads a stem and the zip and checks they are audio and a zip. — Done: Each stem and the zip have a download button that asks for fresh signed links on every click. In the browser test "Download Vocals" saved `Test Tone (vocals).flac`, which starts with the FLAC signature, and the zip saved as `Test Tone (stems).zip`, a zip that names `vocals.flac` and `bass.flac`.
+- [x] P6.7 Deletion countdown, delete now, delete everything. **Accept:** the job page shows the time left before automatic deletion, from `expires_at`; Delete now removes the job after a second, confirming click and the page says so; Delete everything on the jobs page empties it (browser test). — Done: The job page shows the time left from `expires_at`, refreshed every 30 s ("6 days 23 hours" in the test). Delete now asks first: after one click the job is still Ready, Cancel backs out, and only "Yes, delete" removes it, after which the page says Deleted and the player is gone. On the jobs page, Delete everything asks the same way and leaves the list empty, still empty after a reload.
+- [x] P6.8 Terms and Privacy placeholder pages that say they are placeholders. **Accept:** `/terms` and `/privacy` exist, are linked from every page, and each starts by saying it is a placeholder and not legal text. — Done: `/terms` and `/privacy`. Each opens with a notice that the page is a placeholder and not legal text, then says in plain words how the software is built to behave. The browser test checks that notice is the first thing after the heading and that both pages are linked from the footer of the upload, jobs, job, terms and privacy pages.
+- [x] P6.9 Browser test of the whole flow against the API with the fake separator; keyboard and screen-reader pass on the player. **Accept:** `make web-e2e` runs the browser tests against the real API with `STEMS_WORKER_FAKE_MODELS=1` and they pass; one test works the player with the keyboard alone; axe reports no violations on the upload and job pages; every player control is found by role with a name and state. A real screen reader is not run, and the note says so. — Done: `make web-e2e` (Playwright 1.65.1, the installed Chrome, `@axe-core/playwright` 4.14.0): 11 tests, all passing, about 30 s. They run the real API with its maintenance thread and local worker provider and `STEMS_WORKER_FAKE_MODELS=1`, and the built web app, on their own ports, database and storage with no `.env`. One test works the player with Tab, Space, Enter and the arrow keys only (play, seek, solo, mute, pause). axe reports no violations on the upload page, the job page with the player, the jobs page, and the job page with the delete question open. Every player control is found by role and name with its pressed or value state; the waveform is hidden from assistive technology and the position slider carries the time in words. **A real screen reader was not run**, and neither was any browser but Chrome, nor a phone. A CI job for these tests is written and has never run.
 
 (Acceptance checks for P6.2 to P6.9 were written on 2026-11-24, when Phase 6 started.)
 
@@ -559,3 +559,61 @@ Both came out of one failed `make check` and one failed run of the end-to-end te
   aside and a request is still answered.
 
 After both fixes the storage and API tests passed four times in a row (183 tests each).
+
+## Phase 6 summary (2026-11-24)
+
+Done: P6.1 to P6.9. There is now a web app in front of the API: upload a song, watch the
+job, play the stems together, download them, delete them.
+
+- **Upload** (`/`): file picker or drop, six stem ticks, an optional request in words that
+  fills the ticks for you to check, format, speed or quality, vocal split and de-reverb.
+- **Job** (`/jobs/[id]`): nine named stages followed live, each stem's state, the player,
+  notes on stems the gate could not vouch for, downloads, time left, delete.
+- **My jobs** (`/jobs`): this browser's jobs and Delete everything.
+- **Terms and Privacy**: placeholders that say so first.
+
+Checked by `make web-check` (ESLint, TypeScript, 21 unit tests, build) and `make web-e2e`
+(11 browser tests in Chrome against the real API with stand-in models, about 30 seconds).
+I also opened the upload and job pages in a browser and looked at them: a 6-second test
+tone with all six stems went to Ready, and the waveforms, notes and deletion card were
+laid out as intended.
+
+What the browser tests found that was then fixed:
+
+- With the owner's key now in `.env`, the test server's parse route was calling the real
+  Jev service. `STEMS_DOTENV_PATH` now names the `.env` file to read; both test suites
+  point it at a file that does not exist, so no test, and no process a test starts, sees
+  a real key.
+- The first run wiped the test database after the API had made its tables. That was the
+  test setup's fault, not the app's; storage and database are now cleared before the API
+  starts.
+
+Not verified, and why:
+
+- **Real music.** Every job behind these pages used the stand-in models, so the player has
+  only ever played frequency bands of a test tone. That stems of a real song line up and
+  sound right has not been heard by anyone.
+- **A real screen reader, other browsers, a phone.** The accessibility evidence is axe, a
+  keyboard-only test and roles read from the accessibility tree, all in Chrome on a
+  desktop. The layout has a narrow-screen rule that nothing has exercised.
+- **Long tracks.** The player decodes every stem in full (about 21 MB per minute per stem,
+  by arithmetic). Tracks over 10 minutes wait for a click before loading; what a
+  20-minute, six-stem job does to a browser has not been tried.
+- **Drag and drop.** Written, not tested: the tests use the file picker.
+- **Links to S3 or Azure.** The player fetches audio through the signed links. With local
+  storage those come from the API, which allows the web app's origin. A bucket would need
+  its own CORS rule for the app's origin; nothing sets or checks that yet (B7).
+- **CI.** A job that runs the browser tests on Linux is in the workflow and has never run.
+- The preview launcher of the desktop app could not start the servers here (it could not
+  read the project folder), so the visual check used servers started from a shell.
+
+Choices made here that the owner can overrule (BLOCKED.md D10, D11):
+
+- A request in words is never uploaded as words. It fills in the ticks, the person sees
+  and corrects them, and the job is sent with ticked stems.
+- The player holds whole stems in memory to keep them on one clock, and makes long
+  tracks opt in.
+
+For the owner: `make api` in one terminal and `cd web && npm run dev` in another, then
+http://localhost:3000. With no weights downloaded for a stem's model the first real job
+will download them. Phase 7 (calibration and hardening) waits for a go-ahead.

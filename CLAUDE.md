@@ -75,6 +75,7 @@ make models-status      # which model files are downloaded or in progress
 make node-setup         # project-local Node.js into .tools/node (once per clone)
 make web-setup          # npm ci in web/
 make web-check          # web lint, typecheck, unit tests, build
+make web-e2e            # browser tests in Chrome against the real API with stand-in models
 ```
 
 ## Environment notes
