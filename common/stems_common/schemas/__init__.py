@@ -6,6 +6,9 @@ registry by ``stems_models.plan_schema``) and ``stem_quality_assessment`` (schem
 Two parts of them also stand alone, because one component produces each on its own:
 ``track_features`` (inside (b)) and ``stem_metrics`` (the ``metrics`` object of (c)).
 
+``job_spec``, ``job_status`` and ``job_result`` are the files the API and a worker exchange
+through storage; ``stems_common.jobs`` builds and validates those.
+
 Formats (``uuid``) are checked, not just annotated.
 """
 

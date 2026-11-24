@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/job-result/v1",
+  "title": "JobResult",
+  "description": "jobs/{id}/result.json: the outcome. Written once by the worker, last of all; its presence means the job is over and every object it names exists.",
+  "type": "object",
+  "required": ["version", "job_id", "state", "finished_at", "stems", "decisions", "timings"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "const": 1 },
+    "job_id": { "type": "string", "format": "uuid" },
+    "state": { "type": "string", "enum": ["ready", "needs_review", "failed"], "description": "needs_review: no stem could be recognised in the request text, and nothing was separated." },
+    "finished_at": { "type": "string", "format": "date-time" },
+    "error": { "type": ["string", "null"], "maxLength": 2000 },
+    "format": { "type": ["string", "null"], "enum": ["wav", "flac", "mp3_320", "mp3_192", null] },
+    "device": { "type": ["string", "null"] },
+    "source": {
+      "type": ["object", "null"],
+      "required": ["duration_seconds", "sample_rate_hz", "channels"],
+      "additionalProperties": false,
+      "properties": {
+        "duration_seconds": { "type": "number", "exclusiveMinimum": 0 },
+        "sample_rate_hz": { "type": "integer", "minimum": 1 },
+        "channels": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "stems": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "key", "format", "bytes", "peaks_key", "model_ids", "ensemble_mode", "attempts", "assessment", "warning"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "enum": ["vocals", "drums", "bass", "guitar", "piano", "other", "lead_vocals", "backing_vocals", "vocals_dry"] },
+          "key": { "type": "string", "minLength": 1, "maxLength": 512 },
+          "format": { "type": "string", "enum": ["wav", "flac", "mp3_320", "mp3_192"] },
+          "bytes": { "type": "integer", "minimum": 1 },
+          "peaks_key": { "type": "string", "minLength": 1, "maxLength": 512 },
+          "model_ids": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+          "ensemble_mode": { "type": ["string", "null"], "enum": ["single_best", "two_model_blend", "full_ensemble", null] },
+          "attempts": { "type": "integer", "minimum": 1, "maximum": 3 },
+          "assessment": { "type": ["object", "null"], "description": "The StemQualityAssessment of the delivered attempt. Null for the extras, which are not gated." },
+          "warning": { "type": ["string", "null"], "maxLength": 300 }
+        }
+      }
+    },
+    "zip_key": { "type": ["string", "null"], "maxLength": 512 },
+    "parsed_request": { "type": ["object", "null"] },
+    "track_features": { "type": ["object", "null"] },
+    "plan": { "type": ["object", "null"] },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "provider"],
+        "properties": {
+          "kind": { "type": "string", "enum": ["parse", "plan", "gate"] },
+          "provider": { "type": "string", "enum": ["jev", "mock", "fallback", "selection"] },
+          "model": { "type": ["string", "null"] },
+          "input_tokens": { "type": ["integer", "null"] },
+          "output_tokens": { "type": ["integer", "null"] },
+          "latency_ms": { "type": ["number", "null"] },
+          "answers": { "type": ["object", "null"] },
+          "fallback_reason": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "timings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["model_id", "stage", "device", "audio_seconds", "wall_seconds", "cached"],
+        "additionalProperties": false,
+        "properties": {
+          "model_id": { "type": "string" },
+          "stage": { "type": "string" },
+          "outputs": { "type": "array", "items": { "type": "string" } },
+          "device": { "type": "string" },
+          "audio_seconds": { "type": "number", "minimum": 0 },
+          "wall_seconds": { "type": "number", "minimum": 0 },
+          "cached": { "type": "boolean" }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "state": { "const": "failed" } } },
+      "then": { "required": ["error"], "properties": { "error": { "type": "string", "minLength": 1 }, "stems": { "maxItems": 0 } } }
+    },
+    {
+      "if": { "properties": { "state": { "const": "ready" } } },
+      "then": { "required": ["format", "source"], "properties": { "stems": { "minItems": 1 }, "format": { "type": "string" }, "source": { "type": "object" } } }
+    },
+    {
+      "if": { "properties": { "state": { "const": "needs_review" } } },
+      "then": { "required": ["parsed_request"], "properties": { "stems": { "maxItems": 0 }, "parsed_request": { "type": "object" } } }
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/job-spec/v1",
+  "title": "JobSpec",
+  "description": "jobs/{id}/spec.json: what the API asks a worker to do. Written once by the API before the job is submitted; the worker reads it and never changes it.",
+  "type": "object",
+  "required": ["version", "job_id", "created_at", "source", "request"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "const": 1 },
+    "job_id": { "type": "string", "format": "uuid" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "source": {
+      "type": "object",
+      "required": ["key"],
+      "additionalProperties": false,
+      "properties": {
+        "key": { "type": "string", "minLength": 1, "maxLength": 512, "description": "Storage key of the uploaded audio, as uploaded. The worker decodes it." },
+        "bytes": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "request": {
+      "type": "object",
+      "description": "Either ticked stems or free text, never both: text is parsed by the worker's decision layer.",
+      "required": ["stems", "text", "split_vocals", "dereverb", "format", "quality_mode"],
+      "additionalProperties": false,
+      "properties": {
+        "stems": {
+          "type": ["array", "null"],
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "enum": ["vocals", "drums", "bass", "guitar", "piano", "other"] }
+        },
+        "text": { "type": ["string", "null"], "minLength": 1, "maxLength": 2000 },
+        "split_vocals": { "type": "boolean" },
+        "dereverb": { "type": "boolean" },
+        "format": { "type": ["string", "null"], "enum": ["wav", "flac", "mp3_320", "mp3_192", null], "description": "Null: the format named in the text, else the configured default." },
+        "quality_mode": { "type": "string", "enum": ["best_quality", "balanced", "fastest", "unspecified"] }
+      },
+      "oneOf": [
+        { "properties": { "stems": { "type": "array" }, "text": { "type": "null" } } },
+        { "properties": { "stems": { "type": "null" }, "text": { "type": "string" } } }
+      ]
+    }
+  }
+}

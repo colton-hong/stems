@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/job-status/v1",
+  "title": "JobStatus",
+  "description": "jobs/{id}/status.json: where the worker is. Rewritten whole by the worker at every step; the API polls it. `events` is the complete history so far, so a poll that misses a rewrite loses nothing.",
+  "type": "object",
+  "required": ["version", "job_id", "state", "stage", "updated_at", "stems", "events"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "const": 1 },
+    "job_id": { "type": "string", "format": "uuid" },
+    "state": { "type": "string", "enum": ["running", "ready", "needs_review", "failed"], "description": "running until result.json has been written; then the result's state." },
+    "stage": { "type": "string", "enum": ["queued", "transcoding", "analysing", "planning", "separating", "assessing", "retrying", "packaging", "ready", "failed"] },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "progress": { "type": ["number", "null"], "minimum": 0, "maximum": 1, "description": "Of the current stage, when it can be counted." },
+    "stems": {
+      "type": "object",
+      "description": "Per requested stem, once the request is known.",
+      "propertyNames": { "enum": ["vocals", "drums", "bass", "guitar", "piano", "other"] },
+      "additionalProperties": {
+        "type": "object",
+        "required": ["state"],
+        "additionalProperties": false,
+        "properties": {
+          "state": { "type": "string", "enum": ["waiting", "separating", "assessing", "retrying", "delivered", "delivered_with_warning"] },
+          "attempt": { "type": "integer", "minimum": 0, "maximum": 2, "description": "0 for the first try; at most 2 retries." }
+        }
+      }
+    },
+    "events": {
+      "type": "array",
+      "maxItems": 500,
+      "items": {
+        "type": "object",
+        "required": ["seq", "at", "stage"],
+        "additionalProperties": false,
+        "properties": {
+          "seq": { "type": "integer", "minimum": 1, "description": "1, 2, 3, ... in the order things happened." },
+          "at": { "type": "string", "format": "date-time" },
+          "stage": { "type": "string" },
+          "stem": { "type": ["string", "null"] },
+          "message": { "type": ["string", "null"], "maxLength": 500 },
+          "progress": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+        }
+      }
+    },
+    "error": { "type": ["string", "null"], "maxLength": 2000 }
+  }
+}

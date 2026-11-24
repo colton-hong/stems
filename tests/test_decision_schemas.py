@@ -181,6 +181,9 @@ def test_every_schema_file_is_itself_a_valid_schema() -> None:
     names = sorted(p.name.removesuffix(".schema.json") for p in schemas.SCHEMA_DIR.glob("*.json"))
     assert names == [
         "ensemble_plan",
+        "job_result",
+        "job_spec",
+        "job_status",
         "parsed_stem_request",
         "stem_metrics",
         "stem_quality_assessment",
