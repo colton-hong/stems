@@ -77,8 +77,14 @@ def _slot(first: str, second: str) -> SlotModels:
 
 
 BASE = load_defaults()
+# These tests exercise the retry machinery with silent stems, so the switch that sends an
+# empty stem round again is on here. As shipped it is off: see the test of that below.
+_RETRYING = BASE.gate.model_copy(
+    update={"rules": BASE.gate.rules.model_copy(update={"retry_empty": True})}
+)
 DEFAULTS = BASE.model_copy(
     update={
+        "gate": _RETRYING,
         "ensembles": EnsembleSettings(
             provisional=True,
             basis="fake models for a test",
@@ -90,7 +96,7 @@ DEFAULTS = BASE.model_copy(
                 "vocal_split": _slot("fake_kara", "fake_kara2"),
                 "dereverb": _slot("fake_dry", "fake_dry2"),
             },
-        )
+        ),
     }
 )
 CALIBRATED = DEFAULTS.model_copy(
@@ -419,6 +425,33 @@ def test_a_stem_far_below_the_mix_is_retried_and_then_delivered_with_its_own_not
     drums = result["stems"]["drums"]
     assert [a["model_used"] for a in drums["attempts"]] == ["fake4", "fake4b"]
     assert (drums["delivered_attempt"], drums["warning"]) == (1, UNCHECKED)
+
+
+def test_as_shipped_an_empty_stem_is_delivered_at_once_and_no_other_model_runs(tmp_path) -> None:
+    assert BASE.gate.rules.retry_empty is False
+    shipped = DEFAULTS.model_copy(update={"gate": BASE.gate})
+    # Drums come back silent from one model and 20 dB down from the other.
+    for label, song in (
+        ("silent", Song(tmp_path / "a", broken={"fake4": ("drums",)})),
+        ("faint", Song(tmp_path / "b", faint={"fake4": ("drums",)})),
+    ):
+        (song.tmp).mkdir(parents=True, exist_ok=True)
+        song.path = song.tmp / "song.wav"
+        save_audio(song.path, song.mix, SR, "wav")
+        result = song.run(
+            song.tmp / "out", {"stems": ("drums", "bass")}, client=None, defaults=shipped
+        )
+        drums = result["stems"]["drums"]
+        assert [a["model_used"] for a in drums["attempts"]] == ["fake4"], label
+        assert drums["attempts"][0]["assessment"]["reason_code"] == "mostly_silent"
+        assert drums["attempts"][0]["verdict"]["action"] == "deliver_with_warning"
+        assert (drums["state"], drums["retries"], drums["warning"]) == (
+            "delivered_with_warning",
+            0,
+            EMPTY,
+        )
+        # The fallback model was never run.
+        assert {run["model_id"] for run in result["models"]} == {"fake4"}
 
 
 class OracleTagger:

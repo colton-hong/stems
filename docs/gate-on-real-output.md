@@ -95,6 +95,25 @@ Of the 700 held-out outputs, 111 have a reference that is absent in the loudest 
 
 **The rule is replaced.** Measured over the loudest minute it fails against the whole song; measured over the whole song it passes, and that is what the gate now uses.
 
+## Should a stem found empty be tried again?
+
+The gate tries an empty stem again with the fallback model and delivers the retry if that is not empty. A real job (`docs/product-vs-benchmark.md`) showed how that goes wrong: a song with no guitar, a silent first attempt, and a fallback model whose leftovers were delivered as the guitar. This counts both sides on the held-out outputs, for every track and stem where both the default model's output and the fallback's were kept. The counting rules and what follows from them were added to this file's code at commit `a537158b22f8`, after that job and before these counts were made.
+
+"Empty" is the rule in force: at least 21.68 dB under the mix over the whole song. A rescue is an instrument that is in the song, where the fallback's output is not empty and its measured SDR is above 0 dB and above the default model's. A wrong delivery is an instrument that is not in the song, where the fallback's output is not empty.
+
+| Stem | Default, then fallback | Tracks | Default's output empty | Fallback's too | Rescued | Wrongly delivered | No better |
+|---|---|---:|---:|---:|---:|---:|---:|
+| vocals | `mel_roformer_kim_vocals`, then `bs_roformer_viperx_vocals` | 50 | 1 | 1 | 0 | 0 | 0 |
+| drums | `scnet_xl_ihf`, then `htdemucs_ft` | 50 | 2 | 2 | 0 | 0 | 0 |
+| bass | `htdemucs_ft`, then `bs_roformer_sw_6stem` | 50 | 2 | 2 | 0 | 0 | 0 |
+| guitar | `bs_roformer_sw_6stem`, then `mel_roformer_guitar_becruily` | 50 | 5 | 1 | 0 | 4 | 0 |
+| piano | `bs_roformer_sw_6stem`, then `htdemucs_6s` | 50 | 32 | 32 | 0 | 0 | 0 |
+| all | | 250 | 42 | 38 | 0 | 4 | 0 |
+
+**The gate stops retrying empty stems.** 0 rescues against 4 wrong deliveries: a stem found empty is now delivered at once with its note, and no other model is run for it.
+
+The stems here are the ones whose default and fallback models the benchmark kept outputs for; the six-stem `other` is not among them. The gate also calls a stem empty when it is silent for 98% of its length, which this count does not look at separately.
+
 ## Limits
 
 - One minute per track, not the whole stem; a job scores the whole stem.

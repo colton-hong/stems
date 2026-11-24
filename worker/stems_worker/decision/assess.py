@@ -168,6 +168,10 @@ def rule_assessment(
         "reason_code": reason,
     }
     suggested = "retry_fallback_model" if passed == 0.0 else None
+    if reason == "mostly_silent" and not rules.retry_empty:
+        # Another model's answer to "there is nothing here" is leftovers more often than
+        # the instrument (docs/gate-on-real-output.md): deliver it with its note instead.
+        suggested = gate.FLAG
     return assessment, suggested
 
 
@@ -264,6 +268,10 @@ def assess_stem(
                     f"retry_action: Jev was unsure ({action['confidence']:.2f}), so the "
                     f"rules' suggestion is used ({rule_action})"
                 )
+    if by_rules["reason_code"] == "mostly_silent" and not settings.rules.retry_empty:
+        if suggested in gate.RETRY_ACTIONS:
+            notes.append(f"{suggested} was suggested for an empty stem and is not done")
+        suggested = gate.FLAG
     if not calibrated.all and tagged:
         notes.append("the tagger's thresholds are uncalibrated")
     value = {

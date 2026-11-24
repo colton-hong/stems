@@ -17,6 +17,8 @@ from stems_worker.decision.mock import ReplayTransport, handwritten, save_exchan
 DEFAULTS = load_defaults()
 GATE = DEFAULTS.gate
 ON, OFF = Calibrated.both(True), Calibrated.both(False)
+# The gate as shipped does not try an empty stem again; this one does.
+RETRYING = GATE.model_copy(update={"rules": GATE.rules.model_copy(update={"retry_empty": True})})
 FLOOR = DEFAULTS.decision.min_confidence
 CALIBRATED = DEFAULTS.model_copy(
     update={"listening": DEFAULTS.listening.model_copy(update={"calibrated": ON})}
@@ -292,7 +294,12 @@ def test_a_silent_stem_is_certain_without_any_tagger() -> None:
             "confidence": 1.0,
             "reason_code": "mostly_silent",
         }
-        assert action == "retry_fallback_model"
+        # Certain, and still not retried: another model's answer to silence is leftovers.
+        assert action == gate.FLAG
+        again = rule_assessment(
+            metrics(silence=1.0), present=None, settings=RETRYING, calibrated=calibrated
+        )
+        assert again == (assessment, "retry_fallback_model")
     edge = GATE.rules.silent_fraction_min
     assert reason_code(metrics(silence=edge), None, GATE) == "mostly_silent"
     assert reason_code(metrics(silence=edge - 0.01), None, GATE) == "low_confidence"
@@ -309,7 +316,11 @@ def test_a_stem_far_below_the_mix_is_treated_like_a_silent_one() -> None:
         assert assessment["reason_code"] == "mostly_silent"
         assert (assessment["score"], assessment["pass_probability"]) == (0.0, 0.0)
         assert assessment["confidence"] == 1.0  # a level measurement, whatever the tagger's state
-        assert action == "retry_fallback_model"
+        assert action == gate.FLAG
+        _, again = rule_assessment(
+            metrics(), present=None, settings=RETRYING, calibrated=calibrated, below_mix_db=-25.0
+        )
+        assert again == "retry_fallback_model"
     # The threshold is inclusive, and a tagger that hears the instrument does not overrule it.
     assert reason_code(metrics(), True, GATE, limit) == "mostly_silent"
     assert reason_code(metrics(), True, GATE, limit + 0.01) == "clean"
@@ -469,7 +480,9 @@ def test_uncalibrated_or_unchecked_stems_are_warned_about_not_retried() -> None:
     }
     assert unchecked.record["notes"] == []
 
-    # A silent stem is a measurement, so it is acted on even now.
+    # A silent stem is a measurement, so the user is told what was found; and as shipped
+    # it is delivered at once, because a retry of an empty stem was measured to do harm.
+    assert GATE.rules.retry_empty is False
     silent = assess_stem(
         "piano",
         "bs_roformer_sw_6stem",
@@ -478,7 +491,20 @@ def test_uncalibrated_or_unchecked_stems_are_warned_about_not_retried() -> None:
         defaults=DEFAULTS,
         available=RETRIES,
     )
-    assert silent.value["verdict"]["action"] == "retry_fallback_model"
+    assert silent.value["verdict"]["action"] == "deliver_with_warning"
+    assert silent.value["verdict"]["user_message"].startswith("This stem is silent or very quiet")
+    assert silent.record["suggested_action"] == gate.FLAG
+    # With the switch on it is tried again, as it used to be.
+    retrying = DEFAULTS.model_copy(update={"gate": RETRYING})
+    again = assess_stem(
+        "piano",
+        "bs_roformer_sw_6stem",
+        metrics(silence=1.0, rms=-120.0),
+        client=None,
+        defaults=retrying,
+        available=RETRIES,
+    )
+    assert again.value["verdict"]["action"] == "retry_fallback_model"
 
 
 def test_a_failing_jev_hands_over_to_the_rules() -> None:

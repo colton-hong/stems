@@ -147,6 +147,7 @@ def empty_attempts(stem: str, defaults: Defaults, registry: Any, mode: str) -> l
 
     Played out with the gate's own retry machine and the rules' fallback model, with no
     Jev: the first attempt, then each retry until the cap or until nothing is left to try.
+    With ``gate.rules.retry_empty`` off there is only the first attempt.
     """
     from stems_worker.decision import gate, retry
     from stems_worker.decision.plan import config_fallback
@@ -164,7 +165,7 @@ def empty_attempts(stem: str, defaults: Defaults, registry: Any, mode: str) -> l
         verdict = gate.verdict(
             _EMPTY,
             settings=defaults.gate,
-            suggested="retry_fallback_model",
+            suggested="retry_fallback_model" if defaults.gate.rules.retry_empty else gate.FLAG,
             available=machine.available(),
             retries_used=machine.retries_used,
         )
@@ -278,6 +279,7 @@ def build(
     absent = None
     if registry is not None and defaults.gate.rules.empty_below_mix_db is not None:
         absent = {
+            "retry": defaults.gate.rules.retry_empty,
             "mode": default_mode,
             "base_seconds": separation[default_mode]["seconds"],
             "cases": absent_costs(defaults, registry, rates, minutes, default_mode),
@@ -400,7 +402,20 @@ def render(report: Mapping[str, Any], prices: Mapping[str, Any]) -> str:
             "These are the provisional defaults of `config/defaults.yaml`. The benchmark's "
             "recommendation (P2.13) will change which models run, and with them these times.",
         ]
-    if report.get("absent"):
+    if report.get("absent") and not report["absent"]["retry"]:
+        lines += [
+            "",
+            "### When the song lacks an instrument",
+            "",
+            "Nothing extra. A stem far below the mix is delivered at once with its note and no "
+            "other model is run for it (`gate.rules.retry_empty` is off: on held-out tracks a "
+            "retry never rescued an instrument and sometimes delivered leftovers as one, "
+            "`docs/gate-on-real-output.md`). Until 2026-11-24 such a stem was tried again "
+            "with the fallback model, which for a 4-minute song on this Mac's GPU cost 26 s "
+            "more without guitar, 11 s without piano and 36 s without both, by arithmetic on "
+            "the model times above.",
+        ]
+    elif report.get("absent"):
         absent = report["absent"]
         base = absent["base_seconds"]
         lines += [

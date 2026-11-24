@@ -153,7 +153,7 @@ RETRY_EMPTY_DB = -21.68
 # What is done with the result: the gate keeps retrying empty stems only if rescues
 # outnumber wrong deliveries. Otherwise (fewer, or as many, or none of either) it stops:
 # a stem found empty is delivered at once with its note.
-RETRY_RULES_COMMIT: str | None = None
+RETRY_RULES_COMMIT: str | None = "a537158b22f8a127f394195f1cd2c72c0b2751aa"
 
 
 class OutputsError(ValueError):

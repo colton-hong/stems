@@ -119,6 +119,12 @@ gate:
     # caught instruments that play elsewhere in the song, so it was replaced. A level
     # measurement, so it is acted on whatever the tagger's switches say. null turns it off.
     empty_below_mix_db: -21.68
+    # Whether a silent or empty stem is tried again with the fallback model. Off: on the
+    # held-out tracks (docs/gate-on-real-output.md) the fallback never rescued an
+    # instrument the default model had missed (0 of 42 empty first attempts), and 4 times
+    # it would have delivered leftovers as an instrument the song does not have. So such
+    # a stem is delivered at once with its note and no other model is run for it.
+    retry_empty: false
 
 # How tagger outputs (AudioSet class probabilities per 10-second window) become
 # track_features and per-stem signals. Measured on clean and deliberately bled MoisesDB

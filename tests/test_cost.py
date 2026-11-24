@@ -36,6 +36,14 @@ USAGE = {
     "gate": {"input_tokens": 700, "output_tokens": 100, "file": "g.jsonl"},
 }
 DEFAULTS = load_defaults()
+# The gate as it was until 2026-11-24: an empty stem is tried again.
+RETRYING = DEFAULTS.model_copy(
+    update={
+        "gate": DEFAULTS.gate.model_copy(
+            update={"rules": DEFAULTS.gate.rules.model_copy(update={"retry_empty": True})}
+        )
+    }
+)
 
 
 def benchmark(leave_out: str | None = None) -> dict:
@@ -97,12 +105,14 @@ def test_an_empty_stem_is_tried_with_the_fallback_and_then_as_a_blend() -> None:
     registry = load_registry()
     for stem in ("guitar", "piano"):
         slot = DEFAULTS.ensembles.slots[stem]
-        attempts = cost.empty_attempts(stem, DEFAULTS, registry, "single_best")
+        attempts = cost.empty_attempts(stem, RETRYING, registry, "single_best")
         assert attempts[0] == [slot.single_best]
         assert attempts[1] == [config_fallback(stem, DEFAULTS, registry)]
         assert attempts[1] != attempts[0]
         assert len(attempts) <= 1 + DEFAULTS.gate.max_retries_per_stem
         assert len({tuple(a) for a in attempts}) == len(attempts)  # nothing is tried twice
+        # As shipped an empty stem is not tried again: one attempt, nothing added.
+        assert cost.empty_attempts(stem, DEFAULTS, registry, "single_best") == [attempts[0]]
 
 
 def test_what_an_absent_instrument_adds_is_the_models_not_already_run() -> None:
@@ -111,7 +121,7 @@ def test_what_an_absent_instrument_adds_is_the_models_not_already_run() -> None:
     registry = load_registry()
     base = cost.models_for(DEFAULTS, "single_best")
     tried = {
-        stem: cost.empty_attempts(stem, DEFAULTS, registry, "single_best")
+        stem: cost.empty_attempts(stem, RETRYING, registry, "single_best")
         for stem in ("guitar", "piano")
     }
     new = {
@@ -120,7 +130,7 @@ def test_what_an_absent_instrument_adds_is_the_models_not_already_run() -> None:
     }
     everything = {m for attempts in tried.values() for a in attempts for m in a} | set(base)
     rates = {m: {"seconds_per_audio_minute": 7.0, "devices": ["mps"]} for m in everything}
-    costs = cost.absent_costs(DEFAULTS, registry, rates, 4.0, "single_best")
+    costs = cost.absent_costs(RETRYING, registry, rates, 4.0, "single_best")
     assert list(costs) == ["no guitar", "no piano", "neither"]
     for label, stem in (("no guitar", "guitar"), ("no piano", "piano")):
         assert costs[label]["attempts"] == {stem: tried[stem]}
@@ -132,7 +142,7 @@ def test_what_an_absent_instrument_adds_is_the_models_not_already_run() -> None:
     # A model the benchmark has no time for gives no figure, and is named.
     if new["piano"]:
         short = {m: r for m, r in rates.items() if m != new["piano"][0]}
-        missing = cost.absent_costs(DEFAULTS, registry, short, 4.0, "single_best")
+        missing = cost.absent_costs(RETRYING, registry, short, 4.0, "single_best")
         assert missing["no piano"]["seconds"] is None
         assert missing["no piano"]["unmeasured"] == [new["piano"][0]]
 
@@ -142,7 +152,7 @@ def test_the_report_has_the_absent_instrument_table_only_with_a_registry_and_the
 
     registry = load_registry()
     with_it = cost.build(
-        PRICES, USAGE, benchmark(), DEFAULTS, benchmark_file="b.json", registry=registry
+        PRICES, USAGE, benchmark(), RETRYING, benchmark_file="b.json", registry=registry
     )
     assert with_it["absent"]["mode"] == DEFAULTS.decision.mode_for_quality["balanced"]
     assert with_it["absent"]["base_seconds"] == with_it["separation"]["single_best"]["seconds"]
@@ -150,6 +160,15 @@ def test_the_report_has_the_absent_instrument_table_only_with_a_registry_and_the
     assert "### When the song lacks an instrument" in text
     assert "| no guitar | guitar: `" in text
     assert "| neither | guitar: `" in text
+    # As shipped: no table, and a sentence saying an absent instrument costs nothing more.
+    shipped = cost.build(
+        PRICES, USAGE, benchmark(), DEFAULTS, benchmark_file="b.json", registry=registry
+    )
+    assert shipped["absent"]["retry"] is False
+    shipped_text = cost.render(shipped, PRICES)
+    assert "### When the song lacks an instrument" in shipped_text
+    assert "Nothing extra." in shipped_text
+    assert "| no guitar |" not in shipped_text
     without = cost.build(PRICES, USAGE, benchmark(), DEFAULTS, benchmark_file="b.json")
     assert without["absent"] is None
     assert "When the song lacks an instrument" not in cost.render(without, PRICES)

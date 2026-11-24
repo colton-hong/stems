@@ -109,6 +109,9 @@ class GateRules(_Strict):
     # A stem this far below the mix, or further, over the whole song is treated like a
     # silent one: the instrument is probably not in the song. None switches it off.
     empty_below_mix_db: float | None = Field(le=0)
+    # Whether a silent or empty stem is tried again with another model before it is
+    # delivered with its note.
+    retry_empty: bool
 
     @model_validator(mode="after")
     def _check(self) -> GateRules:

@@ -49,15 +49,7 @@ These are the provisional defaults of `config/defaults.yaml`. The benchmark's re
 
 ### When the song lacks an instrument
 
-A stem far below the mix is treated as probably empty and tried again (`gate.rules.empty_below_mix_db`): first with the fallback model, then as a blend. So asking for an instrument the song does not have costs extra model runs. The rows are for a job in the default mode (`single_best`), played out with the gate's own retry rules and no Jev; a model the job has already run is reused and costs nothing more. Same timings and device as the table above.
-
-| The song has | Attempts at the missing stem | Extra models run | Extra seconds | Added to the job |
-|---|---|---|---:|---:|
-| no guitar | guitar: `bs_roformer_sw_6stem`, then `mel_roformer_guitar_becruily`, then `bs_roformer_sw_6stem` + `mel_roformer_guitar_becruily` | `mel_roformer_guitar_becruily` | 26 | 11% |
-| no piano | piano: `bs_roformer_sw_6stem`, then `htdemucs_6s`, then `bs_roformer_sw_6stem` + `htdemucs_6s` | `htdemucs_6s` | 11 | 5% |
-| neither | guitar: `bs_roformer_sw_6stem`, then `mel_roformer_guitar_becruily`, then `bs_roformer_sw_6stem` + `mel_roformer_guitar_becruily`; piano: `bs_roformer_sw_6stem`, then `htdemucs_6s`, then `bs_roformer_sw_6stem` + `htdemucs_6s` | `mel_roformer_guitar_becruily`, `htdemucs_6s` | 36 | 16% |
-
-This is arithmetic on measured model times, not a measured job. The tagger listens to every attempt as well, which is not counted here.
+Nothing extra. A stem far below the mix is delivered at once with its note and no other model is run for it (`gate.rules.retry_empty` is off: on held-out tracks a retry never rescued an instrument and sometimes delivered leftovers as one, `docs/gate-on-real-output.md`). Until 2026-11-24 such a stem was tried again with the fallback model, which for a 4-minute song on this Mac's GPU cost 26 s more without guitar, 11 s without piano and 36 s without both, by arithmetic on the model times above.
 
 ### The tagger
 
