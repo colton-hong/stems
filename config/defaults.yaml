@@ -32,6 +32,25 @@ retention:
   days: 7
   signed_url_ttl_seconds: 900
 
+# The API's own timers.
+api:
+  # How often a job in progress has its status.json read.
+  poll_interval_seconds: 1.0
+  # How often the retention sweeper runs. It also runs once at startup.
+  sweep_interval_seconds: 600
+  # Lifetime of the owner cookie. Browsers cap cookies at 400 days.
+  owner_cookie_days: 400
+
+# Proposed limits, not requirements from the brief (BLOCKED.md, decision D7). Counted per
+# API process, in memory. An upload counts when it is attempted, accepted or not.
+rate_limits:
+  uploads_per_owner_per_hour: 20
+  uploads_per_ip_per_hour: 40
+  parses_per_owner_per_minute: 20
+  parses_per_ip_per_minute: 40
+  # Jobs one browser may have queued or running at once.
+  max_active_jobs_per_owner: 3
+
 decision:
   # Always the pinned version, never jev-latest / jev-preview.
   jev_model: jev-1.14.0

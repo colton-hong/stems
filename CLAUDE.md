@@ -64,6 +64,9 @@ make bench-device-spread   # repeat runs per device, then docs/benchmarks/device
 python -m stems_bench.clef.prereg   # show the committed Clef-omni pre-registration (.venv/bin/python)
 python -m stems_bench.clef.run      # run the Clef-omni test; --report FILE writes its report
 .venv/bin/python -m stems_worker.decision.job FILE --request "vocals and drums"   # one job through the decision layer; stems + job.json
+make api                # serve the API on http://127.0.0.1:8000 (python -m stems_api)
+.venv/bin/python -m stems_api.db.migrate    # bring the database to the newest schema (the API does this at startup)
+.venv/bin/python -m stems_worker.jobs JOB_ID   # run one job from storage: what the local provider starts
 make registry           # validate models/registry.yaml and print it
 make schemas            # regenerate the EnsemblePlan schema's model lists after a registry edit
 make registry-sources   # HEAD every model URL and refresh sizes (network)

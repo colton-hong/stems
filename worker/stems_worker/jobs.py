@@ -366,6 +366,8 @@ def main(argv: list[str] | None = None) -> int:
         from stems_worker.fakes import fake_pipeline
 
         options, defaults = fake_pipeline(defaults)
+        # Stand-in outputs stay out of the separation cache and the timing log.
+        options.update(cache_dir=None, timings_path=None)
     else:
         from stems_models.download import DownloadError
         from stems_worker.decision.jev import JevClient

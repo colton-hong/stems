@@ -60,6 +60,15 @@ api = [
   # The database (SQLite by default, Postgres-compatible) and its migrations.
   "SQLAlchemy==2.1.9",
   "alembic==1.20.1",
+  # The HTTP layer.
+  "fastapi==0.165.0",
+  "uvicorn==0.54.0",
+  "python-multipart==0.0.34",
+  # Uploads are checked by decoding (stems_worker.audio): the same pins as the worker's.
+  "numpy==2.5.5",
+  "soundfile==0.14.0",
+  "soxr==1.1.0",
+  "av==19.0.2",
 ]
 
 [project.scripts]

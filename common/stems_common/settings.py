@@ -239,11 +239,31 @@ class EnsembleSettings(_Strict):
         return self
 
 
+class ApiSettings(_Strict):
+    # How often the API reads a job's status.json while the job is in progress.
+    poll_interval_seconds: float = Field(gt=0)
+    # How often the retention sweeper runs (it also runs at startup).
+    sweep_interval_seconds: float = Field(gt=0)
+    # How long a browser keeps its owner cookie.
+    owner_cookie_days: int = Field(gt=0, le=400)
+
+
+class RateLimitSettings(_Strict):
+    uploads_per_owner_per_hour: int = Field(ge=0)
+    uploads_per_ip_per_hour: int = Field(ge=0)
+    parses_per_owner_per_minute: int = Field(ge=0)
+    parses_per_ip_per_minute: int = Field(ge=0)
+    # Jobs one browser may have queued or running at the same time.
+    max_active_jobs_per_owner: int = Field(ge=1)
+
+
 class Defaults(_Strict):
     audio: AudioSettings
     separation: SeparationSettings
     uploads: UploadSettings
     retention: RetentionSettings
+    api: ApiSettings
+    rate_limits: RateLimitSettings
     decision: DecisionSettings
     gate: GateSettings
     listening: ListeningSettings

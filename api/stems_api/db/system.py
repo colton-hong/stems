@@ -35,6 +35,12 @@ def jobs_past_expiry(session: Session, now: datetime) -> list[Job]:
     return list(session.scalars(query))
 
 
+def jobs_ended_since(session: Session, since: datetime) -> list[Job]:
+    """Jobs deleted or expired at or after ``since``."""
+    query = select(Job).where(Job.deleted_at >= since).order_by(Job.deleted_at, Job.id)
+    return list(session.scalars(query))
+
+
 def mark_expired(session: Session, job: Job, now: datetime) -> None:
     scrub(job, "expired", now)
     session.execute(delete(JobEvent).where(JobEvent.job_id == job.id))
