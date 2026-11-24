@@ -711,12 +711,13 @@ def cmd_make(args: argparse.Namespace) -> int:
         write_json(status_path, {"state": "running", "started": started, "now": message})
         print(message, flush=True)
 
+    defaults = load_defaults()
     try:
         made = make(
             run_dir,
             get_dataset(DATASET),
             track_ids,
-            defaults=load_defaults(),
+            defaults=defaults,
             old_models=old_models,
             device=args.device,
             progress=progress,
@@ -736,6 +737,9 @@ def cmd_make(args: argparse.Namespace) -> int:
             "tracks": len(made),
             "device": args.device,
             "old_models": old_models,
+            "new_models": {
+                stem: defaults.ensembles.slots[stem].single_best for stem in PRODUCT_STEMS
+            },
             "steps": len(load_kit(run_dir / "kit")["items"]),
             "left_out": left["steps"],
             "empty_below_mix_db": left["empty_below_mix_db"],

@@ -32,6 +32,30 @@ def peak_dbfs(audio: np.ndarray) -> float:
     return _db(float(np.abs(audio).max())) if audio.size else FLOOR_DBFS
 
 
+def sounding_windows(
+    audio: np.ndarray,
+    sample_rate: int,
+    *,
+    threshold_dbfs: float = SILENCE_DBFS,
+    window_seconds: float = SILENCE_WINDOW_SECONDS,
+) -> np.ndarray:
+    """For each short window of the audio, whether its RMS reaches ``threshold_dbfs``.
+
+    The last window may be shorter than the others; it counts as one. Empty audio has no
+    windows.
+    """
+    samples = audio.shape[-1]
+    if samples == 0:
+        return np.zeros(0, dtype=bool)
+    window = max(1, round(window_seconds * sample_rate))
+    starts = np.arange(0, samples, window)
+    power = np.square(audio, dtype=np.float64).reshape(-1, samples).mean(axis=0)
+    sums = np.add.reduceat(power, starts)
+    lengths = np.diff(np.append(starts, samples))
+    limit = 10.0 ** (threshold_dbfs / 10.0)
+    return np.asarray(sums / lengths >= limit)
+
+
 def silence_fraction(
     audio: np.ndarray,
     sample_rate: int,
@@ -43,16 +67,12 @@ def silence_fraction(
 
     1.0 for empty audio. The last window may be shorter than the others; it counts as one.
     """
-    samples = audio.shape[-1]
-    if samples == 0:
+    sounding = sounding_windows(
+        audio, sample_rate, threshold_dbfs=threshold_dbfs, window_seconds=window_seconds
+    )
+    if sounding.size == 0:
         return 1.0
-    window = max(1, round(window_seconds * sample_rate))
-    starts = np.arange(0, samples, window)
-    power = np.square(audio, dtype=np.float64).reshape(-1, samples).mean(axis=0)
-    sums = np.add.reduceat(power, starts)
-    lengths = np.diff(np.append(starts, samples))
-    limit = 10.0 ** (threshold_dbfs / 10.0)
-    return float(np.mean(sums / lengths < limit))
+    return float(np.mean(~sounding))
 
 
 def level_below_mix_db(stem: np.ndarray, mix: np.ndarray) -> float:

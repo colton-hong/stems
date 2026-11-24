@@ -83,6 +83,7 @@ python -m stems_bench.clef.run      # run the Clef-omni test; --report FILE writ
 .venv/bin/python -m stems_bench.listen make --tracks 6 --device mps   # the owner's listening test: make the audio and the kit (long; resumable)
 make listen             # serve the blind listening page on http://127.0.0.1:8765
 .venv/bin/python -m stems_bench.listen report --out docs/listening-owner.md   # unblind the marks
+.venv/bin/python -m stems_bench.dropouts --out docs/dropouts.md   # where the true stem plays and the product's is silent (needs the listening run's audio)
 make api                # serve the API on http://127.0.0.1:8000 (python -m stems_api)
 .venv/bin/python -m stems_api.db.migrate    # bring the database to the newest schema (the API does this at startup)
 .venv/bin/python -m stems_worker.jobs JOB_ID   # run one job from storage: what the local provider starts
