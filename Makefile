@@ -3,7 +3,7 @@ PY := .venv/bin/python
 # Use the project-local Node.js if tools/install_node.sh has installed one.
 export PATH := $(CURDIR)/.tools/node/bin:$(PATH)
 
-.PHONY: setup lint format test test-slow api smoke bench-synthetic bench-device-spread check env registry schemas registry-sources models-status node-setup web-setup web-check web-e2e
+.PHONY: setup lint format test test-slow api smoke bench-synthetic bench-device-spread check env registry schemas registry-sources models-status node-setup web-setup web-check web-e2e web-e2e-real
 
 setup: ## create .venv and install the project with dev tools
 	test -d .venv || python3 -m venv .venv
@@ -73,3 +73,6 @@ web-check:
 
 web-e2e: ## browser tests: the real API with stand-in models, the built web app, Chrome
 	cd web && npm run e2e
+
+web-e2e-real: ## one job with the real models through the API and Chrome (slow; needs the weights)
+	cd web && npm run e2e:real

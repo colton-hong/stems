@@ -7,8 +7,9 @@ How to run Stems, from one laptop to rented GPUs and a bucket. Every step below 
 - **Not run** means the code exists and its tests pass, but nobody has done this for real.
   Expect to fix small things the first time.
 
-Only the local setup has ever run end to end, and only with stand-in models (frequency
-bands, not music). No deployment beyond one machine has been tried.
+Only the local setup has ever run end to end: every test with stand-in models (frequency
+bands, not music), and one job with the real models on a synthetic test signal (below).
+No real song has been through it, and no deployment beyond one machine has been tried.
 
 ## What there is to deploy
 
@@ -34,17 +35,46 @@ can be on a rented GPU that cannot reach your laptop.
 | Start the web app for development | `cd web && npm run dev` (port 3000) | Run here, 2026-11-24 |
 | Build and serve the web app | `cd web && npm run build && npm run start` | Run here, 2026-11-24, by the browser tests |
 | Upload a song in the browser and get stems, **stand-in models** | set `STEMS_WORKER_FAKE_MODELS=1` before `make api` | Run here, 2026-11-24 |
-| Upload a song in the browser and get stems, **real models** | nothing extra: weights download on first use | **Not run** |
+| Upload in the browser and get stems, **real models** | `make web-e2e-real` (starts its own API and web app; weights must be on disk) | Run here, 2026-11-24, on the synthetic fixture |
 
 Nothing has to be configured. With no `.env` the API uses a SQLite file in `runs/dev/`,
 keeps files in `runs/dev/storage/`, makes its own link-signing secret there, runs jobs on
 this machine one at a time, and decides with rules instead of Jev.
 
-The last row is the gap that matters. Real checkpoints have run through the command
-line (`separate`, Phase 1) and through the benchmark, but a job with real models has
-never gone through the API. The first one downloads the checkpoints its plan names
-(about 16.7 GB for all of them) and needs the memory they need; on a 24 GB Mac do not run
-it while a benchmark is running.
+### The one job with real models
+
+`make web-e2e-real` starts the API with the real registry and no stand-ins, builds and
+serves the web app, and in Chrome uploads a 12-second synthetic signal (tones and noise
+made by code, not music), asks for all six stems, waits, plays them and downloads one.
+Run on 2026-11-24 with `STEMS_DEVICE=cpu`, because the benchmark had this Mac's GPU; the
+figures are from the job's own result file (`web/.e2e-real/real-job.json`, not in the
+repository).
+
+- Upload to ready: 103.3 seconds, on a machine that was also running a benchmark.
+- Six stems arrived, started on one clock in the player, and one downloaded as audio.
+- No key was used, so the rules decided, and the tagger ran but is not acted on: four
+  stems carry the "could not be quality-checked" note.
+- Guitar and piano came back more than 19.8 dB under the mix, so the gate tried the
+  fallback model and then a blend for each, and delivered them with the "silent or very
+  quiet" note. That is the rule working as built; whether it is right here cannot be
+  said, since the signal's "guitar" and "piano" are tones no model was trained on.
+
+| Model | For | Seconds for 12 s of audio, CPU |
+|---|---|---:|
+| `mel_roformer_kim_vocals` | vocals | 12.7 |
+| `scnet_xl_ihf` | drums, other | 49.2 |
+| `htdemucs_ft` | bass | 3.9 |
+| `bs_roformer_sw_6stem` | guitar, piano | 17.5 |
+| `mel_roformer_guitar_becruily` | guitar, retry | 5.3 |
+| `htdemucs_6s` | piano, retry | 3.8 |
+
+Each time includes whatever the benchmark was taking from the machine at that moment and
+is one run; they are not speed measurements (those are in `docs/benchmarks/`). The
+blends of the second retry reused the outputs above and ran no model again.
+
+What this does not show: a real song, a long one, the GPU path through the API, or a
+first run that has to download its checkpoints (about 16.7 GB for all of them). On a
+24 GB Mac do not run a real job on the GPU while a benchmark is running.
 
 ## 2. Settings
 
@@ -59,6 +89,7 @@ committed). `.env.example` lists them all.
 | `STEMS_SIGNING_SECRET` | Signs local download links | made once, kept in the storage folder |
 | `STEMS_WORKER_PROVIDER` | `local` or `modal` | `local` |
 | `STEMS_WEB_ORIGIN` | The address the web app is served from; the only origin the API accepts | `http://localhost:3000` |
+| `STEMS_TRUSTED_PROXIES` | Addresses or networks of the reverse proxies in front of the API, comma-separated. Forwarded headers are believed only from them | unset: believed from nobody |
 | `NEXT_PUBLIC_API_URL` | Where the web app finds the API (set when building the web app) | `http://localhost:8000` |
 | `TYPESAFE_API_KEY` | Jev, for decisions. Without it the rules decide. | unset |
 | `S3_BUCKET`, `S3_ENDPOINT_URL`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` | The S3 backend | unset |
@@ -74,18 +105,25 @@ Limits, timers and thresholds are not environment variables: they are in
 **Not run.** None of this has been done; these are the things the code assumes.
 
 - **Serve both over HTTPS.** The owner cookie is marked Secure only when the API sees an
-  HTTPS request. If a proxy terminates TLS, it must tell the API so. `python -m
-  stems_api` has no option for that; running the app through uvicorn directly
-  (`uvicorn stems_api.app:create_app --factory --proxy-headers --forwarded-allow-ips ...`)
-  should do it, and would also give the rate limiter each visitor's own address. This has
-  not been set up or tested.
+  HTTPS request. If a proxy terminates TLS, it must tell the API so, in the
+  `X-Forwarded-Proto` header, and the API must be told to believe that proxy.
+- **Name the proxy.** Start the API with `--trusted-proxies 10.0.0.5` (or set
+  `STEMS_TRUSTED_PROXIES`), giving the address the proxy connects from, or its network
+  (`10.0.0.0/24`), several separated by commas. From those addresses, and no others, the
+  API takes the visitor's address from `X-Forwarded-For` (so each visitor has their own
+  rate limit, where otherwise all would share the proxy's) and HTTPS from
+  `X-Forwarded-Proto`. With nothing named the headers are ignored, including from this
+  machine. `*` is refused: it would let any visitor choose the address they are counted
+  under. The proxy must append the address it saw to `X-Forwarded-For`, as nginx's
+  `$proxy_add_x_forwarded_for` does; the last entry not written by a trusted proxy is the
+  one used. *Tested with uvicorn's own middleware (`tests/test_api_proxy.py`,
+  2026-11-24); not run behind a real proxy.*
 - **Same site.** The cookie is SameSite=Lax, so the web app and the API must share a
   registrable domain (`app.example.org` and `api.example.org` are fine; two unrelated
   domains are not). Set `STEMS_WEB_ORIGIN` to the web app's exact origin and build the web
   app with `NEXT_PUBLIC_API_URL` set to the API's.
 - **One API process.** Rate limits and the local job queue live in the API's memory. A
-  second process would double the limits and not see the first one's queue. Behind a
-  proxy the rate limiter sees the proxy's address for everyone (BLOCKED.md D7).
+  second process would double the limits and not see the first one's queue.
 - **The database.** SQLite is what every test uses. The SQL is meant to work on Postgres
   and has never run there.
 - **Terms and privacy.** The pages in the web app are placeholders that say so. Offering

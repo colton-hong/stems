@@ -57,5 +57,6 @@ runs/*
 
 # Browser-test output (web/.e2e)
 web/.e2e/
+web/.e2e-real/
 web/test-results/
 web/playwright-report/

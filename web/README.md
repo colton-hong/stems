@@ -36,7 +36,8 @@ owner cookie is tied to the host name.
 | `lib/player.ts` | The player engine: every stem started at one time on one audio clock |
 | `lib/useJob.ts` | A job kept current from the API's server-sent events, with polling as fallback |
 | `lib/*.test.ts` | Unit tests, run by Node's own test runner (`npm test`) |
-| `e2e/` | Browser tests (Playwright, with axe for accessibility) |
+| `e2e/` | Browser tests (Playwright, with axe for accessibility), at desktop and phone width |
+| `e2e-real/` | One browser test with the real models (`make web-e2e-real`) |
 
 ## Browser tests
 
@@ -50,9 +51,19 @@ real jobs or keys.
 Locally it uses the Chrome already installed. Elsewhere, install Playwright's browser
 (`npx playwright install chromium`) and set `STEMS_E2E_CHANNEL=chromium`.
 
+`e2e/mobile.spec.ts` repeats the flow and the axe checks as Chrome emulates a phone held
+upright (375 by 812, touch): nothing may run off the side of the screen, and no button,
+menu or link-button may be smaller than 24 by 24 pixels.
+
+`make web-e2e-real` is separate and slow: the same servers with the real models (the
+weights must be on disk), one upload of a 12-second synthetic signal asking for all six
+stems, played and downloaded in Chrome. It writes what ran, and how long each model took,
+to `web/.e2e-real/real-job.json`. Set `STEMS_DEVICE=cpu` to keep it off the GPU.
+
 What these tests do not show: how real separated music sounds in the player, any browser
-other than Chrome, a phone, or a real screen reader. The accessibility checks are axe, a
-keyboard-only test, and roles and names read from the accessibility tree.
+other than Chrome, a real phone (the phone tests are desktop Chrome at a phone's size),
+or a real screen reader. The accessibility checks are axe, a keyboard-only test, and
+roles and names read from the accessibility tree.
 
 ## The player and memory
 

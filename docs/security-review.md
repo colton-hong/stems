@@ -83,10 +83,12 @@ part of `make check` or CI; these are two runs on one day.
 - **A download link is all anyone needs.** Whoever has a link can fetch that file until
   it expires, cookie or not. That is how signed links work and is what PLAN.md asks for;
   the 15-minute life is the protection. The links do appear in the server's access log.
-- **Rate limits live in one process and count the connection's address.** Behind a
-  reverse proxy every user shares one address, and several API processes each allow the
-  full limit. Fine for one process on one machine; a wider deployment needs the proxy's
-  forwarded address and a shared counter (BLOCKED.md D7).
+- **Rate limits live in one process.** Several API processes would each allow the full
+  limit; a wider deployment needs a shared counter (BLOCKED.md D7). Behind a reverse
+  proxy the visitor's address is taken from the forwarded header only when the proxy is
+  named in `STEMS_TRUSTED_PROXIES` (added in P8.8; before that, a proxy made every
+  visitor share one address, and uvicorn's default believed the header from this
+  machine).
 - **Event streams are not limited.** A browser can hold many `/events` connections open.
   Each costs little while idle; there is no cap.
 - **The database file has default permissions.** It holds cookie hashes, file names and
