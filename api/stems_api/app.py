@@ -659,7 +659,7 @@ def create_app(deps: Deps | None = None, *, background: bool = True) -> FastAPI:
 
     # -- downloads from local storage ------------------------------------------------------
 
-    @router.get("/files/{token}")
+    @router.api_route("/files/{token}", methods=["GET", "HEAD"])
     def download(token: str) -> FileResponse:
         verify = getattr(deps.storage, "verify", None)
         stat = getattr(deps.storage, "stat", None)

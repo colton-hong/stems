@@ -8,6 +8,7 @@ from typing import Any
 
 from stems_api.db.models import Job, Stem
 from stems_common import jobs as contract
+from stems_common.stems import PRODUCT_STEMS
 
 REQUEST_FIELDS = ("stems", "text", "split_vocals", "dereverb", "format", "quality_mode")
 
@@ -44,7 +45,8 @@ def _stems(job: Job, live: dict[str, Any] | None) -> list[dict[str, Any]]:
         return []
     asked = job.request.get("stems") or []
     states = (live or {}).get("stems") or {}
-    names = list(states) or list(asked)
+    # Display order, whatever order the status file lists them in.
+    names = [stem for stem in PRODUCT_STEMS if stem in states] or list(asked)
     return [
         {
             "name": name,
