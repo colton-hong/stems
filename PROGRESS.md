@@ -2,7 +2,7 @@
 
 Single source of truth for where the build is. Read this first, every iteration.
 
-**Current phase: 11 (more songs, and an app that says what it does), started 2026-11-24.** The owner asked on 2026-11-24 for each phase to follow the last without waiting, and for new phases to be added when none is left; Phases 8 to 11 were added that way. Phases 0, 1 and 4 to 10 are complete apart from checks that need the owner's accounts (S3 and Azure, B7; Modal, B4; the listening test, B8). Still open from earlier phases: P3.11 (optional; P11.5 closes it); Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done; the MoisesDB tuning run finished its 900 jobs at 13:39Z on 2026-11-24 and the tuner was still searching at 15:50Z; the MUSDB18-HQ tuning stage follows and will start with the new single-model defaults; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task).
+**Current phase: 12 (the edges), started 2026-11-24.** The owner asked on 2026-11-24 for each phase to follow the last without waiting, and for new phases to be added when none is left; Phases 8 to 12 were added that way. Phases 0, 1, 3 and 4 to 11 are complete apart from checks that need the owner's accounts (S3 and Azure, B7; Modal, B4; the listening test, B8). Still open from earlier phases: Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done; the MoisesDB tuning run finished its 900 jobs at 13:39Z on 2026-11-24 and the tuner was still scoring candidate blends at 17:45Z; the MUSDB18-HQ tuning stage follows and will start with the new single-model defaults; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task).
 
 ## How to use this file
 
@@ -206,6 +206,19 @@ menu that changes nothing.
 - [x] P11.3 The real-models job in the browser, with the new default. **Accept:** `make web-e2e-real` passes on the config as it is and `docs/deployment.md` describes that run. — Done: `make web-e2e-real` passed on the config as it is, at 15:58Z on 2026-11-24 with `STEMS_DEVICE=cpu`: one model, `bs_roformer_sw_6stem`, made all six stems of the 12-second synthetic signal in 28.5 s, and the job went from upload to ready in 35.8 s (the first run that day, with four models, retries and the tagger, took 103.3 s). Six stems arrived, played on one clock and one downloaded. Three of them (vocals, guitar, piano) carried the empty-stem note, which on tones and noise says nothing about the rule. `docs/deployment.md` has the run. Still not done: a real song in the browser, or the GPU through the API.
 - [x] P11.4 The vocal-split model, by the same rule. **Accept:** `stems_bench.recommend` covers lead and backing vocals on the tuning tracks with the rule already committed, the report shows the result beside the model in use, and the config follows; or a note saying why the rule cannot be applied. — Done: the rule of P10.2, as committed, applied to the two outputs of the vocal split on the tuning tracks (14 of the 30 have both lead and backing vocals), and `docs/benchmarks/recommendation.md` has the section. It names `mel_roformer_karaoke_aufr33_viperx` for both: 12.32 dB on lead vocals (the others 10.99 and 10.06) and 4.92 dB on backing vocals (1.09 and 0.84). That is the model already in use, so the config does not change. On the MoisesDB test list it scores 10.53 and 4.28 dB. In the benchmark these models are fed the reference vocals, not a separated stem, so the figures say how well each splits a clean vocal and not what a user gets after the first separation. The de-reverb model still cannot be chosen this way: no list has reverberant vocals to score it on. 1 test (the slot is settled only if one model is named for both outputs).
 - [x] P11.5 Close P3.11. **Accept:** the optional MERT and Essentia comparison is done, or ticked with the note its acceptance asks for. — Done: P3.11 ticked with its note (see there). Nothing was run for it.
+
+## Phase 12: the edges
+
+Added on 2026-11-24 under rule 6 (no phase was left). The product's ordinary road is now
+measured on twenty songs, on CPU. Three things at its edges are not: the GPU, which is
+the device a job uses by default on this machine and which every real job so far has
+avoided because the benchmark held it; the longest upload the limits allow; and the
+weakest stem, `other`, where the model often finds next to nothing.
+
+- [ ] P12.1 Real songs through the product on the GPU. **Accept:** `python -m stems_bench.product_check` run under its own run id with `--device mps` on the first three tracks of the frozen subset, and a report from it (`docs/product-on-gpu.md`): agreement with the benchmark, which ran on the same device, and the wall time beside the CPU run's.
+- [ ] P12.2 The longest upload. **Accept:** a synthetic signal as long as `uploads.max_duration_seconds` allows goes through the worker's storage entry point with the real default model; the job finishes, all six stems have the right length, and its wall time and the worker's peak memory are recorded with the device; the result is in `docs/deployment.md`. If it does not finish, the limit and what stopped it are written down instead.
+- [ ] P12.3 Is what is left over a better `other`? **Accept:** with the comparison and what counts as better fixed first, a run on the tuning tracks scores the default model's own `other` beside the mix minus its five other stems, and a report states the result and what the test tracks then show. PLAN.md decides that a six-stem model's `other` is used as it is, so nothing changes in the product: the result goes to the owner as a question in BLOCKED.md.
+- [ ] P12.4 The README and the cost report after these. **Accept:** every figure that changed is corrected from its file.
 
 ---
 
@@ -911,3 +924,40 @@ Still open from earlier phases: P2.12, P2.13 and P2.14b (the tuner is still sear
 and P3.11 (optional).
 
 **Next:** Phase 11, added under rule 6.
+
+## Phase 11 summary (2026-11-24)
+
+Done: P11.1 to P11.5.
+
+- **Twenty real songs through the product** (P11.1, `docs/product-vs-benchmark.md`):
+  100 of 100 comparable stems within 0.15 dB of the benchmark; all 20 absent instruments
+  flagged; 7 of 100 present ones flagged as well.
+- **The quality menu** (P11.2) is shown only when the choice changes something.
+- **The real-models browser job** (P11.3) passes with the one default model: 35.8 s from
+  upload to ready on CPU for the 12-second synthetic signal.
+- **The vocal-split model** (P11.4): the committed rule keeps the one in use.
+- **P3.11** (P11.5) closed as skipped, with its reason.
+
+What the phase found:
+
+- **The tests could kill a real job.** The sweeper's tests cleaned the real temporary
+  directory with a clock set days ahead, and one job of the twenty lost its working
+  folder to a test run. The test run now has a temporary directory of its own. Any job
+  running during an earlier `make check` on this machine was exposed to the same thing.
+- **When the gate flags a stem whose instrument is in the song, the stem is usually
+  useless anyway.** Six of the seven such stems scored 1.2 dB or less: the model had
+  found next to nothing, mostly for `other`. One was a good piano that is quiet in its
+  song, and the note is wrong about that one.
+- **`other` is where the product is weakest.** Five of the twenty songs have an `other`
+  the model all but missed.
+
+Not verified, and why:
+
+- **The GPU.** Every real job so far ran on CPU. P12.1.
+- **A long upload.** The longest song so far was ten minutes; the limit is twenty. P12.2.
+- **Songs from anywhere but MoisesDB**, and anyone listening.
+- As before: Jev, S3 and Azure (B7), Modal (B4), the listening test (B8).
+
+Still open from earlier phases: P2.12, P2.13 and P2.14b (the tuner is still scoring).
+
+**Next:** Phase 12, added under rule 6.
