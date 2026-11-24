@@ -1,0 +1,8 @@
+{
+  "vocals": "mel_roformer_kim_vocals",
+  "drums": "scnet_xl_ihf",
+  "bass": "htdemucs_ft",
+  "guitar": "bs_roformer_sw_6stem",
+  "piano": "bs_roformer_sw_6stem",
+  "other": "scnet_xl_ihf"
+}
