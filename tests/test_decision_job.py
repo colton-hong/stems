@@ -9,7 +9,12 @@ import pytest
 np = pytest.importorskip("numpy")
 torch = pytest.importorskip("torch")
 
-from stems_common.settings import EnsembleSettings, SlotModels, load_defaults  # noqa: E402
+from stems_common.settings import (  # noqa: E402
+    Calibrated,
+    EnsembleSettings,
+    SlotModels,
+    load_defaults,
+)
 from stems_common.stems import PRODUCT_STEMS  # noqa: E402
 from stems_common.synthetic import generate_track  # noqa: E402
 from stems_models.registry import ModelEntry, Registry  # noqa: E402
@@ -30,6 +35,10 @@ SR = 44100
 LSB_24 = 2.0**-23
 FOUR = ["vocals", "drums", "bass", "other"]
 UNCHECKED = "This stem could not be quality-checked automatically."
+EMPTY = (
+    "This stem is silent or very quiet compared with the song. The instrument may not be in "
+    "the song, or it was not found."
+)
 
 
 def _entry(model_id: str, stems: list[str], slots: list[str]) -> ModelEntry:
@@ -85,7 +94,7 @@ DEFAULTS = BASE.model_copy(
     }
 )
 CALIBRATED = DEFAULTS.model_copy(
-    update={"listening": BASE.listening.model_copy(update={"calibrated": True})}
+    update={"listening": BASE.listening.model_copy(update={"calibrated": Calibrated.both(True)})}
 )
 SETTINGS = DEFAULTS.decision
 
@@ -94,10 +103,11 @@ class Song:
     """A fixture track on disk, and fake models that know its stems.
 
     ``broken`` names outputs a model returns as silence, to give the gate something to
-    catch: ``{"fake4": ("drums",)}``.
+    catch: ``{"fake4": ("drums",)}``. ``faint`` names outputs it returns 20 dB down, which
+    is what leftovers of an instrument that is not in the song look like.
     """
 
-    def __init__(self, tmp_path, broken: dict | None = None) -> None:
+    def __init__(self, tmp_path, broken: dict | None = None, faint: dict | None = None) -> None:
         track = generate_track(seed=41, duration_seconds=3.0)
         q = lambda x: (np.round(x.astype(np.float64) / LSB_24) * LSB_24).astype(np.float32)  # noqa: E731
         self.stems = {name: q(stem) for name, stem in track.stems.items()}
@@ -120,6 +130,11 @@ class Song:
             "fake_dry2": dry,
         }
         self.broken = broken or {}
+        for model_id, names in (faint or {}).items():
+            self.truth[model_id] = {
+                name: stem * np.float32(0.1) if name in names else stem
+                for name, stem in self.truth[model_id].items()
+            }
         self.tmp = tmp_path
 
     def factory(self, model_id, stems):
@@ -315,7 +330,10 @@ def test_the_whole_pipeline_with_no_key(song, tmp_path) -> None:
         assert report["retries"] == 0
         assert report["attempts"][0]["assessment"]["reason_code"] == "low_confidence"
     assert result["warnings"] == {"vocals": UNCHECKED, "drums": UNCHECKED}
-    assert result["listening"] == {"tagger": None, "calibrated": False}
+    assert result["listening"] == {
+        "tagger": None,
+        "calibrated": {"presence": False, "bleed": False},
+    }
 
 
 # --- retries ------------------------------------------------------------------------------
@@ -375,7 +393,31 @@ def test_when_every_attempt_fails_the_cap_holds_and_the_best_is_delivered(tmp_pa
     assert drums["retries"] == DEFAULTS.gate.max_retries_per_stem == 2
     assert drums["state"] == "delivered_with_warning"
     assert drums["delivered_attempt"] == 0  # all equally bad: the earliest
-    assert drums["warning"] == "This stem is almost silent. The instrument may not be in the song."
+    assert drums["warning"] == EMPTY
+
+
+def test_a_stem_far_below_the_mix_is_retried_and_then_delivered_with_its_own_note(tmp_path) -> None:
+    # Neither model finds drums: each returns them 20 dB down. Not silence, so the
+    # silence rule says nothing; the level against the mix does.
+    song = Song(tmp_path, faint={"fake4": ("drums",), "fake4b": ("drums",)})
+    result = song.run(tmp_path / "out", {"stems": ("drums", "bass")}, client=None)
+    drums, bass = result["stems"]["drums"], result["stems"]["bass"]
+    assert [a["model_used"] for a in drums["attempts"]] == ["fake4", "fake4b", "fake4+fake4b"]
+    for attempt in drums["attempts"]:
+        assert attempt["metrics"]["silence_fraction"] < 0.5
+        assert attempt["assessment"]["reason_code"] == "mostly_silent"
+        assert attempt["assessment"]["confidence"] == 1.0
+    assert (drums["state"], drums["warning"]) == ("delivered_with_warning", EMPTY)
+    # A stem at an ordinary level is not touched by the rule.
+    assert bass["warning"] == UNCHECKED
+    assert bass["retries"] == 0
+
+    # One model does find them: its output is delivered, with the usual note.
+    song = Song(tmp_path / "second", faint={"fake4": ("drums",)})
+    result = song.run(tmp_path / "second" / "out", {"stems": ("drums",)}, client=None)
+    drums = result["stems"]["drums"]
+    assert [a["model_used"] for a in drums["attempts"]] == ["fake4", "fake4b"]
+    assert (drums["delivered_attempt"], drums["warning"]) == (1, UNCHECKED)
 
 
 class OracleTagger:
@@ -423,7 +465,10 @@ def test_with_a_calibrated_tagger_the_fallback_gate_delivers_clean_stems(song, t
             "suspected_source": "none",
             "level": "none",
         }
-    assert result["listening"] == {"tagger": "oracle", "calibrated": True}
+    assert result["listening"] == {
+        "tagger": "oracle",
+        "calibrated": {"presence": True, "bleed": True},
+    }
     assert result["warnings"] == {}
 
 

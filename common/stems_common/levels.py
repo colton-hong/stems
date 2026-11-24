@@ -53,3 +53,35 @@ def silence_fraction(
     lengths = np.diff(np.append(starts, samples))
     limit = 10.0 ** (threshold_dbfs / 10.0)
     return float(np.mean(sums / lengths < limit))
+
+
+def loudest_window(audio: np.ndarray, sample_rate: int, seconds: float) -> tuple[int, int]:
+    """``(start, length)`` in samples of the ``seconds``-long stretch with the most energy.
+
+    Starts are tried every second; of equally loud stretches the earliest wins. Audio no
+    longer than ``seconds`` is used whole. This is the rule the gate's measurements were
+    made with (``stems_bench.clef.clips.loudest_window``), kept here so that the worker
+    applies the same one.
+    """
+    samples = audio.shape[-1]
+    length = round(seconds * sample_rate)
+    if samples <= length:
+        return 0, samples
+    power = np.square(audio, dtype=np.float64).reshape(-1, samples).sum(axis=0)
+    total = np.concatenate([[0.0], np.cumsum(power)])
+    starts = np.arange(0, samples - length + 1, max(1, sample_rate))
+    energy = total[starts + length] - total[starts]
+    return int(starts[int(np.argmax(energy))]), length
+
+
+def level_below_mix_db(
+    stem: np.ndarray, mix: np.ndarray, sample_rate: int, seconds: float
+) -> float:
+    """The stem's RMS level minus the mix's, over the loudest ``seconds`` of the mix.
+
+    Negative when the stem is quieter than the mix, which is the usual case. If the two
+    differ in length the shorter one decides how much is compared.
+    """
+    samples = min(stem.shape[-1], mix.shape[-1])
+    start, length = loudest_window(mix[..., :samples], sample_rate, seconds)
+    return rms_dbfs(stem[..., start : start + length]) - rms_dbfs(mix[..., start : start + length])

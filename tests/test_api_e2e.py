@@ -45,12 +45,15 @@ def test_upload_to_download_with_the_local_provider(tmp_path) -> None:
         log_dir=tmp_path / "logs",
     )
     deps = h.make_deps(tmp_path, provider=provider)
+    # Noise, split by the stand-in models into frequency bands. The two asked for are
+    # wide bands at an ordinary level; a narrow one (the band called bass) would be far
+    # enough below the mix for the gate to call it empty and retry it.
     upload = h.wav_bytes(seconds=SECONDS)
     try:
         with TestClient(create_app(deps, background=True)) as client:
             # 1. Upload.
             response = h.upload(
-                client, upload, name="Demo Track.wav", stems="vocals,bass", format="flac"
+                client, upload, name="Demo Track.wav", stems="vocals,guitar", format="flac"
             )
             assert response.status_code == 201, response.text
             job_id = response.json()["id"]
@@ -78,7 +81,7 @@ def test_upload_to_download_with_the_local_provider(tmp_path) -> None:
             assert job["name"] == "Demo Track.wav"
             assert [(s["name"], s["format"], s["warning"]) for s in job["stems"]] == [
                 ("vocals", "flac", UNCHECKED),
-                ("bass", "flac", UNCHECKED),
+                ("guitar", "flac", UNCHECKED),
             ]
             assert job["source"]["duration_seconds"] == SECONDS
             result = contract.validate_result(
@@ -103,7 +106,7 @@ def test_upload_to_download_with_the_local_provider(tmp_path) -> None:
             links = client.post(f"/api/jobs/{job_id}/links").json()
             assert [s["filename"] for s in links["stems"]] == [
                 "Demo Track (vocals).flac",
-                "Demo Track (bass).flac",
+                "Demo Track (guitar).flac",
             ]
             audio = {}
             for stem in links["stems"]:
@@ -116,13 +119,13 @@ def test_upload_to_download_with_the_local_provider(tmp_path) -> None:
                 assert abs(samples).max() > 0  # not silence
                 audio[stem["name"]] = got.content
             # The two bands differ: each stem is its own audio, not a copy.
-            assert audio["vocals"] != audio["bass"]
+            assert audio["vocals"] != audio["guitar"]
             archive = client.get(links["zip"]["url"])
             assert archive.status_code == 200
             with zipfile.ZipFile(io.BytesIO(archive.content)) as unzipped:
-                assert sorted(unzipped.namelist()) == ["bass.flac", "vocals.flac"]
+                assert sorted(unzipped.namelist()) == ["guitar.flac", "vocals.flac"]
                 assert unzipped.read("vocals.flac") == audio["vocals"]
-            peaks = client.get(f"/api/jobs/{job_id}/stems/bass/peaks").json()
+            peaks = client.get(f"/api/jobs/{job_id}/stems/guitar/peaks").json()
             assert peaks["duration_seconds"] == SECONDS
             assert max(peaks["max"]) > 0
 

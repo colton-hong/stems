@@ -109,6 +109,14 @@ gate:
     # thresholds are measured the gate does not act on them, and the stem is delivered
     # with a warning instead of being retried.
     uncalibrated_confidence: 0.5
+    # A stem at least this far below the mix, over the mix's loudest minute, is treated
+    # like a silent one ("the instrument is probably not in the song"). Measured on real
+    # separator output (docs/gate-on-real-output.md, run gate-outputs-v1): the threshold
+    # was chosen on outputs for the tuning tracks; on held-out tracks 95.1% of the
+    # outputs it called empty were, and it found 88.3% of the empty ones. A level
+    # measurement, so it is acted on whatever the tagger's switches say. null turns it off.
+    empty_below_mix_db: -19.81
+    empty_window_seconds: 60
 
 # How tagger outputs (AudioSet class probabilities per 10-second window) become
 # track_features and per-stem signals. Measured on clean and deliberately bled MoisesDB
@@ -116,9 +124,15 @@ gate:
 #   - presence on a stem passed its check: 97.1% right when it commits, on held-out tracks;
 #   - bleed failed: the tagger ranks bled stems above clean ones only weakly (AUC 0.644)
 #     and flags half of the clean ones.
-# `calibrated` therefore stays false, and the gate does not act on what the tagger hears.
+# Then measured again on what real separators produce (docs/gate-on-real-output.md, run
+# gate-outputs-v1), which is what the gate sees:
+#   - presence: "absent" at the threshold below was right 87.9% of the time (90% needed);
+#   - bleed: preferred the better of two outputs in 64.8% of pairs (80% needed).
+# One switch per signal; both stay off, and the gate does not act on what the tagger hears.
 listening:
-  calibrated: false
+  calibrated:
+    presence: false
+    bleed: false
   presence:
     # A stem's score for a track: the mean of its best quarter of audible windows, so an
     # instrument that plays in only part of the track still counts.

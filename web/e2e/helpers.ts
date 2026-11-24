@@ -5,13 +5,17 @@ const SAMPLE_RATE = 44100;
 /**
  * A real WAV file: two tones, 16-bit stereo. 100 Hz lands in the band the stand-in
  * models call bass and 6 kHz in the band they call vocals, so both stems have sound.
+ * `extra` adds further tones, each a frequency and an amplitude.
  */
-export function toneWav(seconds = 3): Buffer {
+export function toneWav(seconds = 3, extra: Array<[hz: number, amplitude: number]> = []): Buffer {
   const frames = Math.floor(seconds * SAMPLE_RATE);
   const data = Buffer.alloc(frames * 4);
   for (let i = 0; i < frames; i += 1) {
     const t = i / SAMPLE_RATE;
-    const sample = 0.3 * Math.sin(2 * Math.PI * 100 * t) + 0.2 * Math.sin(2 * Math.PI * 6000 * t);
+    let sample = 0.3 * Math.sin(2 * Math.PI * 100 * t) + 0.2 * Math.sin(2 * Math.PI * 6000 * t);
+    for (const [hz, amplitude] of extra) {
+      sample += amplitude * Math.sin(2 * Math.PI * hz * t);
+    }
     const value = Math.round(sample * 32767);
     data.writeInt16LE(value, i * 4);
     data.writeInt16LE(value, i * 4 + 2);

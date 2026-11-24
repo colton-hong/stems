@@ -72,8 +72,13 @@ def storage(tmp_path) -> Counting:
 @pytest.fixture
 def source_bytes(tmp_path) -> bytes:
     track = generate_track(seed=41, duration_seconds=3.0)
+    # The fixture has little above 5 kHz, the band the stand-in models call vocals: 21 dB
+    # under the mix, which the gate would rightly call empty. A tone at 7 kHz gives that
+    # band an ordinary level, so these tests see one attempt per stem.
+    t = np.arange(track.mix.shape[-1]) / SR
+    mix = (track.mix + 0.05 * np.sin(2 * np.pi * 7000 * t)).astype(np.float32)
     path = tmp_path / "upload.wav"
-    save_audio(path, track.mix, SR, "wav")
+    save_audio(path, mix, SR, "wav")
     return path.read_bytes()
 
 

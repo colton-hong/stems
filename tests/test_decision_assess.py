@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from stems_common import schemas
-from stems_common.settings import load_defaults
+from stems_common.settings import Calibrated, load_defaults
 from stems_worker.decision import assess, gate
 from stems_worker.decision.assess import assess_stem, reason_code, rule_assessment
 from stems_worker.decision.jev import JevClient, Reply, build_request, noul_confidence
@@ -16,9 +16,10 @@ from stems_worker.decision.mock import ReplayTransport, handwritten, save_exchan
 
 DEFAULTS = load_defaults()
 GATE = DEFAULTS.gate
+ON, OFF = Calibrated.both(True), Calibrated.both(False)
 FLOOR = DEFAULTS.decision.min_confidence
 CALIBRATED = DEFAULTS.model_copy(
-    update={"listening": DEFAULTS.listening.model_copy(update={"calibrated": True})}
+    update={"listening": DEFAULTS.listening.model_copy(update={"calibrated": ON})}
 )
 FIXTURE = json.loads(
     (Path(__file__).parent / "fixtures" / "jev" / "gate.handwritten.json").read_text()
@@ -183,7 +184,7 @@ def test_an_unsure_assessment_is_replaced_by_the_rule_scorer(client, name, reaso
     assert decision.record["fallback_reason"] == reason
     assert decision.record["answers"]["quality"]["score"] == case["answers"]["quality"]["score"]
     expected, _ = rule_assessment(
-        case["metrics"], present=case["present"], settings=GATE, calibrated=False
+        case["metrics"], present=case["present"], settings=GATE, calibrated=OFF
     )
     assert decision.value["assessment"] == expected
     assert schemas.errors("stem_quality_assessment", decision.value) == []
@@ -208,15 +209,15 @@ def test_noul_confidence_is_derived_not_read(client) -> None:
 def test_the_state_fills_in_nothing(client) -> None:
     case = CASES["bleed"]
     sent = assess.state(
-        "drums", "m", case["metrics"], present=True, tagged=True, calibrated=False, retries_used=1
+        "drums", "m", case["metrics"], present=True, tagged=True, calibrated=OFF, retries_used=1
     )
     assert sent["metrics"]["sdr_db"] is None  # no reference, so no SDR, and none is invented
     assert sent["metrics"] == case["metrics"]
     assert sent["own_source_heard"] == "yes"
     assert sent["retries_so_far"] == 1
-    assert sent["tagger_thresholds_calibrated"] is False
+    assert sent["tagger_thresholds_calibrated"] == {"presence": False, "bleed": False}
     untagged = assess.state(
-        "drums", "m", metrics(), present=None, tagged=False, calibrated=False, retries_used=0
+        "drums", "m", metrics(), present=None, tagged=False, calibrated=OFF, retries_used=0
     )
     assert untagged["own_source_heard"] == "not checked"
     asked = assess.questions("drums")
@@ -263,7 +264,7 @@ RULES = [
 
 @pytest.mark.parametrize(("m", "present", "reason", "score", "label", "passed", "suggested"), RULES)
 def test_rule_scorer_on_tagger_signals(m, present, reason, score, label, passed, suggested) -> None:
-    assessment, action = rule_assessment(m, present=present, settings=GATE, calibrated=True)
+    assessment, action = rule_assessment(m, present=present, settings=GATE, calibrated=ON)
     assert assessment == {
         "score": float(score),
         "score_label": label,
@@ -274,13 +275,13 @@ def test_rule_scorer_on_tagger_signals(m, present, reason, score, label, passed,
     assert action == suggested
     assert reason_code(m, present, GATE) == reason
     # The same signals with uncalibrated thresholds: same reading, low confidence.
-    unsure, _ = rule_assessment(m, present=present, settings=GATE, calibrated=False)
+    unsure, _ = rule_assessment(m, present=present, settings=GATE, calibrated=OFF)
     assert unsure == {**assessment, "confidence": GATE.rules.uncalibrated_confidence}
     assert GATE.rules.uncalibrated_confidence < GATE.confidence_min
 
 
 def test_a_silent_stem_is_certain_without_any_tagger() -> None:
-    for calibrated in (True, False):
+    for calibrated in (ON, OFF):
         assessment, action = rule_assessment(
             metrics(silence=1.0), present=None, settings=GATE, calibrated=calibrated
         )
@@ -297,8 +298,78 @@ def test_a_silent_stem_is_certain_without_any_tagger() -> None:
     assert reason_code(metrics(silence=edge - 0.01), None, GATE) == "low_confidence"
 
 
+def test_a_stem_far_below_the_mix_is_treated_like_a_silent_one() -> None:
+    limit = GATE.rules.empty_below_mix_db
+    assert limit == -19.81  # measured: docs/gate-on-real-output.md
+    # Not silent at all (10% of it is), but leftovers 25 dB under the song.
+    for calibrated in (ON, OFF):
+        assessment, action = rule_assessment(
+            metrics(), present=None, settings=GATE, calibrated=calibrated, below_mix_db=-25.0
+        )
+        assert assessment["reason_code"] == "mostly_silent"
+        assert (assessment["score"], assessment["pass_probability"]) == (0.0, 0.0)
+        assert assessment["confidence"] == 1.0  # a level measurement, whatever the tagger's state
+        assert action == "retry_fallback_model"
+    # The threshold is inclusive, and a tagger that hears the instrument does not overrule it.
+    assert reason_code(metrics(), True, GATE, limit) == "mostly_silent"
+    assert reason_code(metrics(), True, GATE, limit + 0.01) == "clean"
+    assert reason_code(metrics(), None, GATE, -5.0) == "low_confidence"
+    assert reason_code(metrics(), None, GATE, None) == "low_confidence"  # not measured
+    assert gate.warning({**assessment}, GATE) == (
+        "This stem is silent or very quiet compared with the song. The instrument may not "
+        "be in the song, or it was not found."
+    )
+
+
+def test_the_empty_stem_rule_can_be_switched_off() -> None:
+    off = GATE.model_copy(
+        update={"rules": GATE.rules.model_copy(update={"empty_below_mix_db": None})}
+    )
+    assert reason_code(metrics(), None, off, -60.0) == "low_confidence"
+    assert assess.is_empty(-60.0, off) is False
+    assert assess.is_empty(-60.0, GATE) is True
+    assert assess.is_empty(None, GATE) is False
+
+
+def test_each_tagger_signal_has_its_own_switch() -> None:
+    confident, unsure = 1.0, GATE.rules.uncalibrated_confidence
+    absent = (metrics(bleed=("none", "none")), False)  # rests on presence
+    bled = (metrics(bleed=("drums", "moderate")), True)  # rests on bleed
+    clean = (metrics(bleed=("none", "none")), True)  # rests on both
+    for switches, expected in [
+        (Calibrated(presence=True, bleed=False), (confident, unsure, unsure)),
+        (Calibrated(presence=False, bleed=True), (unsure, confident, unsure)),
+        (ON, (confident, confident, confident)),
+        (OFF, (unsure, unsure, unsure)),
+    ]:
+        got = tuple(
+            rule_assessment(m, present=present, settings=GATE, calibrated=switches)[0]["confidence"]
+            for m, present in (absent, bled, clean)
+        )
+        assert got == expected, switches
+
+
+def test_jev_is_told_the_level_and_which_tagger_signals_are_switched_on() -> None:
+    sent = assess.state(
+        "piano",
+        "m",
+        metrics(),
+        present=None,
+        tagged=False,
+        calibrated=Calibrated(presence=True, bleed=False),
+        retries_used=0,
+        below_mix_db=-23.456,
+    )
+    assert sent["level_below_mix_db"] == -23.46
+    assert sent["tagger_thresholds_calibrated"] == {"presence": True, "bleed": False}
+    unmeasured = assess.state(
+        "piano", "m", metrics(), present=None, tagged=False, calibrated=OFF, retries_used=0
+    )
+    assert unmeasured["level_below_mix_db"] is None
+
+
 def test_with_no_tagger_the_scorer_says_it_cannot_tell() -> None:
-    assessment, action = rule_assessment(metrics(), present=None, settings=GATE, calibrated=True)
+    assessment, action = rule_assessment(metrics(), present=None, settings=GATE, calibrated=ON)
     assert assessment == {
         "score": float(GATE.rules.unchecked_score),
         "score_label": "acceptable",
@@ -365,7 +436,7 @@ def test_without_jev_the_rules_assess_and_the_record_says_so() -> None:
 
 def test_uncalibrated_or_unchecked_stems_are_warned_about_not_retried() -> None:
     # The shipped configuration: listening.calibrated is false.
-    assert DEFAULTS.listening.calibrated is False
+    assert DEFAULTS.listening.calibrated == OFF
     heard_bleed = assess_stem(
         "drums",
         "scnet_xl_ihf",

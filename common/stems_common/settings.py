@@ -106,6 +106,11 @@ class GateRules(_Strict):
     unchecked_score: float = Field(ge=0, le=4)
     # Confidence of a verdict that rests on tagger thresholds not yet calibrated.
     uncalibrated_confidence: float = Field(ge=0, le=1)
+    # A stem this far below the mix, or further, in the mix's loudest stretch is treated
+    # like a silent one: the instrument is probably not in the song. None switches it off.
+    empty_below_mix_db: float | None = Field(le=0)
+    # How long that stretch is.
+    empty_window_seconds: float = Field(gt=0)
 
     @model_validator(mode="after")
     def _check(self) -> GateRules:
@@ -190,9 +195,29 @@ class ReverbSettings(_Strict):
         return self
 
 
+class Calibrated(_Strict):
+    """Which of the tagger's signals have been measured to work, one switch each.
+
+    The gate acts on a verdict only if every signal it rests on is switched on.
+    """
+
+    # Whether a stem holds its own instrument (listening.presence).
+    presence: bool
+    # How much of another instrument is in it (listening.bleed).
+    bleed: bool
+
+    @property
+    def all(self) -> bool:
+        return self.presence and self.bleed
+
+    @classmethod
+    def both(cls, value: bool) -> Calibrated:
+        return cls(presence=value, bleed=value)
+
+
 class ListeningSettings(_Strict):
-    # False until the thresholds below have been measured on labelled audio (P7.1).
-    calibrated: bool
+    # Per signal: true only once it passed its held-out check on real separator output.
+    calibrated: Calibrated
     presence: PresenceSettings
     # Per instrument, the thresholds for hearing it in a full mix. Only instruments whose
     # thresholds held up on held-out mixes are listed; any other is never claimed.

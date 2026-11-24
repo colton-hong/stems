@@ -396,7 +396,7 @@ def stem_signals(
         "rms_dbfs": rms_dbfs(channels),
         "peak_dbfs": peak_dbfs(channels),
         "silence_fraction": silence_fraction(channels, sample_rate),
-        "calibrated": settings.calibrated,
+        "calibrated": settings.calibrated.all,
     }
     if levels["silence_fraction"] >= 1.0:
         return StemSignals(**levels)

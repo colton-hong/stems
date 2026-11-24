@@ -345,3 +345,27 @@ test("the vocal split and the de-reverbed vocal come back as extra stems", async
   await page.getByRole("button", { name: "Download Lead vocals" }).click();
   expect((await download).suggestedFilename()).toBe("Test Tone (lead_vocals).wav");
 });
+
+test("a stem far quieter than the song says the instrument may not be in it", async ({ page }) => {
+  await page.goto("/");
+  // The usual two tones, and a trace at 1 kHz, which is in the band the stand-in models
+  // call piano: that stem is leftovers about 33 dB under the song. It is not silence, so
+  // only the level against the mix can tell.
+  await chooseFile(page, "Test Tone.wav", toneWav(3, [[1000, 0.008]]));
+  await page.getByRole("checkbox", { name: "Bass", exact: true }).check();
+  await page.getByRole("checkbox", { name: "Piano", exact: true }).check();
+  await page.getByRole("button", { name: "Upload and separate" }).click();
+  await page.waitForURL(/\/jobs\/[0-9a-f-]{36}$/);
+  await expect(page.getByTestId("status")).toHaveText("Ready", { timeout: 120_000 });
+
+  const rows = page.locator("ul.stems > li");
+  await expect(rows.locator(".stem-name")).toHaveText(["Bass", "Piano"]);
+  await expect(rows.nth(0).locator(".stem-warning")).toContainText(UNCHECKED);
+  await expect(rows.nth(1).locator(".stem-warning")).toContainText(
+    "This stem is silent or very quiet compared with the song. The instrument may not be in " +
+      "the song, or it was not found.",
+  );
+  // It is still delivered: the note informs, it does not take the stem away.
+  await playerReady(page);
+  await expect(page.getByRole("button", { name: "Download Piano" })).toBeEnabled();
+});

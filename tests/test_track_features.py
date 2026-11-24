@@ -356,7 +356,7 @@ def test_thresholds_must_be_ordered():
         broken = {**data, section: {**data[section], key: value}}
         with pytest.raises(ValueError, match="must"):
             type(SETTINGS).model_validate(broken)
-    assert SETTINGS.calibrated is False
+    assert SETTINGS.calibrated.all is False
     for table in ({"kazoo": {"present_min": 0.5, "absent_max": 0.2}},
                   {"piano": {"present_min": 0.2, "absent_max": 0.2}}):  # fmt: skip
         with pytest.raises(ValueError, match="must"):

@@ -28,6 +28,7 @@ from typing import Any
 
 import numpy as np
 
+from stems_common.levels import level_below_mix_db
 from stems_common.paths import RUNS_DIR
 from stems_common.settings import Defaults, load_defaults
 from stems_common.stems import PRODUCT_STEMS
@@ -382,6 +383,12 @@ def run_job(
                     defaults=defaults,
                     job_id=job_id,
                     present=signals.present,
+                    below_mix_db=level_below_mix_db(
+                        audio,
+                        loaded.samples,
+                        loaded.sample_rate,
+                        defaults.gate.rules.empty_window_seconds,
+                    ),
                     retries_used=machine.retries_used,
                     available=machine.available(),
                 ),
@@ -445,7 +452,7 @@ def run_job(
             "device": device,
             "listening": {
                 "tagger": None if tagger is None else tagger.name,
-                "calibrated": defaults.listening.calibrated,
+                "calibrated": defaults.listening.calibrated.model_dump(),
             },
             "track_features": features,
             "plan": plan,

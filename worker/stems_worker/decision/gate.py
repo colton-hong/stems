@@ -33,7 +33,10 @@ DELIVER = "deliver"
 WARN = "deliver_with_warning"
 
 _WARNINGS = {
-    "mostly_silent": "This stem is almost silent. The instrument may not be in the song.",
+    "mostly_silent": (
+        "This stem is silent or very quiet compared with the song. The instrument may not "
+        "be in the song, or it was not found."
+    ),
     "bleed": "Other instruments may be audible in this stem.",
     "wrong_content": "This stem may not contain the instrument it is named after.",
     "artifacts": "This stem may contain audible artifacts.",

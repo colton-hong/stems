@@ -13,13 +13,17 @@ deliver, and which retry it would pick.
 - If either is under ``decision.min_confidence``, the rule-based scorer decides instead.
 
 The rule-based scorer reads the same signals and nothing else: how much of the stem is
-silent, the bleed level the tagger estimated, and whether the stem's own source was heard.
-It never uses SDR, SIR or SAR, which exist only where there is a reference stem (never for
-an upload), so a stem with no reference is judged on tagger signals alone. Its numbers
-are in ``config/defaults.yaml`` (``gate.rules``) and are uncalibrated; while
-``listening.calibrated`` is false, a verdict that rests on the tagger carries the low
-``uncalibrated_confidence``, which the gate does not act on. With no tagger at all the
-scorer says so (``low_confidence``) instead of inventing a judgement.
+silent, how far its level is below the mix, the bleed level the tagger estimated, and
+whether the stem's own source was heard. It never uses SDR, SIR or SAR, which exist only
+where there is a reference stem (never for an upload). Its numbers are in
+``config/defaults.yaml`` (``gate.rules``).
+
+Two of those signals are level measurements and are acted on as they are: a silent stem,
+and a stem far below the mix (measured on real separator output,
+docs/gate-on-real-output.md). The other two are the tagger's, each with a switch in
+``listening.calibrated``; a verdict that rests on a signal whose switch is off carries the
+low ``uncalibrated_confidence``, which the gate does not act on. With no tagger at all
+the scorer says so (``low_confidence``) instead of inventing a judgement.
 """
 
 from __future__ import annotations
@@ -29,7 +33,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from stems_common import schemas
-from stems_common.settings import Defaults, GateSettings
+from stems_common.settings import Calibrated, Defaults, GateSettings
 from stems_common.stems import PRODUCT_STEMS
 from stems_worker.decision import gate, jev
 from stems_worker.decision.jev import JevClient
@@ -74,8 +78,9 @@ def state(
     *,
     present: bool | None,
     tagged: bool,
-    calibrated: bool,
+    calibrated: Calibrated,
     retries_used: int,
+    below_mix_db: float | None = None,
 ) -> dict[str, Any]:
     """What Jev is told about the stem. Missing measurements stay null; none is filled in."""
     return {
@@ -83,18 +88,35 @@ def state(
         "model_used": model_used,
         "retries_so_far": retries_used,
         "metrics": dict(metrics),
+        # The stem's level against the mix, in the mix's loudest stretch. Far below it
+        # (see gate.rules.empty_below_mix_db) the instrument is probably not in the song.
+        "level_below_mix_db": None if below_mix_db is None else round(below_mix_db, 2),
         "own_source_heard": HEARD[present] if tagged else "not checked",
-        "tagger_thresholds_calibrated": calibrated,
+        "tagger_thresholds_calibrated": calibrated.model_dump(),
     }
 
 
 # --- the rule-based scorer ----------------------------------------------------------------
 
 
-def reason_code(metrics: Mapping[str, Any], present: bool | None, settings: GateSettings) -> str:
+def is_empty(below_mix_db: float | None, settings: GateSettings) -> bool:
+    """Is the stem so far below the mix that the instrument is probably not in the song?"""
+    limit = settings.rules.empty_below_mix_db
+    return limit is not None and below_mix_db is not None and below_mix_db <= limit
+
+
+def reason_code(
+    metrics: Mapping[str, Any],
+    present: bool | None,
+    settings: GateSettings,
+    below_mix_db: float | None = None,
+) -> str:
     """The main thing the signals say about a stem, as a schema ``reason_code``."""
     bleed = metrics.get("bleed_estimate")
     if metrics["silence_fraction"] >= settings.rules.silent_fraction_min:
+        return "mostly_silent"
+    if is_empty(below_mix_db, settings):
+        # Leftovers, not silence, but the same finding: nothing of the instrument is there.
         return "mostly_silent"
     if bleed is None and present is None:
         return "low_confidence"  # nothing listened to it
@@ -110,14 +132,16 @@ def rule_assessment(
     *,
     present: bool | None,
     settings: GateSettings,
-    calibrated: bool,
+    calibrated: Calibrated,
+    below_mix_db: float | None = None,
 ) -> tuple[dict[str, Any], str | None]:
     """The ``assessment`` object from the signals alone, and the retry the rules suggest.
 
     SDR, SIR and SAR are not read: a stem is judged the same with or without a reference.
+    ``below_mix_db`` is the stem's level against the mix (``level_below_mix_db``).
     """
     rules = settings.rules
-    reason = reason_code(metrics, present, settings)
+    reason = reason_code(metrics, present, settings, below_mix_db)
     if reason == "mostly_silent":
         # A level measurement, not a tagger's opinion: certain whatever is calibrated.
         score, passed, confidence = 0.0, 0.0, 1.0
@@ -131,7 +155,11 @@ def rule_assessment(
         elif present is None:
             score = min(score, rules.unchecked_score)
         passed = 1.0 if score >= settings.score_min and present is not False else 0.0
-        confidence = 1.0 if calibrated else rules.uncalibrated_confidence
+        # The verdict is trusted only if every tagger signal it rests on is switched on:
+        # "the instrument is not here" rests on presence, "something else is here" on
+        # bleed, and a clean bill of health on both.
+        trusted = {"wrong_content": calibrated.presence, "bleed": calibrated.bleed}
+        confidence = 1.0 if trusted.get(reason, calibrated.all) else rules.uncalibrated_confidence
     assessment = {
         "score": float(score),
         "score_label": LABELS[min(max(round(score), 0), len(LABELS) - 1)],
@@ -155,13 +183,15 @@ def assess_stem(
     defaults: Defaults,
     job_id: str | None = None,
     present: bool | None = None,
+    below_mix_db: float | None = None,
     retries_used: int = 0,
     available: Mapping[str, str | None] | None = None,
 ) -> Decision:
     """Assess one attempt at one stem and say what the gate does with it.
 
     ``metrics`` is the ``metrics`` object of schema (c) (``StemSignals.metrics()``);
-    ``present`` is whether the tagger heard the stem's own source in it. ``retries_used``
+    ``present`` is whether the tagger heard the stem's own source in it; ``below_mix_db``
+    is the stem's level against the mix in the mix's loudest stretch. ``retries_used``
     and ``available`` are what the gate needs to choose between a retry and a warning
     (``gate.verdict``).
     """
@@ -172,7 +202,11 @@ def assess_stem(
     calibrated = defaults.listening.calibrated
     tagged = metrics.get("bleed_estimate") is not None or present is not None
     by_rules, rule_action = rule_assessment(
-        metrics, present=present, settings=settings, calibrated=calibrated
+        metrics,
+        present=present,
+        settings=settings,
+        calibrated=calibrated,
+        below_mix_db=below_mix_db,
     )
     asked = ask(
         client,
@@ -185,6 +219,7 @@ def assess_stem(
             tagged=tagged,
             calibrated=calibrated,
             retries_used=retries_used,
+            below_mix_db=below_mix_db,
         ),
         questions(stem),
     )
@@ -229,7 +264,7 @@ def assess_stem(
                     f"retry_action: Jev was unsure ({action['confidence']:.2f}), so the "
                     f"rules' suggestion is used ({rule_action})"
                 )
-    if not calibrated and tagged:
+    if not calibrated.all and tagged:
         notes.append("the tagger's thresholds are uncalibrated")
     value = {
         "job_id": job_id or str(uuid.uuid4()),
