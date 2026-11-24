@@ -174,6 +174,56 @@ def test_a_running_job_shows_its_stage_and_each_stem(client, deps) -> None:
     assert (listed["stage"], listed["stems"][0]["state"]) == ("packaging", "retrying")
 
 
+def test_two_syncs_of_one_job_never_record_an_event_twice(client, deps) -> None:
+    """The poller and a request can reach the same job at once. Whoever is second leaves
+    it to the first, until the first has committed."""
+    import threading
+
+    job_id = h.upload(client).json()["id"]
+    at = contract.timestamp(deps.clock())
+    status = {
+        "version": 1,
+        "job_id": job_id,
+        "state": "running",
+        "stage": "separating",
+        "updated_at": at,
+        "stems": {},
+        "events": [{"seq": n, "at": at, "stage": "separating"} for n in (1, 2, 3)],
+    }
+    put_json(deps.storage, contract.status_key(job_id), status)
+    deps.provider.states[f"manual:{job_id}"] = "running"
+    inside, release = threading.Event(), threading.Event()
+    real_sync = deps.sync._sync
+
+    def slow_sync(session, job):
+        over = real_sync(session, job)  # the events are written, not yet committed
+        inside.set()
+        assert release.wait(30)
+        return over
+
+    deps.sync._sync = slow_sync
+    first = threading.Thread(target=deps.sync.refresh, args=(deps.sessions, job_id))
+    first.start()
+    try:
+        assert inside.wait(30)
+        deps.sync._sync = real_sync
+        # A second sync steps aside at once, and a request is answered from what is
+        # committed so far instead of waiting or writing the same events.
+        assert deps.sync.refresh(deps.sessions, job_id) is False
+        seen = client.get(f"/api/jobs/{job_id}")
+        assert seen.status_code == 200
+        assert seen.json()["stage"] == "queued"
+    finally:
+        release.set()
+        first.join(30)
+    assert client.get(f"/api/jobs/{job_id}").json()["stage"] == "separating"
+    with deps.sessions() as session:
+        recorded = session.scalars(
+            select(JobEvent.seq).where(JobEvent.job_id == job_id).order_by(JobEvent.id)
+        ).all()
+    assert recorded == [None, None, 1, 2, 3]
+
+
 def test_a_status_that_is_not_valid_is_ignored(client, deps) -> None:
     job_id = h.upload(client).json()["id"]
     deps.provider.states[f"manual:{job_id}"] = "running"

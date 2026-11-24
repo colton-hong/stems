@@ -1,7 +1,7 @@
 """Bring a job's database row up to date with what its worker wrote to storage.
 
 The API learns about a job only from ``status.json`` and ``result.json`` (PLAN.md section
-2). ``JobSync.sync`` reads them for one job in progress and applies what is new: the
+2). ``JobSync.refresh`` reads them for one job in progress and applies what is new: the
 stage, events not seen before, and at the end the stems, decisions and timings. It also
 asks the provider whether the worker is still alive, so that a worker that died without
 writing a result ends the job as failed instead of leaving it running for ever.
@@ -187,26 +187,34 @@ class JobSync:
 
     # -- the entry points ----------------------------------------------------------------
 
-    def sync(self, session: Session, job: Job) -> bool:
-        """Update ``job`` from storage. Returns True if the job is now over.
+    def refresh(self, sessions: sessionmaker[Session], job_id: str) -> bool:
+        """Bring one job's row up to date, in a transaction of its own.
 
-        Safe to call from several threads: a job that is being synced elsewhere is left
-        to that caller. The session is flushed, not committed.
+        Returns True if the job is over afterwards. Safe to call from several threads: a
+        job that is being synced elsewhere is left to that caller, and this returns False
+        at once. The claim on the job is held until the transaction has committed, so two
+        callers can never both record the same event.
         """
-        if job.status not in IN_PROGRESS or job.deleted_at is not None:
-            return job.status not in IN_PROGRESS
         with self._lock:
-            if job.id in self._busy:
+            if job_id in self._busy:
                 return False
-            self._busy.add(job.id)
+            self._busy.add(job_id)
         try:
-            return self._sync(session, job)
-        except StorageError as exc:
-            log.warning("job %s: storage could not be read: %s", job.id, exc)
-            return False
+            with sessions() as session:
+                job = session.get(Job, job_id)
+                if job is None or job.status not in IN_PROGRESS or job.deleted_at is not None:
+                    return True
+                try:
+                    over = self._sync(session, job)
+                except StorageError as exc:
+                    log.warning("job %s: storage could not be read: %s", job_id, exc)
+                    session.rollback()
+                    return False
+                session.commit()
+                return over
         finally:
             with self._lock:
-                self._busy.discard(job.id)
+                self._busy.discard(job_id)
 
     def _sync(self, session: Session, job: Job) -> bool:
         now = self._clock()
@@ -238,14 +246,7 @@ class JobSync:
         """Sync every job in progress, each in its own transaction. Returns how many ended."""
         with sessions() as session:
             job_ids = [job.id for job in system.jobs_in_progress(session)]
-        ended = 0
-        for job_id in job_ids:
-            with sessions() as session:
-                job = session.get(Job, job_id)
-                if job is not None and self.sync(session, job):
-                    ended += 1
-                session.commit()
-        return ended
+        return sum(1 for job_id in job_ids if self.refresh(sessions, job_id))
 
     def recover(self, sessions: sessionmaker[Session]) -> int:
         """After a restart: hand every unfinished job back to the provider.

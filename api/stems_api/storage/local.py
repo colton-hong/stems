@@ -76,9 +76,15 @@ def _b64(data: bytes) -> str:
 
 def _unb64(text: str) -> bytes:
     try:
-        return base64.b64decode(text + "=" * (-len(text) % 4), altchars=b"-_", validate=True)
+        data = base64.b64decode(text + "=" * (-len(text) % 4), altchars=b"-_", validate=True)
     except (binascii.Error, ValueError) as exc:
         raise LinkInvalid("the link is malformed") from exc
+    # Only the one spelling this module writes is accepted. The last character of a
+    # base64 string can carry bits that decode to nothing, so without this a token could
+    # be respelled and still verify.
+    if _b64(data) != text:
+        raise LinkInvalid("the link is malformed")
+    return data
 
 
 def _signature(secret: bytes, body: str) -> bytes:

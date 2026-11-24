@@ -345,6 +345,13 @@ def create_app(deps: Deps | None = None, *, background: bool = True) -> FastAPI:
             raise HTTPException(404, NOT_FOUND)
         return JobStore(session, owner.id), job
 
+    def refresh(request: Request, job_id: str) -> None:
+        """Bring the owner's job up to date with its worker before it is read. Whose job
+        it is comes first: nothing is synced for a browser that does not own it."""
+        with deps.sessions.begin() as session:
+            owned_job(request, session, job_id)
+        deps.sync.refresh(deps.sessions, job_id)
+
     def view(job: Job) -> dict[str, Any]:
         return job_view(job, deps.sync.live(job.id), deps.clock())
 
@@ -530,9 +537,9 @@ def create_app(deps: Deps | None = None, *, background: bool = True) -> FastAPI:
 
     @router.get("/jobs/{job_id}")
     def get_job(job_id: str, request: Request) -> dict[str, Any]:
+        refresh(request, job_id)
         with deps.sessions.begin() as session:
             _, job = owned_job(request, session, job_id)
-            deps.sync.sync(session, job)
             return view(job)
 
     @router.get("/jobs/{job_id}/events")
@@ -543,9 +550,9 @@ def create_app(deps: Deps | None = None, *, background: bool = True) -> FastAPI:
             after = 0
 
         def read(last_id: int) -> tuple[dict[str, Any], list[dict[str, Any]], bool]:
+            refresh(request, job_id)
             with deps.sessions.begin() as session:
                 store, job = owned_job(request, session, job_id)
-                deps.sync.sync(session, job)
                 events = [
                     {
                         "id": event.id,
@@ -593,9 +600,9 @@ def create_app(deps: Deps | None = None, *, background: bool = True) -> FastAPI:
     @router.post("/jobs/{job_id}/links")
     def links(job_id: str, request: Request) -> dict[str, Any]:
         ttl = defaults.retention.signed_url_ttl_seconds
+        refresh(request, job_id)
         with deps.sessions.begin() as session:
             _, job = owned_job(request, session, job_id)
-            deps.sync.sync(session, job)
             if job.status != "ready":
                 raise HTTPException(409, "This job has no files to download.")
             files = []

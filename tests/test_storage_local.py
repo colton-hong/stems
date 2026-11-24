@@ -89,6 +89,30 @@ def test_changing_any_character_of_a_link_is_rejected(storage) -> None:
             storage.verify(tampered)
 
 
+def test_a_token_has_exactly_one_spelling(storage) -> None:
+    """Base64's last character can hold bits that decode to nothing. A token respelled
+    that way carries the same signature bytes, and is refused all the same."""
+    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+    token = token_of(storage.signed_url(KEY, 900, filename="song.wav"))
+    body, _, signature = token.partition(".")
+    accepted = []
+    for part, rebuild in (
+        (signature, lambda s: f"{body}.{s}"),
+        (body, lambda b: f"{b}.{signature}"),
+    ):
+        for letter in alphabet:
+            candidate = rebuild(part[:-1] + letter)
+            try:
+                storage.verify(candidate)
+            except LinkInvalid:
+                continue
+            accepted.append(candidate)
+    assert accepted == [token, token]  # only the original, once per half
+    for padded in (token + "=", f"{body}=.{signature}", f"{body}.{signature}=="):
+        with pytest.raises(LinkInvalid):
+            storage.verify(padded)
+
+
 def test_a_link_cannot_be_repointed_or_extended(storage, clock) -> None:
     """Re-encoding the payload with another key or a later expiry breaks the signature."""
     put_bytes(storage, "jobs/other/source", b"someone else's", "audio/wav")

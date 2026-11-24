@@ -2,7 +2,7 @@
 
 Single source of truth for where the build is. Read this first, every iteration.
 
-**Current phase: 5 (API and worker), finished 2026-11-24 except for three live checks that need the owner's accounts.** P5.1 to P5.14 are ticked; the live checks of S3 and Azure Blob (B7) and of Modal (B4) are recorded as not done inside P5.2, P5.3 and P5.12. The owner's TypeSafe key and Cloudflare token arrived on 2026-11-24 (B5 and B6 resolved): P4.9 is done, and P3.9 to P3.11 are unblocked and open. Still open from earlier phases: Phase 2's real benchmarks are running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done, the tuning stage on MoisesDB started 2026-11-24T04:53Z; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task). Do not start Phase 6 without the owner's go-ahead.
+**Current phase: 5 (API and worker), finished 2026-11-24 except for three live checks that need the owner's accounts.** P5.1 to P5.14 are ticked; the live checks of S3 and Azure Blob (B7) and of Modal (B4) are recorded as not done inside P5.2, P5.3 and P5.12. The owner's TypeSafe key and Cloudflare token arrived on 2026-11-24 (B5 and B6 resolved): P4.9, P3.9 and P3.10 are done; P3.11 (optional) is open. Still open from earlier phases: Phase 2's real benchmarks are running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done, the tuning stage on MoisesDB started 2026-11-24T04:53Z; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task). Do not start Phase 6 without the owner's go-ahead.
 
 ## How to use this file
 
@@ -88,8 +88,8 @@ Format: `- [ ] Pn.m Task. **Accept:** how to tell it is done.`
 - [x] P3.6 Clip builder: loudest 30-second window, programmatic presence ground truth, Part B bleed mixes at +30, +20, +12 and +6 dB SIR, five reverb clips, 16 kHz mono encoding under 8 MiB. **Accept:** tested on the synthetic dataset, including the measured SIR of each bleed clip. — Done, ahead of P3.5 because the pre-registration needs its window and presence rules: `stems_bench.clef.clips` (loudest window on a one-second grid, the -40 dBFS / 5 s presence rule, `mix_at_sir`, seeded Part B selection with no track used twice, 16 kHz mono PCM16 encoding that only ever turns a clip down) and `clef.clipset` (`make_plan`, `build_clips` with a manifest). On the synthetic set every bleed clip's measured SIR equals the requested one to 1e-6 dB, and the contaminant recovered from the written files rises by 24 dB (within 3) from +30 to +6 dB SIR. The reverb probe uses Part B's clean vocal stems. 16 tests.
 - [x] P3.7 Clef-omni client with full request and response logging and a recorded-response mock. **Accept:** enforces 4 clips, 8 MiB, 300 seconds and 64 questions per request; every call appends to a JSONL log with question ids, probabilities and token usage; the token never appears in logs. — Done: `stems_bench.clef.client`. Request and answer shapes are the ones on Cloudflare's model page (noul gives `noul`; choice gives `choice`, `probabilities`, `confidence`; score adds `score` and `legend`; audio as `{content_type, base64}`). Limits come from the registry entry and a request over any of them is refused before sending. Each call appends a JSONL line (question ids and wording, clip id, size and SHA-256 but never audio, status, attempts, every probability, token usage); the first line is a header naming the pre-registration commit. Retries on 408/429/5xx and network errors with 1, 2, 4 s waits. `RecordingTransport` saves exchanges and `ReplayTransport` answers from them with no network. **Not live-tested:** the saved responses in the tests are hand-written to the documented format, and whether the REST endpoint wraps the body in `{result, success}` is unconfirmed (both are accepted). 35 tests.
 - [x] P3.8 Scoring: accuracy overall and per stem, AUC, Spearman correlation, clean false-positive rate, pass or fail per threshold. **Accept:** unit tests with hand-computed cases for each statistic. — Done: `stems_bench.clef.scoring`: `accuracy`, `auc` (pair counting, ties half), `spearman` (on mean ranks), `best_f1_threshold` (secondary), `score_part_a` (A1-A3, plus what always answering 'present' would score on A3), `score_part_b` (B1-B3; a clean clip is flagged by score >= 1 or probability >= 0.5), `compare` (C, in points, needed on both A1 and B1) and `verdict` (the pre-registered decision rule). A statistic that cannot be computed fails its threshold rather than passing. 14 tests, each against a case worked by hand.
-- [ ] P3.9 Run Parts A and B for Clef-omni and BEATs. **Accept:** `runs/clef_test/<run-id>/` holds all logs and scores. *Unblocked 2026-11-24: the Cloudflare account id and token are in `.env` and Cloudflare reports the token active; the Clef-omni half is the next thing to run.* *BEATs half run 2026-11-22* (`python -m stems_bench.clef.run --only beats`, run `clef-omni-v1`, CPU, all 300 mix decisions and 100 Part B clips): A1 26.0% (78 of 300) at the pre-registered 0.5; per stem vocals 12%, drums 4%, bass 4%, guitar 12%, piano 72%, other 52%; B1 AUC 0.643 pooled and 0.598 at +30 dB; B2 Spearman 0.231; B3 10% (2 of 20 clean clips flagged). On mixes the median stem score is under 0.1 for every stem, so at 0.5 BEATs answers 'absent' almost everywhere; the best-F1 cut-offs are 0.02 or lower, where it is close to answering 'present' every time. The median bleed score does rise with every level (0.022 clean, then 0.047, 0.062, 0.078, 0.126), but clean bass stems score 0.24 to 0.61 for guitar (AudioSet files bass guitar under guitar), which buries it. These are BEATs with the pre-registered mapping and thresholds, not a tuned detector. The task stays open for the Clef-omni half.* *Ready to run (2026-11-23): `python -m stems_bench.clef.run` builds the clips from the pre-registration, asks every pre-registered question, runs the tagger on the same clips, scores both and writes the run folder; it resumes from its log. Proven end to end on the synthetic set with stand-ins that answer from the known truth (`tests/test_clef_run.py`). Nothing has been sent to Clef-omni and no real tagger has run.*
-- [ ] P3.10 Pass/fail report and recommendation. **Accept:** `docs/clef-omni-test.md` states each threshold, the measured value and the verdict, generated from the run. **BLOCKED (needs P3.9).** *The generator exists: `python -m stems_bench.clef.run --report docs/clef-omni-test.md` writes the report from a run folder's files.*
+- [x] P3.9 Run Parts A and B for Clef-omni and BEATs. **Accept:** `runs/clef_test/<run-id>/` holds all logs and scores. *Unblocked 2026-11-24: the Cloudflare account id and token are in `.env` and Cloudflare reports the token active; the Clef-omni half is the next thing to run.* *BEATs half run 2026-11-22* (`python -m stems_bench.clef.run --only beats`, run `clef-omni-v1`, CPU, all 300 mix decisions and 100 Part B clips): A1 26.0% (78 of 300) at the pre-registered 0.5; per stem vocals 12%, drums 4%, bass 4%, guitar 12%, piano 72%, other 52%; B1 AUC 0.643 pooled and 0.598 at +30 dB; B2 Spearman 0.231; B3 10% (2 of 20 clean clips flagged). On mixes the median stem score is under 0.1 for every stem, so at 0.5 BEATs answers 'absent' almost everywhere; the best-F1 cut-offs are 0.02 or lower, where it is close to answering 'present' every time. The median bleed score does rise with every level (0.022 clean, then 0.047, 0.062, 0.078, 0.126), but clean bass stems score 0.24 to 0.61 for guitar (AudioSet files bass guitar under guitar), which buries it. These are BEATs with the pre-registered mapping and thresholds, not a tuned detector. The task stays open for the Clef-omni half.* *Ready to run (2026-11-23): `python -m stems_bench.clef.run` builds the clips from the pre-registration, asks every pre-registered question, runs the tagger on the same clips, scores both and writes the run folder; it resumes from its log. Proven end to end on the synthetic set with stand-ins that answer from the known truth (`tests/test_clef_run.py`). Nothing has been sent to Clef-omni and no real tagger has run.* — Done: Clef-omni half run 2026-11-24 (`--only clef`, run `clef-omni-v1`): 183 of 183 requests answered on the first attempt, 137,930 input tokens, logged in `clef-log.jsonl` with no token or account id in it. A further run of both halves sent nothing new and recomputed BEATs, so `runs/clef_test/clef-omni-v1/` holds `run.json` (both ran, clean tree at commit `83d7a20`), the request log, the tagger scores and `scores.json` with both systems and the verdict.
+- [x] P3.10 Pass/fail report and recommendation. **Accept:** `docs/clef-omni-test.md` states each threshold, the measured value and the verdict, generated from the run. *The generator exists: `python -m stems_bench.clef.run --report docs/clef-omni-test.md` writes the report from a run folder's files.* — Done: `docs/clef-omni-test.md`, generated by `python -m stems_bench.clef.run --run-id clef-omni-v1 --report`: every threshold with its measured value and result for both systems, the margin test, and the verdict. Clef-omni: rejected (A1 81.3% against 85%; piano 76% and other 58%; bleed AUC at +30 dB 0.757 against 0.80; 4 of 20 clean clips called bleeding). It beat BEATs by 55 points on A1 and 26 on B1, which the margin test passes but which does not rescue a system that misses its own thresholds. Listening layer: BEATs with CLAP as second opinion, as PLAN.md decision 6 already had it.
 - [ ] P3.11 Optional: MERT probe and Essentia model compared with BEATs on Part A. **Accept:** results added to the same report, or a note saying it was skipped and why. *Waits for P3.10: it adds to that report, and compares against BEATs.*
 
 ## Phase 4: decision layer
@@ -511,3 +511,51 @@ How it behaves that the owner may want to change (BLOCKED.md D7 to D9):
 For the owner: nothing is needed to use this locally (`make api`). Bucket credentials
 (B7) and a Modal token (B4) unblock the three live checks. Phase 6 (web app) waits for a
 go-ahead.
+
+## Phase 3 addendum: the Clef-omni half (2026-11-24)
+
+The Cloudflare token arrived, so the pre-registered test was completed (P3.9, P3.10).
+`python -m stems_bench.clef.run --only clef --run-id clef-omni-v1` sent 183 requests to
+Workers AI; all 183 were answered on the first attempt (137,930 input tokens). A second
+run with both halves took the Clef-omni answers from the log, sent nothing, and
+recomputed BEATs on CPU, so `scores.json` holds both. The report is
+`docs/clef-omni-test.md`, generated from the run.
+
+By the rule fixed before any score was seen, Clef-omni is **rejected** and the listening
+layer stays BEATs with CLAP as second opinion. It missed five of its own thresholds:
+overall presence accuracy 81.3% against 85%, piano 76% against 80%, other 58% against
+70%, bleed AUC at +30 dB 0.757 against 0.80, and 4 of 20 clean clips called bleeding
+against at most 2. It passed vocals, drums, bass and guitar presence, vocal absence, the
+pooled bleed AUC (0.901) and the rank correlation with bleed level (0.703).
+
+What the same report also shows, and the verdict does not say: on this test Clef-omni
+was far ahead of BEATs as the listening layer uses it today. Presence accuracy 81.3%
+against 26.0%; bleed AUC 0.901 against 0.642. The BEATs figures come from the
+uncalibrated mapping at its pre-registered 0.5 cut-off, where it answers "absent" almost
+everywhere; P7.1 calibrates that mapping. The verdict is the pre-registered one and
+nothing was changed because of this comparison. Whether to look at Clef-omni again
+after BEATs is calibrated is the owner's call.
+
+Not known: what the run cost. No price was read from Cloudflare, and nothing was bought.
+P3.11 (optional: MERT and Essentia against BEATs on Part A) is open.
+
+## Phase 5 addendum: two faults found after the summary (2026-11-24)
+
+Both came out of one failed `make check` and one failed run of the end-to-end test.
+
+- **A link token had more than one spelling.** The last character of a base64 string can
+  carry bits that decode to nothing, so a token with that character changed could carry
+  the same signature bytes and still verify. It granted nothing new (same key, same
+  expiry), but P5.1's note said any changed character is rejected, and about 1 run in 16
+  of that test would have shown otherwise. Tokens are now accepted only in the one
+  spelling the server writes; a test tries all 64 last characters of each half.
+- **The poller and a request could record the same worker event twice.** The claim on a
+  job was released before the transaction committed, leaving a window in which a second
+  sync read the old history and wrote the same events, which the unique index then
+  refused with an error. It failed the end-to-end test once in about 20 runs and could
+  not be reproduced on demand; the cause was found by reading the code, so it is likely
+  but not proven to be what failed. The claim is now held until the commit
+  (`JobSync.refresh`), and a test holds one sync open and checks that a second steps
+  aside and a request is still answered.
+
+After both fixes the storage and API tests passed four times in a row (183 tests each).
