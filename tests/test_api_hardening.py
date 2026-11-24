@@ -271,6 +271,26 @@ def test_a_jobs_log_goes_when_the_job_goes(tmp_path) -> None:
     assert LocalProvider(log_dir=None).forget(JOB) is False
 
 
+def test_the_tests_never_sweep_the_real_temporary_directory(tmp_path) -> None:
+    import tempfile
+    from datetime import timedelta
+    from pathlib import Path
+
+    from stems_api.sweeper import sweep
+
+    # The run has a temporary directory of its own, and so does every process it starts.
+    here = Path(tempfile.gettempdir())
+    assert here.name == f"stems-tests-{os.getuid()}"
+    assert os.environ["TMPDIR"] == str(here)
+    # A sweep with a clock a year ahead removes what looks stale in there, and only there.
+    deps = h.make_deps(tmp_path)
+    mine = here / "stems-job-of-this-test"
+    mine.mkdir(exist_ok=True)
+    sweep(deps.sessions, deps.storage, deps.provider, deps.clock() + timedelta(days=365))
+    assert not mine.exists()
+    assert here.exists()
+
+
 def test_temporary_folders_left_by_a_dead_process_are_removed(tmp_path) -> None:
     now = time.time()
     old = now - STALE_TEMP.total_seconds() - 60
