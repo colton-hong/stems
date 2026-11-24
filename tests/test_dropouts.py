@@ -123,6 +123,12 @@ def test_a_run_is_counted_stem_by_stem_and_the_report_lists_the_long_dropouts(ru
     assert "For drums the product uses the same model now as before" in text
     assert "| T01 | bass | now | 20.0 | 12.0 | 12.0 |" in text
     assert "0 of these 1 stems would carry it" in text
+    assert "the true stem is itself" not in text
+    # A true stem that is itself next to nothing against the song is pointed out.
+    faint = [{**r, "true_below_song_db": -30.0} for r in records]
+    assert "In 1 of them (T01's bass) the true stem is itself more than 21.68 dB" in (
+        dropouts.render(faint, run)
+    )
     # A stem that is very quiet over the whole song would carry the product's note.
     noted = dropouts.collect(run_dir, empty_below_mix_db=-1.0)
     assert all(r["noted"] for r in noted)

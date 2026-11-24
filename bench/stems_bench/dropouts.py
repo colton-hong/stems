@@ -45,6 +45,10 @@ from stems_common.levels import (
 from stems_common.stems import PRODUCT_STEMS
 
 LONG_SECONDS = IN_SONG_SECONDS
+# The commit that holds the definitions above, made before the count was run. The column
+# with the true stem's own level, and the sentence about faint true stems, came after the
+# first count; they add what is needed to read the table and change no figure in it.
+RULES_COMMIT = "dc9ee6c1d12c7bcb7274b073aae44991fa6a6408"
 VERSIONS = ("new", "old")
 SAMPLE_RATE = 44100
 
@@ -104,6 +108,7 @@ def collect(run_dir: Path, *, empty_below_mix_db: float | None) -> list[dict[str
                         "version": version,
                         **measure(true.samples, audio.samples, SAMPLE_RATE),
                         "below_song_db": round(below, 2),
+                        "true_below_song_db": round(level_below_mix_db(true.samples, mix), 2),
                         "noted": empty_below_mix_db is not None and below < empty_below_mix_db,
                     }
                 )
@@ -158,8 +163,8 @@ def render(records: Sequence[Mapping[str, Any]], run: Mapping[str, Any]) -> str:
         "not. A **dropout** is one unbroken stretch of the product's silence, as long as the "
         f"true stem sounds inside it; it is **long** from {LONG_SECONDS:g} seconds, the time "
         "that makes an instrument count as being in a song. These definitions were written "
-        "into `bench/stems_bench/dropouts.py` before the count was run; one case had been "
-        "seen by then (the bass of the sixth song).",
+        f"into `bench/stems_bench/dropouts.py` and committed (`{RULES_COMMIT[:7]}`) before the "
+        "count was run; one case had been seen by then (the bass of the sixth song).",
         "",
         head,
         rule,
@@ -194,25 +199,37 @@ def render(records: Sequence[Mapping[str, Any]], run: Mapping[str, Any]) -> str:
     if long:
         lines += [
             "| Song | Stem | Version | True stem sounds (s) | Dropped (s) | Longest (s) | "
-            "Stem under the song (dB) | The product's note |",
-            "|---|---|---|---:|---:|---:|---:|---|",
+            "True stem under the song (dB) | Product's stem under the song (dB) | "
+            "The product's note |",
+            "|---|---|---|---:|---:|---:|---:|---:|---|",
         ]
         for r in long:
             lines.append(
                 f"| {r['track']} | {r['stem']} | {'now' if r['version'] == 'new' else 'before'} | "
                 f"{r['sounding']:.1f} | {r['dropped']:.1f} | {r['longest']:.1f} | "
-                f"{-r['below_song_db']:.1f} | {'yes' if r['noted'] else 'no'} |"
+                f"{-r['true_below_song_db']:.1f} | {-r['below_song_db']:.1f} | "
+                f"{'yes' if r['noted'] else 'no'} |"
             )
-        noted = sum(1 for r in long if r["noted"])
-        lines += [
-            "",
-            f'"The product\'s note" is the one it puts on a stem that is silent or very quiet '
-            f"against the whole song (more than {-run['empty_below_mix_db']:g} dB under it). "
-            f"{noted} of these {len(long)} stems would carry it. The others are delivered "
-            "without a word: over the whole song they are loud enough."
-            if run.get("empty_below_mix_db") is not None
-            else "",
-        ]
+        limit = run.get("empty_below_mix_db")
+        if limit is not None:
+            noted = sum(1 for r in long if r["noted"])
+            lines += [
+                "",
+                '"The product\'s note" is the one it puts on a stem that is silent or very '
+                f"quiet against the whole song (more than {-limit:g} dB under it). {noted} of "
+                f"these {len(long)} stems would carry it. The others are delivered without a "
+                "word: over the whole song they are loud enough.",
+            ]
+            faint = [r for r in long if r["true_below_song_db"] < limit]
+            if faint:
+                names = ", ".join(sorted({f"{r['track']}'s {r['stem']}" for r in faint}))
+                lines += [
+                    "",
+                    f"In {len(faint)} of them ({names}) the true stem is itself more than "
+                    f"{-limit:g} dB under the song. By the product's own rule there was next "
+                    "to nothing to find there, and near-silence is close to the right answer; "
+                    "the count above includes them all the same, as it was defined.",
+                ]
     else:
         lines.append("None.")
     lines += [
