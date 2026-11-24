@@ -1,0 +1,34 @@
+# Prices used by `python -m stems_bench.cost`. Each was read from the page named beside
+# it on the date given. Nothing here is a measurement and nothing is carried over from
+# the research report: re-check the pages before relying on these.
+checked: 2026-11-24
+
+jev:
+  # "Price (per Btok / per Mtok): $42 / $0.042" and "You pay per input token. Output
+  # tokens are free." for jev-1.14.0.
+  source: https://docs.typesafe.ai/models
+  usd_per_million_input_tokens: 0.042
+  usd_per_million_output_tokens: 0.0
+
+modal:
+  # Per-second list prices. The page also states 3x for non-preemptible execution, and
+  # "$30 / month free credits" on the Starter plan.
+  source: https://modal.com/pricing
+  usd_per_second:
+    T4: 0.000164
+    L4: 0.000222
+  usd_per_core_second: 0.0000131
+  usd_per_gib_second: 0.00000222
+
+r2:
+  # "Storage | $0.015 / GB-month" (Standard) and "Egress (data transfer to Internet) |
+  # Free"; free tier "10 GB-month / month".
+  source: https://developers.cloudflare.com/r2/pricing/
+  usd_per_gb_month: 0.015
+  usd_per_gb_egress: 0.0
+  free_gb_month: 10
+
+not_found:
+  # Looked for and not read: the page was fetched but its rate tables were not in it.
+  - what: Amazon S3 Standard storage and internet egress prices
+    source: https://aws.amazon.com/s3/pricing/

@@ -68,6 +68,7 @@ python -m stems_bench.clef.run      # run the Clef-omni test; --report FILE writ
 .venv/bin/python -m stems_worker.decision.job FILE --request "vocals and drums"   # one job through the decision layer; stems + job.json
 .venv/bin/python -m stems_bench.calibrate collect   # score clean and bled stems with the tagger (long; resumable)
 .venv/bin/python -m stems_bench.calibrate report --out docs/gate-calibration.md   # choose thresholds, check them held out
+.venv/bin/python -m stems_bench.cost --out docs/cost-per-song.md   # cost per song from measured usage and config/prices.yaml
 .venv/bin/python -m stems_bench.listening_kit build MANIFEST.yaml --out KIT --key KEY.json   # blind listening-test kit
 .venv/bin/python -m stems_bench.listening_kit score KIT --key KEY.json --sheets DIR   # unblind returned sheets
 .venv/bin/python -m stems_worker.decision.live   # one real Jev request per decision type, recorded as fixtures (needs the key)
