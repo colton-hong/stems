@@ -106,11 +106,9 @@ class GateRules(_Strict):
     unchecked_score: float = Field(ge=0, le=4)
     # Confidence of a verdict that rests on tagger thresholds not yet calibrated.
     uncalibrated_confidence: float = Field(ge=0, le=1)
-    # A stem this far below the mix, or further, in the mix's loudest stretch is treated
-    # like a silent one: the instrument is probably not in the song. None switches it off.
+    # A stem this far below the mix, or further, over the whole song is treated like a
+    # silent one: the instrument is probably not in the song. None switches it off.
     empty_below_mix_db: float | None = Field(le=0)
-    # How long that stretch is.
-    empty_window_seconds: float = Field(gt=0)
 
     @model_validator(mode="after")
     def _check(self) -> GateRules:
@@ -216,6 +214,8 @@ class Calibrated(_Strict):
 
 
 class ListeningSettings(_Strict):
+    # Whether the worker loads the tagger and listens to the mix and to every stem.
+    enabled: bool
     # Per signal: true only once it passed its held-out check on real separator output.
     calibrated: Calibrated
     presence: PresenceSettings

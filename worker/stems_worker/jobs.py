@@ -395,12 +395,13 @@ def main(argv: list[str] | None = None) -> int:
         from stems_worker.listening.beats import BeatsError, BeatsTagger
 
         options["client"] = JevClient.from_env(defaults.decision)
-        try:
-            tagger = BeatsTagger.from_registry()
-            tagger.load("cpu")
-        except (BeatsError, DownloadError, OSError) as exc:
-            print(f"worker: no tagger ({exc}); stems will not be quality-checked", file=sys.stderr)
-            tagger = None
+        if defaults.listening.enabled:
+            try:
+                tagger = BeatsTagger.from_registry()
+                tagger.load("cpu")
+            except (BeatsError, DownloadError, OSError) as exc:
+                print(f"worker: no tagger ({exc}); stems will not be listened to", file=sys.stderr)
+                tagger = None
         options["tagger"] = tagger
     try:
         result = run_job(args.job_id, storage, defaults=defaults, device=args.device, **options)

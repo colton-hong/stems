@@ -19,6 +19,7 @@ import argparse
 import json
 import os
 import sys
+import time
 import uuid
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
@@ -286,14 +287,37 @@ def run_job(
         input_path, defaults.audio.sample_rate_hz, max_duration_seconds=max_duration_seconds
     )
     device = pick_device(request.device)
+    # What the tagger cost: one line per thing it listened to, beside the models' lines.
+    listened: list[dict[str, Any]] = []
+
+    def listening(what: str, call: Callable[[], Any]) -> Any:
+        started = time.perf_counter()
+        value = call()
+        if tagger is not None:
+            listened.append(
+                {
+                    "model_id": tagger.name,
+                    "stage": "listening",
+                    "outputs": [what],
+                    "device": str(getattr(tagger, "device", None) or "cpu"),
+                    "audio_seconds": round(loaded.duration_seconds, 3),
+                    "wall_seconds": round(time.perf_counter() - started, 3),
+                    "cached": False,
+                }
+            )
+        return value
+
     tell("analysing")
-    features = build_track_features(
-        loaded.samples,
-        loaded.sample_rate,
-        tagger=tagger,
-        settings=defaults.listening,
-        source_sample_rate=loaded.source.sample_rate,
-        source_channels=loaded.source.channels,
+    features = listening(
+        "mix",
+        lambda: build_track_features(
+            loaded.samples,
+            loaded.sample_rate,
+            tagger=tagger,
+            settings=defaults.listening,
+            source_sample_rate=loaded.source.sample_rate,
+            source_channels=loaded.source.channels,
+        ),
     )
 
     # 3. Which models.
@@ -366,13 +390,16 @@ def run_job(
         attempts: list[np.ndarray] = []
         while machine.state == retry.RUNNING:
             tell("assessing", stem=stem, attempt=len(attempts))
-            signals = stem_signals(
+            signals = listening(
                 stem,
-                audio,
-                loaded.sample_rate,
-                tagger=tagger,
-                clap=clap,
-                settings=defaults.listening,
+                lambda audio=audio, stem=stem: stem_signals(
+                    stem,
+                    audio,
+                    loaded.sample_rate,
+                    tagger=tagger,
+                    clap=clap,
+                    settings=defaults.listening,
+                ),
             )
             decision = log(
                 assess_stem(
@@ -383,12 +410,7 @@ def run_job(
                     defaults=defaults,
                     job_id=job_id,
                     present=signals.present,
-                    below_mix_db=level_below_mix_db(
-                        audio,
-                        loaded.samples,
-                        loaded.sample_rate,
-                        defaults.gate.rules.empty_window_seconds,
-                    ),
+                    below_mix_db=level_below_mix_db(audio, loaded.samples),
                     retries_used=machine.retries_used,
                     available=machine.available(),
                 ),
@@ -459,7 +481,7 @@ def run_job(
             "stems": stems_report,
             "extras": extras_report,
             "warnings": {s: r["warning"] for s, r in stems_report.items() if r["warning"]},
-            "models": runner.runs,
+            "models": [*runner.runs, *listened],
             "output_gain": round(written.gain, 6),
             "residual": {
                 "computed": residual.computed,
@@ -504,7 +526,7 @@ def main(argv: list[str] | None = None) -> int:
     output_dir = args.out or args.file.with_name(f"{args.file.stem}_job")
     client = JevClient.from_env(defaults.decision, log_path=output_dir / "jev-calls.jsonl")
     tagger = None
-    if not args.no_tagger:
+    if not args.no_tagger and defaults.listening.enabled:
         from stems_models.download import DownloadError
         from stems_worker.listening.beats import BeatsError, BeatsTagger
 

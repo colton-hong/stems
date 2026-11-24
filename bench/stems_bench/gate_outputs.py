@@ -130,7 +130,7 @@ IN_FORCE_DB = -19.81
 #   replace  it fails and "whole" passes: "whole" takes its place
 #   off      both fail: the rule is switched off
 # The commit that added this block. Filled in by the commit after it.
-WHOLE_RULES_COMMIT: str | None = None
+WHOLE_RULES_COMMIT: str | None = "fcd175726d06774dfa6f9e3c25b0f9e90aa6a93a"
 
 
 class OutputsError(ValueError):

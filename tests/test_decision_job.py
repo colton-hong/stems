@@ -330,6 +330,7 @@ def test_the_whole_pipeline_with_no_key(song, tmp_path) -> None:
         assert report["retries"] == 0
         assert report["attempts"][0]["assessment"]["reason_code"] == "low_confidence"
     assert result["warnings"] == {"vocals": UNCHECKED, "drums": UNCHECKED}
+    assert all(run["stage"] != "listening" for run in result["models"])  # nothing listened
     assert result["listening"] == {
         "tagger": None,
         "calibrated": {"presence": False, "bleed": False},
@@ -465,6 +466,14 @@ def test_with_a_calibrated_tagger_the_fallback_gate_delivers_clean_stems(song, t
             "suspected_source": "none",
             "level": "none",
         }
+    # What the tagger cost is in the job's timings: the mix once, then each stem's one attempt.
+    heard = [run for run in result["models"] if run["stage"] == "listening"]
+    assert [run["outputs"] for run in heard] == [["mix"], ["vocals"], ["bass"]]
+    for run in heard:
+        assert (run["model_id"], run["device"], run["cached"]) == ("oracle", "cpu", False)
+        assert run["audio_seconds"] == 3.0
+        assert run["wall_seconds"] >= 0
+    assert [run["stage"] for run in result["models"]][-3:] == ["listening"] * 3
     assert result["listening"] == {
         "tagger": "oracle",
         "calibrated": {"presence": True, "bleed": True},

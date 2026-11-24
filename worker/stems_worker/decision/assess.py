@@ -88,7 +88,7 @@ def state(
         "model_used": model_used,
         "retries_so_far": retries_used,
         "metrics": dict(metrics),
-        # The stem's level against the mix, in the mix's loudest stretch. Far below it
+        # The stem's level against the mix, over the whole song. Far below it
         # (see gate.rules.empty_below_mix_db) the instrument is probably not in the song.
         "level_below_mix_db": None if below_mix_db is None else round(below_mix_db, 2),
         "own_source_heard": HEARD[present] if tagged else "not checked",
@@ -191,7 +191,7 @@ def assess_stem(
 
     ``metrics`` is the ``metrics`` object of schema (c) (``StemSignals.metrics()``);
     ``present`` is whether the tagger heard the stem's own source in it; ``below_mix_db``
-    is the stem's level against the mix in the mix's loudest stretch. ``retries_used``
+    is the stem's level against the mix over the whole song. ``retries_used``
     and ``available`` are what the gate needs to choose between a retry and a warning
     (``gate.verdict``).
     """

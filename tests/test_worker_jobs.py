@@ -524,3 +524,37 @@ def test_decode_head_decodes_a_second_or_says_the_file_is_not_audio(tmp_path, so
     stub.write_bytes(source_bytes[:44])
     with pytest.raises(UnsupportedAudioError):
         decode_head(stub)
+
+
+def test_the_tagger_is_not_loaded_when_listening_is_switched_off(tmp_path, monkeypatch) -> None:
+    from stems_worker.listening import beats
+
+    seen: dict = {}
+
+    def fake_run(job_id, storage, **options):
+        seen.update(options)
+        return {"state": "ready", "stems": [], "error": None}
+
+    def loaded():
+        seen["loaded"] = True
+        raise beats.BeatsError("no weights in this test")
+
+    monkeypatch.setenv("STEMS_STORAGE_BACKEND", "local")
+    monkeypatch.setenv("STEMS_STORAGE_LOCAL_DIR", str(tmp_path / "store"))
+    monkeypatch.setenv("STEMS_SIGNING_SECRET", SECRET.decode())
+    monkeypatch.delenv("STEMS_WORKER_FAKE_MODELS", raising=False)
+    monkeypatch.setattr(worker, "run_job", fake_run)
+    monkeypatch.setattr(beats.BeatsTagger, "from_registry", staticmethod(loaded))
+    base = load_defaults()
+    off = base.model_copy(
+        update={"listening": base.listening.model_copy(update={"enabled": False})}
+    )
+    monkeypatch.setattr(worker, "load_defaults", lambda: off)
+    assert worker.main([JOB]) == 0
+    assert "loaded" not in seen
+    assert seen["tagger"] is None
+    # Switched on (the shipped setting), the worker does try to load it.
+    assert base.listening.enabled is True
+    monkeypatch.setattr(worker, "load_defaults", lambda: base)
+    assert worker.main([JOB]) == 0
+    assert seen["loaded"] is True

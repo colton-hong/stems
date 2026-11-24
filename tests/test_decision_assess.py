@@ -300,7 +300,7 @@ def test_a_silent_stem_is_certain_without_any_tagger() -> None:
 
 def test_a_stem_far_below_the_mix_is_treated_like_a_silent_one() -> None:
     limit = GATE.rules.empty_below_mix_db
-    assert limit == -19.81  # measured: docs/gate-on-real-output.md
+    assert limit == -21.68  # measured: docs/gate-on-real-output.md
     # Not silent at all (10% of it is), but leftovers 25 dB under the song.
     for calibrated in (ON, OFF):
         assessment, action = rule_assessment(

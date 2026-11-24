@@ -80,6 +80,21 @@ Outputs whose reference is present, by stem. "Called present" and "called absent
 
 **The better of two: failed.** The bleed score preferred the better output in 64.8% of 91 pairs (80.0% needed). A retry chosen on the tagger's word would not reliably pick the better stem, so the gate keeps not acting on it.
 
+## The empty-stem rule against the whole song
+
+Question 1 called an output empty when its reference is absent in the loudest minute, and the gate's note for such a stem says the instrument may not be in the song. Here the truth is the whole song: the instrument is in it if its reference sounds for at least 5 seconds in total, anywhere. The rules below and what is done with the result were added to this file's code at commit `fcd175726d06`, after the results above were known and before any whole-song figure was computed. No tagger is involved; the levels were read from the same kept outputs.
+
+Of the 700 held-out outputs, 111 have a reference that is absent in the loudest minute, and 90 have an instrument that is not in the song at all. The difference, 21 outputs, is instruments that play only outside the loudest minute; the rule in force calls 13 of them empty.
+
+| Rule | Threshold | AUC | Called empty | Right | Found | Result |
+|---|---:|---:|---:|---:|---:|---|
+| In force: level against the mix over the mix's loudest minute | -19.8 dB | 0.989 | 103 | 82.5% | 94.4% | fail |
+| Level against the mix over the whole song | -21.7 dB | 0.996 | 92 | 90.2% | 92.2% | pass |
+
+"Right" and "found" are against the whole-song truth. Needed, as before: right at least 90.0%, found at least 50.0%.
+
+**The rule is replaced.** Measured over the loudest minute it fails against the whole song; measured over the whole song it passes, and that is what the gate now uses.
+
 ## Limits
 
 - One minute per track, not the whole stem; a job scores the whole stem.
