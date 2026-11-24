@@ -71,6 +71,10 @@ api = [
   "av==19.0.2",
 ]
 
+# The Modal worker provider and the worker's Modal app. Installed and imported on macOS
+# arm64, Python 3.14; never run against Modal (BLOCKED.md B4).
+modal = ["modal==1.6.4"]
+
 [project.scripts]
 separate = "stems_worker.cli:main"
 bench = "stems_bench.cli:main"

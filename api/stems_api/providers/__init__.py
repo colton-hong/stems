@@ -1,4 +1,7 @@
-"""Where jobs run: the local machine, Modal, or (as a seam) Azure Container Apps."""
+"""Where jobs run: the local machine, Modal, or (as a seam) Azure Container Apps.
+
+The Modal and Azure modules are imported only when selected.
+"""
 
 from stems_api.providers.base import (
     JobSpec,
