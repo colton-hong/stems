@@ -458,6 +458,7 @@ def test_split_and_dereverb_extras(song, tmp_path) -> None:
     assert result["plan"]["dereverb"] == {"apply": True, "model": "fake_dry"}
     assert result["extras"]["vocals_dry"] == {
         "stage": "dereverb",
+        "model_ids": ["fake_dry"],
         "source": "fake_dry on the vocals stem",
         "file": "vocals_dry.wav",
     }

@@ -204,6 +204,8 @@ def run_job(
     rates: Mapping[tuple[str, str], float] | None = None,
     job_id: str | None = None,
     progress: Callable[[str, int, int], None] | None = None,
+    on_stage: Callable[[str, Mapping[str, Any]], None] | None = None,
+    max_duration_seconds: float | None = None,
 ) -> dict[str, Any]:
     """Run one job and write its stems and ``job.json`` into ``output_dir``. Returns the json.
 
@@ -211,6 +213,11 @@ def run_job(
     ``tagger`` is the listening model; None means nothing is heard, the gate says so, and
     stems are delivered with a warning that they were not checked. ``factory`` and
     ``fingerprint`` let tests substitute weightless models.
+
+    ``on_stage(name, info)`` is told where the job is: ``transcoding``, ``analysing``,
+    ``planning``, ``separating`` (with ``stems``), then per stem ``assessing``, ``retrying``
+    and ``delivered`` (with ``stem``, ``attempt`` and for the last ``state``), and
+    ``packaging``. Audio longer than ``max_duration_seconds`` is refused while decoding.
     """
     input_path, output_dir = Path(input_path), Path(output_dir)
     registry = registry or load_registry()
@@ -219,6 +226,10 @@ def run_job(
     if request.fmt is not None:
         extension_for(request.fmt)  # reject an unknown format before doing any work
     decisions: list[dict[str, Any]] = []
+
+    def tell(name: str, **info: Any) -> None:
+        if on_stage is not None:
+            on_stage(name, info)
 
     def log(decision: Decision, **extra: Any) -> Decision:
         decisions.append({**decision.record, **extra})
@@ -269,8 +280,12 @@ def run_job(
     parsed_for_plan = {**parsed, "vocal_split": "lead_and_backing" if split else "single_vocals"}
 
     # 2. What the track is.
-    loaded = load_audio(input_path, defaults.audio.sample_rate_hz)
+    tell("transcoding")
+    loaded = load_audio(
+        input_path, defaults.audio.sample_rate_hz, max_duration_seconds=max_duration_seconds
+    )
     device = pick_device(request.device)
+    tell("analysing")
     features = build_track_features(
         loaded.samples,
         loaded.sample_rate,
@@ -281,6 +296,7 @@ def run_job(
     )
 
     # 3. Which models.
+    tell("planning")
     plan = log(
         plan_ensemble(
             parsed_for_plan,
@@ -316,6 +332,7 @@ def run_job(
     )
 
     # 4. Separate.
+    tell("separating", stems=list(requested))
     first = runner.separate(requested, assignment, ("vocals",) if stages else ())
     slots = defaults.ensembles.slots
     dereverb_model = slots["dereverb"].single_best if registry.candidates_for("dereverb") else None
@@ -347,6 +364,7 @@ def run_job(
         audio = first.stems[stem]
         attempts: list[np.ndarray] = []
         while machine.state == retry.RUNNING:
+            tell("assessing", stem=stem, attempt=len(attempts))
             signals = stem_signals(
                 stem,
                 audio,
@@ -372,12 +390,17 @@ def run_job(
             attempts.append(audio)
             step = machine.step(decision.value)
             if step.next is not None:
+                tell("retrying", stem=stem, attempt=len(attempts))
                 audio = produce(step.next)
         assert machine.chosen is not None
+        tell("delivered", stem=stem, state=machine.state, attempt=len(attempts) - 1)
         delivered[stem] = attempts[machine.chosen]
+        chosen = machine.delivered.spec
         stems_report[stem] = {
             "state": machine.state,
-            "model_used": machine.delivered.spec.model_used,
+            "model_used": chosen.model_used,
+            "model_ids": [*chosen.models, *([chosen.dereverb] if chosen.dereverb else [])],
+            "mode": chosen.mode,
             "delivered_attempt": machine.chosen,
             "retries": len(machine.attempts) - 1,
             "warning": machine.warning,
@@ -399,10 +422,12 @@ def run_job(
                 extras[name] = outputs[output]
                 extras_report[name] = {
                     "stage": stage,
+                    "model_ids": list(as_blend(assignment[stage]).models),
                     "source": f"{as_blend(assignment[stage]).describe()} on the vocals stem",
                 }
 
     # 7. Write.
+    tell("packaging")
     written = save_stems(output_dir, {**delivered, **extras}, loaded.sample_rate, fmt)
     for name, report in (*stems_report.items(), *extras_report.items()):
         report["file"] = written.paths[name].name

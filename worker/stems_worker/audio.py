@@ -133,6 +133,33 @@ def _probe_pyav(path: Path) -> SourceInfo:
         raise UnsupportedAudioError(f"{path.name}: not decodable audio ({e})") from e
 
 
+def decode_head(path: Path | str, seconds: float = 1.0) -> int:
+    """Decode the start of the file and return how many sample frames came out.
+
+    A header can be parsed from a file whose audio cannot be decoded. This is the cheap
+    proof that it can: ``UnsupportedAudioError`` if nothing decodes.
+    """
+    path = Path(path)
+    info = probe(path)
+    wanted = max(1, int(seconds * max(info.sample_rate, 1)))
+    frames = 0
+    try:
+        if info.decoder == "soundfile":
+            with sf.SoundFile(str(path)) as handle:
+                frames = len(handle.read(frames=wanted, dtype="float32", always_2d=True))
+        else:
+            with av.open(str(path)) as container:
+                for frame in container.decode(audio=0):
+                    frames += frame.samples
+                    if frames >= wanted:
+                        break
+    except (sf.SoundFileError, av.error.FFmpegError, RuntimeError, ValueError) as e:
+        raise UnsupportedAudioError(f"{path.name}: the audio cannot be decoded ({e})") from e
+    if frames <= 0:
+        raise UnsupportedAudioError(f"{path.name}: the file holds no audio")
+    return frames
+
+
 def load_audio(
     path: Path | str,
     sample_rate: int = PIPELINE_SAMPLE_RATE,

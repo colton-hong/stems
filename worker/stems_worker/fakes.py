@@ -124,3 +124,85 @@ class OracleSeparator(Separator):
         index = np.clip(block * self._BLOCK + within, 0, self._length - 1)
         # (outputs, channels, batch, chunk) -> (batch, outputs, channels, chunk)
         return np.ascontiguousarray(self._answers[:, :, index].transpose(2, 0, 1, 3))
+
+
+# --- a whole weightless pipeline ----------------------------------------------------------
+
+# Low to high: which band of the spectrum stands in for which stem.
+FAKE_BANDS: tuple[str, ...] = ("bass", "drums", "other", "piano", "guitar", "vocals")
+_FAKE_CUTOFFS: dict[str, tuple[tuple[str, ...], tuple[float, ...]]] = {
+    "fake_bands": (FAKE_BANDS, (150.0, 400.0, 900.0, 2000.0, 5000.0)),
+    "fake_bands_b": (FAKE_BANDS, (120.0, 350.0, 800.0, 1800.0, 4500.0)),
+    "fake_split": (("backing_vocals", "lead_vocals"), (1000.0,)),
+    "fake_split_b": (("backing_vocals", "lead_vocals"), (1200.0,)),
+    "fake_dry": (("dry",), ()),
+    "fake_dry_b": (("dry",), ()),
+}
+
+
+def fake_pipeline(defaults):  # type: ignore[no-untyped-def]
+    """Everything a job needs to run with no weights, no tagger and no key.
+
+    Returns ``(options, defaults)``: keyword arguments for the job runner (a registry of
+    band-splitting stand-ins, the factory that builds them, a cache fingerprint) and the
+    defaults with every slot pointed at them. The "stems" are frequency bands, so the
+    output is not music; what it exercises is every step around the models. Nothing
+    listens to the stems, so each is delivered with the not-checked warning.
+    """
+    from stems_common.settings import EnsembleSettings, SlotModels
+    from stems_common.stems import PRODUCT_STEMS
+    from stems_models.registry import ModelEntry, Registry
+
+    def entry(model_id: str, stems: Sequence[str], slots: Sequence[str]):  # type: ignore[no-untyped-def]
+        return ModelEntry.model_construct(
+            id=model_id,
+            name=f"Fake {model_id}",
+            architecture="fake",
+            stems=list(stems),
+            candidate_for=list(slots),
+            status="available",
+            kind="separator",
+            loader="msst",
+            files=[],
+        )
+
+    def slot(first: str, second: str) -> SlotModels:
+        return SlotModels(
+            single_best=first, two_model_blend=[first, second], full_ensemble=[first, second]
+        )
+
+    registry = Registry.model_construct(
+        schema_version=1,
+        models=[
+            entry("fake_bands", PRODUCT_STEMS, PRODUCT_STEMS),
+            entry("fake_bands_b", PRODUCT_STEMS, PRODUCT_STEMS),
+            entry("fake_split", ("lead_vocals", "backing_vocals"), ("vocal_split",)),
+            entry("fake_split_b", ("lead_vocals", "backing_vocals"), ("vocal_split",)),
+            entry("fake_dry", ("dry",), ("dereverb",)),
+            entry("fake_dry_b", ("dry",), ("dereverb",)),
+        ],
+    )
+    ensembles = EnsembleSettings(
+        provisional=True,
+        basis="Weightless stand-in models (stems_worker.fakes); not music.",
+        default_mode="single_best",
+        slots={
+            **{stem: slot("fake_bands", "fake_bands_b") for stem in PRODUCT_STEMS},
+            "vocal_split": slot("fake_split", "fake_split_b"),
+            "dereverb": slot("fake_dry", "fake_dry_b"),
+        },
+    )
+
+    def factory(model_id: str, stems: Sequence[str]) -> list[Separator]:
+        outputs, cutoffs = _FAKE_CUTOFFS[model_id]
+        return [BandSplitSeparator(outputs, cutoffs, model_id=model_id)]
+
+    options = {
+        "registry": registry,
+        "factory": factory,
+        "fingerprint": lambda model_id: f"fake-{model_id}",
+        "rates": {},
+        "client": None,
+        "tagger": None,
+    }
+    return options, defaults.model_copy(update={"ensembles": ensembles})
