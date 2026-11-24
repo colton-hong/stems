@@ -2,7 +2,7 @@
 
 Single source of truth for where the build is. Read this first, every iteration.
 
-**Current phase: 4 (decision layer), finished as far as it can go without a key (2026-11-23).** P4.1 to P4.8 are done; P4.9 (the live check against Jev) needs `TYPESAFE_API_KEY` (B6). Still open from earlier phases: Phase 2's real benchmarks are running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done, both test-list reports are in for the default models; the tuning stages started 2026-11-24T04:53Z; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task), and P3.9 to P3.11 need `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_AUTH_TOKEN` (B5). Do not start Phase 5 without the owner's go-ahead.
+**Current phase: 5 (API and worker), started 2026-11-24 on the owner's go-ahead.** Still open from earlier phases: P4.9 (the live check against Jev) needs `TYPESAFE_API_KEY` (B6); P3.9 to P3.11 need `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_AUTH_TOKEN` (B5); Phase 2's real benchmarks are running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done, the tuning stages started 2026-11-24T04:53Z; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task). Do not start Phase 6 without the owner's go-ahead.
 
 ## How to use this file
 
@@ -106,7 +106,7 @@ Format: `- [ ] Pn.m Task. **Accept:** how to tell it is done.`
 
 ## Phase 5: API and worker
 
-- [ ] P5.1 Storage interface and local-disk backend with HMAC-signed expiring links. **Accept:** expired or tampered links are rejected; keys cannot escape the storage root.
+- [x] P5.1 Storage interface and local-disk backend with HMAC-signed expiring links. **Accept:** expired or tampered links are rejected; keys cannot escape the storage root. — Done: `stems_api.storage`: the `Storage` protocol of PLAN.md section 6 (`put`, `open`, `exists`, `delete_prefix`, `signed_url`), JSON and bytes helpers, and `LocalStorage`. Keys are checked before any backend sees them: plain segments only, so `..`, absolute paths, hidden names and backslashes are refused, and the local backend also refuses a path that resolves outside its root through a symbolic link. A link is a token of base64url(payload) and an HMAC-SHA256 over it; the payload holds key, expiry and download name, so neither can be changed. Tested: a link is rejected from its expiry onwards, with any single character changed, with the payload swapped for another key or a later expiry, and when signed with another secret. Writes are atomic (a failed upload leaves the old object). With no `STEMS_SIGNING_SECRET` the secret is made once in `<dir>/signing-secret` (mode 600). The file route with range support is P5.9. 59 tests, 29 of them the contract every backend must pass (`tests/test_storage.py`).
 - [ ] P5.2 S3-compatible backend. **Accept:** passes the shared storage test suite against a stubbed client; live check noted as done or **BLOCKED (B7)**.
 - [ ] P5.3 Azure Blob backend. **Accept:** same as P5.2.
 - [ ] P5.4 Database models and migrations. **Accept:** schema matches `PLAN.md` section 7; every job query is owner-scoped (tested by asking for another owner's job).
