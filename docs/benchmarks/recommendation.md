@@ -92,10 +92,39 @@ These tracks took no part in the choice. SDR in dB, median over the list's track
 
 "Composed" is the six-stem other the product has been delivering: a four-stem model's other with the guitar and piano stems taken out, which the benchmark scores as its own system. MUSDB18-HQ has no guitar or piano references, so those stems appear for MoisesDB only. Test runs: `moisesdb_subset` from run `moisesdb-v1`, `musdb18hq_test` from run `musdb18hq-v1`.
 
+## The vocal-split model
+
+The same rule on the two outputs of the vocal split, lead and backing vocals. In the benchmark these models are fed the reference vocals stem, not a separated one, and only tracks that have both kinds of vocal are scored.
+
+| Output | Chosen | Its SDR | Tracks | In use until now | Its SDR |
+|---|---|---:|---:|---|---:|
+| lead_vocals | `mel_roformer_karaoke_aufr33_viperx` | 12.32 | 14 | `mel_roformer_karaoke_aufr33_viperx` | 12.32 |
+| backing_vocals | `mel_roformer_karaoke_aufr33_viperx` | 4.92 | 14 | `mel_roformer_karaoke_aufr33_viperx` | 4.92 |
+
+Every candidate:
+
+| Output | Model | SDR | Tracks |
+|---|---|---:|---:|
+| lead_vocals | `mel_roformer_karaoke_aufr33_viperx` | 12.32 | 14 |
+| lead_vocals | `uvr_mdxnet_kara_2` | 10.99 | 14 |
+| lead_vocals | `uvr_vr_5hp_karaoke` | 10.06 | 14 |
+| backing_vocals | `mel_roformer_karaoke_aufr33_viperx` | 4.92 | 14 |
+| backing_vocals | `uvr_vr_5hp_karaoke` | 1.09 | 14 |
+| backing_vocals | `uvr_mdxnet_kara_2` | 0.84 | 14 |
+
+**No change.** The rule names `mel_roformer_karaoke_aufr33_viperx` for both outputs, which is the model already in use.
+
+On the test lists, which decided nothing:
+
+| Output | List | Chosen | In use until now | Tracks |
+|---|---|---:|---:|---:|
+| lead_vocals | `moisesdb_subset` | 10.53 | 10.53 | 26 |
+| backing_vocals | `moisesdb_subset` | 4.28 | 4.28 | 26 |
+
 ## Limits
 
 - One tuning list of 30 tracks from one dataset decides. MUSDB18-HQ's training tracks have not been scored yet.
 - Only the models the config named when the benchmark started are candidates.
 - Which songs each checkpoint was trained on is not known here. A model that met these datasets' songs in training would score higher on them than on new music, and nothing in this repository can tell.
 - SDR is not how it sounds. No listening test has been run.
-- The vocal split and de-reverb models are not chosen here, and neither are blends.
+- The de-reverb model is not chosen here (no list has reverberant vocals to score it on), and neither are blends.

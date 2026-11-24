@@ -182,6 +182,31 @@ def test_the_configured_blends_are_shown_beside_the_chosen_model() -> None:
     assert "The most any of them gains on the single model is +0.40 dB" in text
 
 
+def test_the_vocal_split_is_settled_only_if_one_model_is_named_for_both_outputs() -> None:
+    def split(lead_b: float, backing_b: float) -> str:
+        tuning = data(
+            "tune-run",
+            [
+                row("a", "lead_vocals", 12.0, tracks=14),
+                row("a", "backing_vocals", 5.0, tracks=14),
+                row("b", "lead_vocals", lead_b, tracks=14),
+                row("b", "backing_vocals", backing_b, tracks=14),
+            ],
+        )
+        tests = {"list_a": data("run-a", [row("a", "lead_vocals", 10.5, tracks=26)])}
+        report = rec.build(tuning, tests, dict.fromkeys(rec.SPLIT_STEMS, "a"))
+        return rec.render_split(report)
+
+    same = split(10.0, 1.0)
+    assert "| lead_vocals | `a` | 12.00 | 14 | `a` | 12.00 |" in same
+    assert "**No change.** The rule names `a` for both outputs" in same
+    assert "| lead_vocals | `list_a` | 10.50 | 10.50 | 26 |" in same
+    other = split(13.0, 6.0)
+    assert "**The rule names `b` for both outputs.**" in other
+    torn = split(13.0, 1.0)  # better at lead, worse at backing
+    assert "**The rule does not settle this slot:**" in torn
+
+
 def test_the_command_refuses_without_the_tuning_report(tmp_path, capsys) -> None:
     assert rec.main(["--tuning", str(tmp_path / "none.json")]) == 2
     assert "run `bench report` on the tuning run" in capsys.readouterr().err

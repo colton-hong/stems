@@ -408,5 +408,120 @@
     ]
   },
   "tuning_dataset": "moisesdb_tuning",
-  "tuning_run": "moisesdb-tuning-v1"
+  "tuning_run": "moisesdb-tuning-v1",
+  "vocal_split": {
+    "blends": {},
+    "checks": {
+      "backing_vocals": {
+        "moisesdb_subset": {
+          "chosen": {
+            "sdr": 4.276993546567154,
+            "tracks": 26
+          },
+          "difference_db": 0.0,
+          "in_use": {
+            "sdr": 4.276993546567154,
+            "tracks": 26
+          },
+          "in_use_composed": false
+        },
+        "musdb18hq_test": {
+          "chosen": null,
+          "difference_db": null,
+          "in_use": null,
+          "in_use_composed": false
+        }
+      },
+      "lead_vocals": {
+        "moisesdb_subset": {
+          "chosen": {
+            "sdr": 10.533389662692771,
+            "tracks": 26
+          },
+          "difference_db": 0.0,
+          "in_use": {
+            "sdr": 10.533389662692771,
+            "tracks": 26
+          },
+          "in_use_composed": false
+        },
+        "musdb18hq_test": {
+          "chosen": null,
+          "difference_db": null,
+          "in_use": null,
+          "in_use_composed": false
+        }
+      }
+    },
+    "chosen": {
+      "backing_vocals": {
+        "best_model": "mel_roformer_karaoke_aufr33_viperx",
+        "best_sdr": 4.91836320029056,
+        "candidates": {
+          "mel_roformer_karaoke_aufr33_viperx": {
+            "sdr": 4.91836320029056,
+            "seconds_per_audio_minute": 12.7644,
+            "tracks": 14
+          },
+          "uvr_mdxnet_kara_2": {
+            "sdr": 0.84445377858161,
+            "seconds_per_audio_minute": 5.7918,
+            "tracks": 14
+          },
+          "uvr_vr_5hp_karaoke": {
+            "sdr": 1.092324317026484,
+            "seconds_per_audio_minute": 4.4829,
+            "tracks": 14
+          }
+        },
+        "gives_up_db": 0.0,
+        "model": "mel_roformer_karaoke_aufr33_viperx",
+        "sdr": 4.91836320029056
+      },
+      "lead_vocals": {
+        "best_model": "mel_roformer_karaoke_aufr33_viperx",
+        "best_sdr": 12.317590684026264,
+        "candidates": {
+          "mel_roformer_karaoke_aufr33_viperx": {
+            "sdr": 12.317590684026264,
+            "seconds_per_audio_minute": 12.7644,
+            "tracks": 14
+          },
+          "uvr_mdxnet_kara_2": {
+            "sdr": 10.98655539459971,
+            "seconds_per_audio_minute": 5.7918,
+            "tracks": 14
+          },
+          "uvr_vr_5hp_karaoke": {
+            "sdr": 10.056583899998955,
+            "seconds_per_audio_minute": 4.4829,
+            "tracks": 14
+          }
+        },
+        "gives_up_db": 0.0,
+        "model": "mel_roformer_karaoke_aufr33_viperx",
+        "sdr": 12.317590684026264
+      }
+    },
+    "in_use": {
+      "backing_vocals": "mel_roformer_karaoke_aufr33_viperx",
+      "lead_vocals": "mel_roformer_karaoke_aufr33_viperx"
+    },
+    "test_runs": {
+      "moisesdb_subset": "moisesdb-v1",
+      "musdb18hq_test": "musdb18hq-v1"
+    },
+    "time": {
+      "chosen": 12.7644,
+      "chosen_models": [
+        "mel_roformer_karaoke_aufr33_viperx"
+      ],
+      "in_use": 12.7644,
+      "in_use_models": [
+        "mel_roformer_karaoke_aufr33_viperx"
+      ]
+    },
+    "tuning_dataset": "moisesdb_tuning",
+    "tuning_run": "moisesdb-tuning-v1"
+  }
 }

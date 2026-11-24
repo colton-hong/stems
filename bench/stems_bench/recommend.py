@@ -53,6 +53,11 @@ MIN_TRACKS = 10
 _EPSILON = 1e-9
 
 
+# The two outputs of the vocal-split slot. One model makes both, so the rule is applied to
+# the pair: it settles the slot only if it names the same model for each.
+SPLIT_STEMS = ("lead_vocals", "backing_vocals")
+
+
 class RecommendError(ValueError):
     """The recommendation cannot be made or reported as asked."""
 
@@ -228,6 +233,69 @@ def build(
             "in_use": seconds_per_minute(tuning["rows"], list(in_use.values())),
         },
     }
+
+
+def render_split(report: Mapping[str, Any]) -> str:
+    """The section on the vocal-split model, from a ``build`` over ``SPLIT_STEMS``."""
+    chosen = report["chosen"]
+    lines = [
+        "## The vocal-split model",
+        "",
+        "The same rule on the two outputs of the vocal split, lead and backing vocals. In "
+        "the benchmark these models are fed the reference vocals stem, not a separated one, "
+        "and only tracks that have both kinds of vocal are scored.",
+        "",
+        "| Output | Chosen | Its SDR | Tracks | In use until now | Its SDR |",
+        "|---|---|---:|---:|---|---:|",
+    ]
+    for stem, entry in chosen.items():
+        used = report["in_use"][stem]
+        if entry["model"] is None:
+            lines.append(f"| {stem} | no candidate | - | - | `{used}` | - |")
+            continue
+        scored = entry["candidates"][entry["model"]]
+        lines.append(
+            f"| {stem} | `{entry['model']}` | {_db(entry['sdr'])} | {scored['tracks']} | "
+            f"`{used}` | {_db(entry['candidates'].get(used, {}).get('sdr'))} |"
+        )
+    lines += [
+        "",
+        "Every candidate:",
+        "",
+        "| Output | Model | SDR | Tracks |",
+        "|---|---|---:|---:|",
+    ]
+    for stem, entry in chosen.items():
+        for model, scored in sorted(entry["candidates"].items(), key=lambda i: -i[1]["sdr"]):
+            lines.append(f"| {stem} | `{model}` | {_db(scored['sdr'])} | {scored['tracks']} |")
+    picked = {entry["model"] for entry in chosen.values()}
+    used = set(report["in_use"].values())
+    lines.append("")
+    if None in picked or len(picked) != 1:
+        lines.append(
+            "**The rule does not settle this slot:** it names a different model for each "
+            "output, or none, and one model has to make both. The model in use stays."
+        )
+    elif picked == used:
+        lines.append(
+            f"**No change.** The rule names `{next(iter(picked))}` for both outputs, which is "
+            "the model already in use."
+        )
+    else:
+        lines.append(f"**The rule names `{next(iter(picked))}` for both outputs.**")
+    lines += ["", "On the test lists, which decided nothing:", ""]
+    lines += ["| Output | List | Chosen | In use until now | Tracks |", "|---|---|---:|---:|---:|"]
+    for stem, lists in report["checks"].items():
+        for name, check in lists.items():
+            new, old = check["chosen"], check["in_use"]
+            if new is None and old is None:
+                continue
+            lines.append(
+                f"| {stem} | `{name}` | {_db(new and new['sdr'])} | {_db(old and old['sdr'])} | "
+                f"{(new or old)['tracks']} |"
+            )
+    lines.append("")
+    return "\n".join(lines)
 
 
 def _db(value: float | None, signed: bool = False) -> str:
@@ -417,14 +485,24 @@ def main(argv: list[str] | None = None) -> int:
             slots = load_defaults().ensembles.slots
             in_use = {stem: slots[stem].single_best for stem in PRODUCT_STEMS}
         report = build(tuning, tests, in_use)
+        split_model = load_defaults().ensembles.slots["vocal_split"].single_best
+        split = build(tuning, tests, dict.fromkeys(SPLIT_STEMS, split_model))
     except RecommendError as error:
         print(f"error: {error}", file=sys.stderr)
         return 2
-    text = render(report)
+    # The split section goes before the limits, which cover both parts.
+    head, limits = render(report).split("## Limits", 1)
+    text = head + render_split(split) + "\n## Limits" + limits
+    text = text.replace(
+        "- The vocal split and de-reverb models are not chosen here, and neither are blends.",
+        "- The de-reverb model is not chosen here (no list has reverberant vocals to score "
+        "it on), and neither are blends.",
+    )
     if args.out:
         args.out.write_text(text, encoding="utf-8")
         args.out.with_suffix(".json").write_text(
-            json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+            json.dumps({**report, "vocal_split": split}, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
         )
         print(f"wrote {args.out}")
     else:
