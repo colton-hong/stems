@@ -266,6 +266,89 @@ def test_another_run_of_the_same_songs_can_be_shown_beside_this_one() -> None:
     assert "Wall time on" not in alone
 
 
+# -- the leftover as `other` -------------------------------------------------------------
+
+
+def left(own, leftover, *, in_song=True, levels=(-12.0, -9.0)) -> dict:
+    return {
+        "track_id": "t",
+        "state": "ready",
+        "stems": {"other": {"in_song": in_song, "sdr_db": own}},
+        "leftover_other": {
+            "sdr_db": leftover,
+            "own_level_below_mix_db": levels[0],
+            "level_below_mix_db": levels[1],
+        },
+    }
+
+
+def test_the_leftover_rule_is_what_the_report_says_it_is() -> None:
+    assert (pc.LEFTOVER_MARGIN_DB, pc.LEFTOVER_MIN_TRACKS) == (0.3, 10)
+    assert pc.DATASETS == ("moisesdb_subset", "moisesdb_tuning")
+
+
+def test_the_leftover_is_better_only_by_a_margin_and_on_most_tracks() -> None:
+    better = pc.leftover_analysis([left(2.0, 3.0)] * 12)
+    assert (better["tracks"], better["verdict"]) == (12, "better")
+    assert (better["median_own_db"], better["median_leftover_db"]) == (2.0, 3.0)
+    assert (better["leftover_higher"], better["own_higher"]) == (12, 0)
+    assert pc.leftover_analysis([left(3.0, 2.0)] * 12)["verdict"] == "worse"
+    # Ahead by less than the margin.
+    assert pc.leftover_analysis([left(2.0, 2.2)] * 12)["verdict"] == "no clear difference"
+    # A median ahead by the margin, but higher on only half of the tracks.
+    split = [left(2.0, 2.5)] * 6 + [left(2.0, 1.9)] * 6
+    assert pc.leftover_analysis(split)["verdict"] == "no clear difference"
+    assert pc.leftover_analysis([left(2.0, 3.0)] * 9)["verdict"] == "too few"
+    assert pc.leftover_analysis([])["verdict"] == "too few"
+
+
+def test_only_songs_with_the_instrument_and_two_scores_count() -> None:
+    records = [
+        *[left(2.0, 3.0)] * 10,
+        left(None, None, in_song=False, levels=(-60.0, -15.0)),  # no `other` in the song
+        left(None, None, in_song=False, levels=(-40.0, -11.0)),
+        left(2.0, None),  # the leftover could not be scored
+        {"track_id": "f", "state": "failed", "stems": {}},
+        {"track_id": "n", "state": "ready", "stems": {"other": {"in_song": True, "sdr_db": 1.0}}},
+    ]
+    analysis = pc.leftover_analysis(records)
+    assert (analysis["tracks"], analysis["absent_tracks"]) == (10, 2)
+    assert analysis["absent_median_own_level_db"] == -50.0
+    assert analysis["absent_median_leftover_level_db"] == -13.0
+    text = pc.render_leftover(analysis, None, {"tuning": "run-a", "test": None})
+    assert "| Tuning (`run-a`) | 10 | 2.00 | 3.00 | 10 | 0 |" in text
+    assert "**The leftover is the better `other`** on the tuning tracks." in text
+    assert "| Tuning | 2 | -50.0 dB | -13.0 dB |" in text
+    assert "Nothing changes in the product." in text
+    both = pc.render_leftover(analysis, analysis, {"tuning": "run-a", "test": "run-b"})
+    assert "| Test (`run-b`), decides nothing | 10 | 2.00 | 3.00 | 10 | 0 |" in both
+
+
+def test_the_leftover_is_scored_when_asked_for(tmp_path) -> None:
+    options, defaults = fake_pipeline(load_defaults())
+    dataset = get_dataset("synthetic")
+    track = dataset.track_ids()[0]
+    arguments = {
+        "run_id": "left",
+        "defaults": defaults,
+        "device": "cpu",
+        "bench_dir": tmp_path / "bench",
+        "pipeline": options,
+    }
+    assert pc.run(dataset, [track], tmp_path / "with", leftover=True, **arguments) == 1
+    (record,) = pc.read_results(tmp_path / "with")
+    leftover = record["leftover_other"]
+    assert isinstance(leftover["sdr_db"], float)
+    # The stand-in models split the mix into bands that add back to it, so what is left
+    # after five bands is the sixth: the same stem, up to the rounding of the FLAC files.
+    assert leftover["sdr_db"] == pytest.approx(record["stems"]["other"]["sdr_db"], abs=0.05)
+    assert leftover["level_below_mix_db"] == pytest.approx(
+        leftover["own_level_below_mix_db"], abs=0.05
+    )
+    assert pc.run(dataset, [track], tmp_path / "without", **arguments) == 1
+    assert "leftover_other" not in pc.read_results(tmp_path / "without")[0]
+
+
 def test_a_difference_that_rounds_to_zero_is_not_shown_as_minus_zero() -> None:
     assert pc._num(-0.001) == "0.00"
     assert pc._num(-0.006) == "-0.01"

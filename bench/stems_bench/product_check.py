@@ -45,7 +45,7 @@ from typing import Any
 
 from stems_bench.gate_outputs import IN_SONG_SECONDS
 from stems_bench.run import BENCH_DIR, git_state, write_json
-from stems_common.levels import silence_fraction
+from stems_common.levels import level_below_mix_db, silence_fraction
 from stems_common.paths import RUNS_DIR
 from stems_common.stems import PRODUCT_STEMS
 
@@ -56,6 +56,27 @@ DATASET = "moisesdb_subset"
 AGREE_DB = 0.5
 EMPTY_REASON = "mostly_silent"
 _NAMESPACE = uuid.UUID("6f0f3f0e-5a55-4a4e-9c57-2d8d6c1f7b10")
+
+
+DATASETS = ("moisesdb_subset", "moisesdb_tuning")
+
+# -- the leftover as `other` (P12.3): fixed before any leftover was scored -----------------
+# The default model has an `other` output of its own, and it is the weakest stem. The
+# alternative is what is left of the mix when the five other delivered stems are taken
+# out. Both are scored against the `other` reference with the benchmark's scorer.
+#
+# Tracks that count: those whose `other` is in the song (its reference sounds for at least
+# IN_SONG_SECONDS) and where both versions get an SDR. On the tuning tracks:
+#   better   the leftover's median SDR is at least LEFTOVER_MARGIN_DB above the model's
+#            own, and it is the higher of the two on more than half of the tracks
+#   worse    the mirror image
+#   no clear difference   anything else
+#   too few  fewer than LEFTOVER_MIN_TRACKS tracks count
+# The test tracks are scored the same way afterwards and decide nothing. Nothing changes
+# in the product whatever the answer: PLAN.md says a six-stem model's `other` is used as
+# it is, so the result is put to the owner.
+LEFTOVER_MARGIN_DB = 0.3
+LEFTOVER_MIN_TRACKS = 10
 
 
 class ProductCheckError(ValueError):
@@ -129,8 +150,13 @@ def run_track(
     work: Path,
     benchmark: Callable[[str], Mapping[str, Mapping[str, Any]]],
     pipeline: Mapping[str, Any],
+    leftover: bool = False,
 ) -> dict[str, Any]:
-    """One track through the worker's storage entry point; scored; its audio deleted."""
+    """One track through the worker's storage entry point; scored; its audio deleted.
+
+    With ``leftover``, the mix minus the five other delivered stems is scored as an
+    alternative ``other`` as well.
+    """
     from stems_api.storage import put_json, read_bytes
     from stems_bench.run import score_estimates
     from stems_common import jobs as contract
@@ -201,6 +227,16 @@ def run_track(
                 "length_matches": name in scorable,
                 "benchmark": compare_stem(stem, sdr, benchmark),
             }
+        if leftover and set(PRODUCT_STEMS) <= set(scorable):
+            others = [scorable[name] for name in PRODUCT_STEMS if name != "other"]
+            left = (mix - sum(others)).astype("float32")
+            alt, _ = score_estimates(track, "mix", {"other": left}, {"other": "other"})
+            left_sdr = (alt.get("other", {}).get("bss") or {}).get("sdr")
+            record["leftover_other"] = {
+                "sdr_db": None if left_sdr is None else round(left_sdr, 3),
+                "level_below_mix_db": round(level_below_mix_db(left, mix), 2),
+                "own_level_below_mix_db": round(level_below_mix_db(scorable["other"], mix), 2),
+            }
         return record
     finally:
         # Real music: nothing of it outlives the track's scoring.
@@ -218,6 +254,7 @@ def run(
     bench_dir: Path = BENCH_DIR,
     pipeline: Mapping[str, Any] | None = None,
     progress: Callable[[str], None] | None = None,
+    leftover: bool = False,
 ) -> int:
     """Run and score each track that has no result yet. Returns how many were run."""
     from stems_api.storage import LocalStorage
@@ -250,6 +287,7 @@ def run(
                 work=Path(work),
                 benchmark=benchmark,
                 pipeline=pipeline or {},
+                leftover=leftover,
             )
         write_json(out, record)
         ran += 1
@@ -351,7 +389,8 @@ def render(
         "comes out with the benchmark's own scorer against the same references. No Jev key "
         "was used, so the rules decided. The audio was deleted after each track was scored.",
         "",
-        f"Tracks: the first {run['tracks']} of the frozen `{DATASET}` list. Device here: "
+        f"Tracks: the first {run['tracks']} of the frozen `{run.get('dataset', DATASET)}` list. "
+        "Device here: "
         f"{', '.join(devices) or 'unknown'}; the benchmark's figures are from this Mac's GPU "
         "(`docs/benchmarks/moisesdb.md`), "
         + (
@@ -505,6 +544,127 @@ def render(
     return "\n".join(lines)
 
 
+def leftover_analysis(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    """The model's own ``other`` beside the leftover, over the tracks that count."""
+    pairs: list[tuple[float, float]] = []
+    absent: list[tuple[float, float]] = []
+    for record in records:
+        left = record.get("leftover_other")
+        own = (record.get("stems") or {}).get("other")
+        if record["state"] != "ready" or left is None or own is None:
+            continue
+        if not own["in_song"]:
+            absent.append((left["own_level_below_mix_db"], left["level_below_mix_db"]))
+        elif own["sdr_db"] is not None and left["sdr_db"] is not None:
+            pairs.append((own["sdr_db"], left["sdr_db"]))
+    out: dict[str, Any] = {
+        "tracks": len(pairs),
+        "median_own_db": None,
+        "median_leftover_db": None,
+        "leftover_higher": sum(1 for own, left in pairs if left > own),
+        "own_higher": sum(1 for own, left in pairs if own > left),
+        "absent_tracks": len(absent),
+        "absent_median_own_level_db": None,
+        "absent_median_leftover_level_db": None,
+        "verdict": "too few",
+    }
+    if absent:
+        out["absent_median_own_level_db"] = statistics.median(a for a, _ in absent)
+        out["absent_median_leftover_level_db"] = statistics.median(b for _, b in absent)
+    if not pairs:
+        return out
+    own_median = statistics.median(own for own, _ in pairs)
+    left_median = statistics.median(left for _, left in pairs)
+    out.update(median_own_db=round(own_median, 3), median_leftover_db=round(left_median, 3))
+    if len(pairs) < LEFTOVER_MIN_TRACKS:
+        return out
+    half = len(pairs) / 2
+    if left_median - own_median >= LEFTOVER_MARGIN_DB and out["leftover_higher"] > half:
+        out["verdict"] = "better"
+    elif own_median - left_median >= LEFTOVER_MARGIN_DB and out["own_higher"] > half:
+        out["verdict"] = "worse"
+    else:
+        out["verdict"] = "no clear difference"
+    return out
+
+
+LEFTOVER_VERDICTS = {
+    "better": "**The leftover is the better `other`** on the tuning tracks.",
+    "worse": "**The model's own `other` is the better one** on the tuning tracks.",
+    "no clear difference": "**No clear difference** on the tuning tracks.",
+    "too few": "**Too few tracks to say.**",
+}
+
+
+def render_leftover(
+    tuning: Mapping[str, Any], test: Mapping[str, Any] | None, runs: Mapping[str, Any]
+) -> str:
+    """The report on the leftover as ``other``. ``tuning`` and ``test`` are analyses."""
+
+    def row(label: str, a: Mapping[str, Any]) -> str:
+        return (
+            f"| {label} | {a['tracks']} | {_num(a['median_own_db'])} | "
+            f"{_num(a['median_leftover_db'])} | {a['leftover_higher']} | {a['own_higher']} |"
+        )
+
+    lines = [
+        "# Is what is left over a better `other`?",
+        "",
+        "Written by `python -m stems_bench.product_check leftover`. The default model has an "
+        "`other` output of its own, and it is the weakest stem the product delivers. The "
+        "alternative costs nothing: the mix minus the five other delivered stems. Both were "
+        "scored against the `other` reference with the benchmark's scorer, on songs put "
+        "through the worker's own path. The comparison and what counts as better were "
+        "written into `bench/stems_bench/product_check.py` before any leftover was scored.",
+        "",
+        f"A track counts if its `other` sounds for at least {IN_SONG_SECONDS:g} seconds. The "
+        f"leftover is better if its median SDR is at least {LEFTOVER_MARGIN_DB:g} dB above the "
+        "model's own and it is the higher of the two on more than half of the tracks; worse "
+        f"is the mirror image; at least {LEFTOVER_MIN_TRACKS} tracks are needed.",
+        "",
+        "| Tracks | Counted | Model's own `other`, median SDR | Leftover, median SDR | "
+        "Leftover higher on | Own higher on |",
+        "|---|---:|---:|---:|---:|---:|",
+        row(f"Tuning (`{runs['tuning']}`)", tuning),
+    ]
+    if test is not None:
+        lines.append(row(f"Test (`{runs['test']}`), decides nothing", test))
+    lines += ["", LEFTOVER_VERDICTS[tuning["verdict"]], ""]
+    lines += [
+        "## When the song has no `other`",
+        "",
+        "Then both should be close to silence. Their level against the mix, median over "
+        "such tracks (lower is quieter):",
+        "",
+        "| Tracks | Songs without `other` | Model's own | Leftover |",
+        "|---|---:|---:|---:|",
+    ]
+    for label, a in (("Tuning", tuning), ("Test", test)):
+        if a is not None:
+            lines.append(
+                f"| {label} | {a['absent_tracks']} | {_num(a['absent_median_own_level_db'], 1)} dB "
+                f"| {_num(a['absent_median_leftover_level_db'], 1)} dB |"
+            )
+    lines += [
+        "",
+        "The leftover holds everything the other five stems missed or got wrong, so it is "
+        "rarely near silence; the gate's empty-stem note depends on that level.",
+        "",
+        "## What happens with this",
+        "",
+        "Nothing changes in the product. PLAN.md decides that a six-stem model's `other` is "
+        "used as it is; this result is put to the owner in BLOCKED.md.",
+        "",
+        "## Limits",
+        "",
+        "- One model, one dataset, SDR only. The leftover makes the six stems add up to the "
+        "song exactly, which SDR does not reward and a listener might.",
+        "- The runs were on this Mac, with no Jev and the default settings.",
+        "",
+    ]
+    return "\n".join(lines)
+
+
 # -- command line --------------------------------------------------------------------------
 
 
@@ -518,7 +678,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         raise ProductCheckError("--tracks must be at least 1")
     run_dir = PRODUCT_DIR / args.run_id
     run_dir.mkdir(parents=True, exist_ok=True)
-    frozen = load_frozen(REPO_ROOT / "bench" / "frozen" / f"{DATASET}.json", DATASET)
+    frozen = load_frozen(REPO_ROOT / "bench" / "frozen" / f"{args.dataset}.json", args.dataset)
     track_ids = [track["id"] for track in frozen.tracks][: args.tracks]
     defaults = load_defaults()
     status_path = run_dir / "status.json"
@@ -534,7 +694,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         tagger.load("cpu")
     try:
         run(
-            get_dataset(DATASET),
+            get_dataset(args.dataset),
             track_ids,
             run_dir,
             run_id=args.run_id,
@@ -542,6 +702,7 @@ def cmd_run(args: argparse.Namespace) -> int:
             device=args.device,
             pipeline={"client": None, "tagger": tagger},
             progress=progress,
+            leftover=args.leftover,
         )
     except BaseException as error:
         write_json(
@@ -558,6 +719,7 @@ def cmd_run(args: argparse.Namespace) -> int:
             "run_id": args.run_id,
             "finished": finished,
             "tracks": args.tracks,
+            "dataset": args.dataset,
             "device": args.device,
             "tagger": None if tagger is None else tagger.name,
             "git": git_state(),
@@ -588,6 +750,24 @@ def cmd_report(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_leftover(args: argparse.Namespace) -> int:
+    def analysed(run_id: str) -> dict[str, Any]:
+        run_dir = PRODUCT_DIR / run_id
+        if not (run_dir / "run.json").is_file():
+            raise ProductCheckError(f"{run_dir / 'run.json'} is missing: the run has not finished")
+        return leftover_analysis(read_results(run_dir))
+
+    tuning = analysed(args.tuning)
+    test = analysed(args.test) if args.test else None
+    text = render_leftover(tuning, test, {"tuning": args.tuning, "test": args.test})
+    if args.out:
+        Path(args.out).write_text(text, encoding="utf-8")
+        print(f"wrote {args.out}")
+    else:
+        print(text)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="python -m stems_bench.product_check",
@@ -598,6 +778,12 @@ def main(argv: list[str] | None = None) -> int:
     run_parser.add_argument("--run-id", default=DEFAULT_RUN)
     run_parser.add_argument("--tracks", type=int, default=3)
     run_parser.add_argument("--device", default="cpu")
+    run_parser.add_argument("--dataset", choices=DATASETS, default=DATASET)
+    run_parser.add_argument(
+        "--leftover",
+        action="store_true",
+        help="also score the mix minus the five other stems as an alternative `other`",
+    )
     run_parser.set_defaults(run=cmd_run)
     report_parser = sub.add_parser("report", help="write the report from a finished run")
     report_parser.add_argument("--run-id", default=DEFAULT_RUN)
@@ -606,6 +792,11 @@ def main(argv: list[str] | None = None) -> int:
         "--beside", help="another run of the same tracks, to show its wall times next to these"
     )
     report_parser.set_defaults(run=cmd_report)
+    left_parser = sub.add_parser("leftover", help="report on the leftover as `other`")
+    left_parser.add_argument("--tuning", required=True, help="run id on the tuning tracks")
+    left_parser.add_argument("--test", help="run id on the test tracks (shown, decides nothing)")
+    left_parser.add_argument("--out")
+    left_parser.set_defaults(run=cmd_leftover)
     args = parser.parse_args(argv)
     try:
         return int(args.run(args))
