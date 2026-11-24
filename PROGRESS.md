@@ -2,7 +2,7 @@
 
 Single source of truth for where the build is. Read this first, every iteration.
 
-**Current phase: 10 (the default models, chosen on the tuning tracks), started 2026-11-24.** The owner asked on 2026-11-24 for each phase to follow the last without waiting, and for new phases to be added when none is left; Phases 8, 9 and 10 were added that way. Phases 0, 1 and 4 to 9 are complete apart from checks that need the owner's accounts (S3 and Azure, B7; Modal, B4; the listening test, B8). Still open from earlier phases: P3.11 (optional); Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done; the MoisesDB tuning run finished its 900 jobs at 13:39Z on 2026-11-24 and the tuner is searching; the MUSDB18-HQ tuning stage follows; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task).
+**Current phase: 11 (more songs, and an app that says what it does), started 2026-11-24.** The owner asked on 2026-11-24 for each phase to follow the last without waiting, and for new phases to be added when none is left; Phases 8 to 11 were added that way. Phases 0, 1 and 4 to 10 are complete apart from checks that need the owner's accounts (S3 and Azure, B7; Modal, B4; the listening test, B8). Still open from earlier phases: P3.11 (optional; P11.5 closes it); Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done; the MoisesDB tuning run finished its 900 jobs at 13:39Z on 2026-11-24 and the tuner was still searching at 15:50Z; the MUSDB18-HQ tuning stage follows and will start with the new single-model defaults; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task).
 
 ## How to use this file
 
@@ -193,6 +193,19 @@ Blends, and with them the rest of P2.13, still wait for the tuner.
 - [x] P10.2 A default single model per stem, chosen by a rule fixed first. **Accept:** the rule (what is compared, on which tracks, how ties and time are weighed) is committed before the choice is computed; `docs/benchmarks/recommendation.md` states the choice per stem from the tuning list and what the two test lists then show for it, beside the model in use; `config/defaults.yaml` names the chosen models for `single_best`; `make check` and `make web-e2e` pass. — Done: `python -m stems_bench.recommend`, with its rule committed (`2e0030a`) before the tuning scores were read: on the 30 tuning tracks, a stem's best model by median SDR, any model within 0.3 dB of it acceptable, and the fewest models win. **The choice is one model for all six stems, `bs_roformer_sw_6stem`**: it is the best on the tuning tracks for every stem outright (vocals 11.48, drums 12.14, bass 15.64, guitar 7.85, piano 8.63, other 2.61 dB), so the margin never came into play. `docs/benchmarks/recommendation.md` has the table of every candidate. On the test lists, which decided nothing: drums +1.44 and +1.43 dB over the model in use (MoisesDB, MUSDB18-HQ), bass +1.90 and +2.52, other +0.98 over the composed stem the product had been delivering, guitar and piano unchanged (same model), and vocals -0.27 on MoisesDB and +0.34 on MUSDB18-HQ. One model instead of four: 18.3 s per minute of audio instead of 64.3 on this Mac's GPU. `config/defaults.yaml` now names it as `single_best` for the six stems. **Two things followed that I had not planned.** The config's blends (equal weights, never tuned) are worse than this single model on the tuning tracks for drums, bass, guitar and piano by 0.9 to 2.9 dB and gain 0.03 dB at most on vocals, so "best quality" would have been slower and worse: all three quality settings now give the single model until the tuner has chosen blends (`decision.mode_for_quality`, BLOCKED.md D14). And the consistency check that a blend must contain the single model is asked only once `ensembles.provisional` is false. **A fault found on the way:** one handwritten Jev reply in the plan fixtures had probabilities summing to 0.9825, so the parser rejected it and the test that Jev can ask for a blend had been passing through the config's old mapping, not through Jev's answer; the generator is fixed, one number in the fixture changed, and the test now asserts the reply was used. For the benchmark still running: its later stages start with this config, so their "single best" rows are this model; the MoisesDB tuning report in progress was started with the old one. Not known, and it matters for this choice: which songs each checkpoint was trained on. `make check` passed, `make web-e2e` 16 passed. 9 tests for the rule and report.
 - [x] P10.3 Real songs through the product with the chosen defaults. **Accept:** `python -m stems_bench.product_check` run again under a new run id on the same three tracks, and `docs/product-vs-benchmark.md` regenerated from it; the six-stem `other`, which the first run could not compare, is set beside a benchmark figure or the report says why not. — Done: run `product-v2` (2026-11-24, 15:19Z to 15:41Z, CPU): the same three MoisesDB tracks through the worker's path with the config as it now is (one model, no tagger, no retries), and `docs/product-vs-benchmark.md` regenerated from it. **15 of 15 stems are within 0.02 dB of the benchmark's figure** for the same model and track; the six-stem `other` is now among them, since the model's own `other` is what is delivered (6.66, 5.80 and 2.63 dB). **The gate flagged all 3 stems whose instrument is not in the song, and none of the 15 that are;** every stem took one attempt. Beside the first run on the same songs (`product-v1`, the old defaults): drums 15.87 to 16.46, 11.52 to 13.18 and 9.54 to 10.01 dB; bass 16.15 to 16.89, 10.28 to 13.98 and 14.35 to 15.65; other 3.40 to 6.66, 2.13 to 5.80 and 1.46 to 2.63; vocals 11.25 to 11.26, 10.82 to 10.69 and 7.35 to 7.26; guitar and piano unchanged. Wall time 411 s, 303 s and 310 s where the first run took 1,820 s, 1,298 s and 1,600 s, both on a busy CPU. Three songs, as before: enough to see the road works with the new model, not to say how often. The audio was deleted after scoring.
 - [x] P10.4 The figures that follow from the defaults. **Accept:** `docs/cost-per-song.md` and the table in `README.md` regenerated or corrected from the new config and reports, each figure traced to its file. — Done: `docs/cost-per-song.md` regenerated by `python -m stems_bench.cost` from the new config: separation of a 4-minute song in the default mode is 69 s on this Mac's GPU (one model at 17.14 s per minute of audio in `docs/benchmarks/moisesdb.json`), where the four old defaults took 230 s. Decisions are $0.000291 for six stems from the recordings, of which the plan call was recorded again (2,338 input and 592 output tokens): the plan request names the default models, so the config change had made the old recording stale and its replay test was skipping itself. One live request to `jev-1.14.0`; Jev's answers were under the confidence floor (0.63 to 0.75), so the rules planned, as before. `README.md`: the default model and what it replaced, 69 s, 15 of 15 stems within 0.02 dB, and what is now not known (whether a tuned blend beats the single model; what the checkpoints were trained on). The 13% in the notes on the tagger (config, D13) is gone: against one model's 69 s the tagger's 31 s would be 45%. Each figure was read from the file it names.
+
+## Phase 11: more songs, and an app that says what it does
+
+Added on 2026-11-24 under rule 6 (no phase was left). Three real songs have shown that
+the product's path works with the new default model; three is not a rate. And the choice
+of one model for every quality setting left the web app offering a "Speed or quality"
+menu that changes nothing.
+
+- [ ] P11.1 Twenty real songs through the product. **Accept:** run `product-v2` extended to the first 20 tracks of the frozen MoisesDB subset (the three done are kept), and `docs/product-vs-benchmark.md` regenerated from it: how many stems agree with the benchmark, how many absent instruments the gate flagged and how many present ones it flagged wrongly, each wrong one named.
+- [ ] P11.2 The quality menu tells the truth. **Accept:** `GET /api/config` says what each quality setting gives; the upload page shows the menu only when the settings differ, and otherwise says in a line that one model is used; a request in words that asks for "best quality" still uploads; unit and browser tests for both cases.
+- [ ] P11.3 The real-models job in the browser, with the new default. **Accept:** `make web-e2e-real` passes on the config as it is and `docs/deployment.md` describes that run.
+- [ ] P11.4 The vocal-split model, by the same rule. **Accept:** `stems_bench.recommend` covers lead and backing vocals on the tuning tracks with the rule already committed, the report shows the result beside the model in use, and the config follows; or a note saying why the rule cannot be applied.
+- [ ] P11.5 Close P3.11. **Accept:** the optional MERT and Essentia comparison is done, or ticked with the note its acceptance asks for.
 
 ---
 
@@ -853,3 +866,48 @@ finished MoisesDB tuning run; the MUSDB18-HQ tuning stage follows) and P3.11 (op
 
 **Next:** Phase 10, added under rule 6: choose the default single models on the tuning
 tracks.
+
+## Phase 10 summary (2026-11-24)
+
+Done: P10.1 to P10.4.
+
+- **The single models on the tuning tracks** (P10.1,
+  `docs/benchmarks/tuning-models-moisesdb.md`).
+- **The default model** (P10.2, `docs/benchmarks/recommendation.md`). By a rule committed
+  before the tuning scores were read, one model, `bs_roformer_sw_6stem`, serves all six
+  stems: it was the best on the 30 tuning tracks for each of them.
+- **Real songs with it** (P10.3, `docs/product-vs-benchmark.md`). The same three songs:
+  15 of 15 stems within 0.02 dB of the benchmark, all 3 absent instruments flagged, none
+  flagged wrongly, about 4.5 times faster than with the old defaults.
+- **The figures that follow** (P10.4): 69 s of separation for a 4-minute song on this
+  Mac's GPU, where the old defaults took 230 s.
+
+What the phase found:
+
+- **The provisional defaults were costing 1.4 to 2.5 dB on drums and bass** on both test
+  lists, and running four models to do it.
+- **The untuned blends are worse than the single model.** On the tuning tracks no blend
+  in the config gains more than 0.03 dB on it and four of five lose 0.9 dB or more. So
+  every quality setting now gives the single model (BLOCKED.md D14), until the tuner says
+  otherwise.
+- **Two tests had been leaning on the config.** One handwritten Jev reply was malformed
+  and its test passed through the old quality mapping; one live recording went stale and
+  its test skipped itself. Both are fixed; the second took one live Jev request.
+
+Not verified, and why:
+
+- **That this model is the best on music it has not seen.** Which songs each checkpoint
+  was trained on is not known. The choice rests on one dataset's tuning tracks and is
+  confirmed on two test lists; if the model met those datasets in training, all three
+  flatter it.
+- **Vocals.** The chosen model is 0.27 dB behind the old vocals model on the MoisesDB
+  test list and 0.34 dB ahead on MUSDB18-HQ. On the tuning tracks it led by 0.39 dB.
+  That is the rule's answer, and it is a close one.
+- **Any blend the tuner may yet find.** P2.12 and P2.13.
+- **How it sounds.** SDR chose this model; nobody has listened (B8).
+- **More than three songs through the product.** P11.1.
+
+Still open from earlier phases: P2.12, P2.13 and P2.14b (the tuner is still searching)
+and P3.11 (optional).
+
+**Next:** Phase 11, added under rule 6.
