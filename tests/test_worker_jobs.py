@@ -546,15 +546,17 @@ def test_the_tagger_is_not_loaded_when_listening_is_switched_off(tmp_path, monke
     monkeypatch.setattr(worker, "run_job", fake_run)
     monkeypatch.setattr(beats.BeatsTagger, "from_registry", staticmethod(loaded))
     base = load_defaults()
-    off = base.model_copy(
-        update={"listening": base.listening.model_copy(update={"enabled": False})}
-    )
-    monkeypatch.setattr(worker, "load_defaults", lambda: off)
+
+    def switched(enabled: bool):
+        listening = base.listening.model_copy(update={"enabled": enabled})
+        return base.model_copy(update={"listening": listening})
+
+    assert base.listening.enabled is False  # the shipped setting (BLOCKED.md D13)
+    monkeypatch.setattr(worker, "load_defaults", lambda: switched(False))
     assert worker.main([JOB]) == 0
     assert "loaded" not in seen
     assert seen["tagger"] is None
-    # Switched on (the shipped setting), the worker does try to load it.
-    assert base.listening.enabled is True
-    monkeypatch.setattr(worker, "load_defaults", lambda: base)
+    # Switched on, the worker does try to load it.
+    monkeypatch.setattr(worker, "load_defaults", lambda: switched(True))
     assert worker.main([JOB]) == 0
     assert seen["loaded"] is True

@@ -59,6 +59,18 @@ A stem far below the mix is treated as probably empty and tried again (`gate.rul
 
 This is arithmetic on measured model times, not a measured job. The tagger listens to every attempt as well, which is not counted here.
 
+### The tagger
+
+When `listening.enabled` is on, the tagger (`beats_iter3plus_as2m_cpt2`, on cpu) listens to the mix and to every attempt at every stem. Measured in the jobs of `runs/product/product-v1`, which ran real songs through the worker with six stems asked for:
+
+| Song | Audio | Times it listened | Tagger seconds | Per minute of audio |
+|---|---:|---:|---:|---:|
+| `014f3712` | 344 s | 9 | 44 | 7.7 s |
+| `01c8ba69` | 249 s | 8 | 30 | 7.3 s |
+| `028c6f6a` | 240 s | 9 | 36 | 8.9 s |
+
+At the median, a 4-minute song costs 31 s of tagger time, beside 230 s of separation in the default mode on the device of the table above (13% more). Those jobs shared the machine with a benchmark, so the figure may be on the high side. What it buys: the gate acts on nothing the tagger hears (`docs/gate-on-real-output.md`); its scores go into each stem's notes and to Jev. `listening.enabled` is **off** in `config/defaults.yaml`.
+
 **What this costs on a rented GPU is not known.** Modal charges $0.000164 per second for a T4 and $0.000222 for an L4 (https://modal.com/pricing, read 2026-11-24; CPU and memory are charged on top, and non-preemptible runs at three times the list price). The cost of a song is that price times the seconds a T4 or L4 takes. Those seconds have not been measured: every timing in this repo is from Apple MPS or CPU, and a different GPU can be faster or slower by an amount nobody here has observed. One job on Modal (BLOCKED.md B4) gives the number.
 
 ## Storage and downloads

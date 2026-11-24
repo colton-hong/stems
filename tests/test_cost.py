@@ -163,6 +163,47 @@ def test_the_report_has_the_absent_instrument_table_only_with_a_registry_and_the
     )
 
 
+def test_the_taggers_time_comes_from_the_timings_of_real_jobs(tmp_path) -> None:
+    assert cost.listening_usage(tmp_path / "no-such-run") is None
+    results = tmp_path / "results"
+    results.mkdir()
+
+    def job(track: str, audio: float, heard: list[float], state: str = "ready") -> None:
+        timings = [{"model_id": "m", "stage": "separation", "device": "cpu", "wall_seconds": 500.0}]
+        timings += [
+            {"model_id": "tagger", "stage": "listening", "device": "cpu", "wall_seconds": w}
+            for w in heard
+        ]
+        record = {"track_id": track, "state": state, "audio_seconds": audio, "timings": timings}
+        (results / f"{track}.json").write_text(json.dumps(record))
+
+    job("aaaaaaaa-1", 240.0, [4.0, 4.0, 4.0, 12.0])  # 24 s: 6 s per minute of audio
+    job("bbbbbbbb-2", 120.0, [10.0, 10.0])  # 10 s per minute
+    job("cccccccc-3", 60.0, [2.0])  # 2 s per minute
+    job("dddddddd-4", 60.0, [])  # the tagger was off: says nothing
+    job("eeeeeeee-5", 60.0, [9.0], state="failed")
+    usage = cost.listening_usage(tmp_path)
+    assert [j["track_id"] for j in usage["jobs"]] == ["aaaaaaaa-1", "bbbbbbbb-2", "cccccccc-3"]
+    assert usage["jobs"][0]["tagger_seconds"] == 24.0
+    assert usage["jobs"][0]["times_listened"] == 4
+    assert usage["median_seconds_per_audio_minute"] == 6.0
+
+    report = cost.build(
+        PRICES, USAGE, benchmark(), DEFAULTS, benchmark_file="b.json", listening=usage
+    )
+    assert report["listening"]["seconds"] == 24.0  # four minutes at the median
+    assert report["listening"]["enabled"] is DEFAULTS.listening.enabled
+    text = cost.render(report, PRICES)
+    assert "### The tagger" in text
+    assert "| `aaaaaaaa` | 240 s | 4 | 24 | 6.0 s |" in text
+    assert "a 4-minute song costs 24 s of tagger time" in text
+    state = "on" if DEFAULTS.listening.enabled else "off"
+    assert f"`listening.enabled` is **{state}**" in text
+    plain = cost.build(PRICES, USAGE, benchmark(), DEFAULTS, benchmark_file="b.json")
+    assert plain["listening"] is None
+    assert "### The tagger" not in cost.render(plain, PRICES)
+
+
 def test_storage_is_an_upper_bound_from_the_format() -> None:
     # One minute of 24-bit 44.1 kHz stereo is 15,876,000 bytes.
     assert cost.WAV_BYTES_PER_SECOND * 60 == 15_876_000

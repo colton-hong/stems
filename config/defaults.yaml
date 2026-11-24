@@ -132,9 +132,11 @@ gate:
 #   - bleed: preferred the better of two outputs in 64.8% of pairs (80% needed).
 # One switch per signal; both stay off, and the gate does not act on what the tagger hears.
 listening:
-  # Whether jobs run the tagger at all. The gate acts on nothing it hears (see above); its
-  # scores go into each stem's notes and to Jev.
-  enabled: true
+  # Whether jobs run the tagger at all. Off: the gate acts on nothing it hears (see above),
+  # so a job's stems and notes come out the same without it, and it cost a median of 31 s
+  # for a 4-minute song in three real jobs (docs/cost-per-song.md), 13% on top of the
+  # separation. On, its scores go into each stem's notes and to Jev. BLOCKED.md D13.
+  enabled: false
   calibrated:
     presence: false
     bleed: false

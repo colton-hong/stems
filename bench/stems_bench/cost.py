@@ -32,6 +32,9 @@ PRICES_PATH = REPO_ROOT / "config" / "prices.yaml"
 RECORDINGS_DIR = REPO_ROOT / "tests" / "fixtures" / "jev"
 BENCHMARK_PATH = REPO_ROOT / "docs" / "benchmarks" / "moisesdb.json"
 SONG_MINUTES = 4.0
+# Jobs with real songs through the worker (python -m stems_bench.product_check); their
+# timings say what the tagger cost. Not in the repository: without it that part is left out.
+PRODUCT_RUN = REPO_ROOT / "runs" / "product" / "product-v1"
 MODES = ("single_best", "two_model_blend", "full_ensemble")
 # 24-bit stereo WAV at 44.1 kHz: what the product writes by default.
 WAV_BYTES_PER_SECOND = 44100 * 2 * 3
@@ -196,6 +199,44 @@ def absent_costs(
     return out
 
 
+def listening_usage(run_dir: Path = PRODUCT_RUN) -> dict[str, Any] | None:
+    """What the tagger cost in the jobs of a product-check run; None if there is none.
+
+    Per job: the seconds of audio, the tagger's seconds, and how many times it listened
+    (the mix once, then every attempt at every stem).
+    """
+    import statistics
+
+    jobs = []
+    for path in sorted((run_dir / "results").glob("*.json")) if run_dir.is_dir() else []:
+        record = json.loads(path.read_text(encoding="utf-8"))
+        heard = [t for t in record.get("timings", []) if t["stage"] == "listening"]
+        if record.get("state") != "ready" or not heard:
+            continue
+        seconds = sum(t["wall_seconds"] for t in heard)
+        jobs.append(
+            {
+                "track_id": record["track_id"],
+                "audio_seconds": record["audio_seconds"],
+                "tagger_seconds": round(seconds, 1),
+                "times_listened": len(heard),
+                "device": sorted({t["device"] for t in heard}),
+                "tagger": sorted({t["model_id"] for t in heard}),
+                "seconds_per_audio_minute": seconds / record["audio_seconds"] * 60,
+            }
+        )
+    if not jobs:
+        return None
+    shown = run_dir.resolve()
+    return {
+        "run": str(shown.relative_to(REPO_ROOT)) if shown.is_relative_to(REPO_ROOT) else str(shown),
+        "jobs": jobs,
+        "median_seconds_per_audio_minute": statistics.median(
+            job["seconds_per_audio_minute"] for job in jobs
+        ),
+    }
+
+
 def storage_gb(stems: int, minutes: float) -> float:
     """Upper bound on what one job stores: the upload, each stem, and a zip of the stems,
     all taken as 24-bit WAV. By arithmetic from the format, not measured."""
@@ -212,8 +253,10 @@ def build(
     benchmark_file: str,
     minutes: float = SONG_MINUTES,
     registry: Any = None,
+    listening: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """``registry`` (the model registry) adds what the empty-stem retries cost."""
+    """``registry`` (the model registry) adds what the empty-stem retries cost;
+    ``listening`` (``listening_usage``) adds what the tagger costs."""
     stems = len(PRODUCT_STEMS)
     rates = model_rates(benchmark)
     decisions = {}
@@ -240,6 +283,14 @@ def build(
             "cases": absent_costs(defaults, registry, rates, minutes, default_mode),
         }
     return {
+        "listening": None
+        if listening is None
+        else {
+            **listening,
+            "enabled": defaults.listening.enabled,
+            "seconds": listening["median_seconds_per_audio_minute"] * minutes,
+            "base_seconds": separation[default_mode]["seconds"],
+        },
         "absent": absent,
         "checked": str(prices["checked"]),
         "minutes": minutes,
@@ -388,6 +439,43 @@ def render(report: Mapping[str, Any], prices: Mapping[str, Any]) -> str:
             "This is arithmetic on measured model times, not a measured job. The tagger "
             "listens to every attempt as well, which is not counted here.",
         ]
+    if report.get("listening"):
+        heard = report["listening"]
+        job = heard["jobs"][0]
+        lines += [
+            "",
+            "### The tagger",
+            "",
+            f"When `listening.enabled` is on, the tagger (`{', '.join(job['tagger'])}`, on "
+            f"{', '.join(job['device'])}) listens to the mix and to every attempt at every "
+            f"stem. Measured in the jobs of `{heard['run']}`, which ran real songs through the "
+            "worker with six stems asked for:",
+            "",
+            "| Song | Audio | Times it listened | Tagger seconds | Per minute of audio |",
+            "|---|---:|---:|---:|---:|",
+        ]
+        for job in heard["jobs"]:
+            lines.append(
+                f"| `{job['track_id'][:8]}` | {job['audio_seconds']:.0f} s | "
+                f"{job['times_listened']} | {job['tagger_seconds']:.0f} | "
+                f"{job['seconds_per_audio_minute']:.1f} s |"
+            )
+        base = heard["base_seconds"]
+        beside = (
+            f", beside {base:.0f} s of separation in the default mode on the device of the "
+            f"table above ({100 * heard['seconds'] / base:.0f}% more)"
+            if base
+            else ""
+        )
+        lines += [
+            "",
+            f"At the median, a {minutes:.0f}-minute song costs {heard['seconds']:.0f} s of "
+            f"tagger time{beside}. Those jobs shared the machine with a benchmark, so the "
+            "figure may be on the high side. What it buys: the gate acts on nothing the tagger "
+            "hears (`docs/gate-on-real-output.md`); its scores go into each stem's notes and "
+            "to Jev. `listening.enabled` is "
+            f"**{'on' if heard['enabled'] else 'off'}** in `config/defaults.yaml`.",
+        ]
     t4, l4 = modal["usd_per_second"]["T4"], modal["usd_per_second"]["L4"]
     lines += [
         "",
@@ -448,6 +536,7 @@ def main(argv: list[str] | None = None) -> int:
             benchmark_file=shown,
             minutes=args.minutes,
             registry=load_registry(),
+            listening=listening_usage(),
         )
     except (CostError, FileNotFoundError) as exc:
         print(f"cost: {exc}", file=sys.stderr)

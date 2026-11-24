@@ -3,7 +3,7 @@ PY := .venv/bin/python
 # Use the project-local Node.js if tools/install_node.sh has installed one.
 export PATH := $(CURDIR)/.tools/node/bin:$(PATH)
 
-.PHONY: setup lint format test test-slow api smoke bench-synthetic bench-device-spread check env registry schemas registry-sources models-status node-setup web-setup web-check web-e2e web-e2e-real
+.PHONY: setup lint format test test-slow api smoke bench-synthetic bench-device-spread check env registry schemas registry-sources models-status node-setup web-setup web-dev web-check web-e2e web-e2e-real
 
 setup: ## create .venv and install the project with dev tools
 	test -d .venv || python3 -m venv .venv
@@ -67,6 +67,9 @@ node-setup: ## install Node.js into .tools/node (skip if you have Node >= 22.13 
 
 web-setup: ## install web dependencies exactly as locked
 	cd web && npm ci --no-fund --no-audit
+
+web-dev: ## serve the web app on http://localhost:3000, reloading on change (needs `make api` too)
+	cd web && npm run dev
 
 web-check:
 	cd web && npm run lint && npm run typecheck && npm test && npm run build
