@@ -51,8 +51,9 @@ Every figure is from a run in this repository; the report named beside it has th
 |---|---|---|
 | Best single model per stem, MoisesDB subset, SDR in dB | vocals 10.82, drums 12.95, bass 15.09, guitar 9.19, piano 5.80, other 2.97 | [docs/benchmarks/moisesdb.md](docs/benchmarks/moisesdb.md) |
 | Best single model per stem, MUSDB18-HQ test, SDR in dB | vocals 12.30, drums 13.35, bass 12.47 | [docs/benchmarks/musdb18hq.md](docs/benchmarks/musdb18hq.md) |
-| What a user downloads against what the benchmark scored | 12 of 12 stems of 3 real songs within 0.07 dB | [docs/product-vs-benchmark.md](docs/product-vs-benchmark.md) |
-| Time for a 4-minute song, six stems, default models, this Mac's GPU | 230 s | [docs/cost-per-song.md](docs/cost-per-song.md) |
+| What a user downloads against what the benchmark scored | 15 of 15 stems of 3 real songs within 0.02 dB | [docs/product-vs-benchmark.md](docs/product-vs-benchmark.md) |
+| The default model, chosen on 30 tuning tracks by a rule fixed first | one model for all six stems, `bs_roformer_sw_6stem`; against the models it replaced, on the test lists: drums +1.4 dB, bass +1.9 and +2.5 dB, vocals -0.27 and +0.34 dB | [docs/benchmarks/recommendation.md](docs/benchmarks/recommendation.md) |
+| Time for a 4-minute song, six stems, the default model, this Mac's GPU | 69 s | [docs/cost-per-song.md](docs/cost-per-song.md) |
 | Telling a stem whose instrument is not in the song, by its level | right 90.2% of the time, finds 92.2% | [docs/gate-on-real-output.md](docs/gate-on-real-output.md) |
 | Whether the audio tagger can judge a stem's quality | no: it fails on bleed twice over, and on naming instruments in a mix | [docs/gate-calibration.md](docs/gate-calibration.md), [docs/gate-on-real-output.md](docs/gate-on-real-output.md) |
 | Clef-omni as the listening model | rejected by its pre-registered test | [docs/clef-omni-test.md](docs/clef-omni-test.md) |
@@ -66,8 +67,11 @@ They are not comparable with figures published elsewhere.
 ## What is not known
 
 - **How it sounds to people.** No listening test has been run. The kit for one is built.
-- **Which models should be the defaults.** The ones in use are provisional. The benchmark
-  run that settles it (blend tuning, then a recommendation) is still going.
+- **Whether any blend of models beats the single default.** None of the untuned ones
+  does, so "fastest", "balanced" and "best quality" all give the same model for now. The
+  tuner that could change that is still running.
+- **What each model was trained on.** A checkpoint that met these datasets' songs in
+  training scores higher on them than it would on new music. Nothing here can tell.
 - **What it costs on a rented GPU.** Nothing has run on one.
 - **Anything beyond one machine.** No bucket, no Modal, no real proxy, no real phone.
 - **How often things go wrong on real songs.** Three have been through the product's own
@@ -77,7 +81,7 @@ They are not comparable with figures published elsewhere.
 
 [BLOCKED.md](BLOCKED.md) has the details: a Modal account (B4), bucket credentials (B7),
 listeners and reference purchases for the listening test (B8), Azure quota (B9), and
-thirteen decisions made for you that you can overrule (D1 to D13).
+fourteen decisions made for you that you can overrule (D1 to D14).
 
 ## Where things are
 

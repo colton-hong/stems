@@ -250,6 +250,12 @@ def test_the_summary_counts_agreement_flags_and_time() -> None:
     assert "| `aaaaaaaa` | 200 s | 100 s | 60 s | 12 s | 28 s |" in text
 
 
+def test_a_difference_that_rounds_to_zero_is_not_shown_as_minus_zero() -> None:
+    assert pc._num(-0.001) == "0.00"
+    assert pc._num(-0.006) == "-0.01"
+    assert pc._num(None) == "-"
+
+
 def test_report_refuses_a_run_that_has_not_finished(tmp_path, monkeypatch, capsys) -> None:
     monkeypatch.setattr(pc, "PRODUCT_DIR", tmp_path)
     assert pc.main(["report", "--run-id", "nothing"]) == 2

@@ -143,8 +143,8 @@ gate:
 listening:
   # Whether jobs run the tagger at all. Off: the gate acts on nothing it hears (see above),
   # so a job's stems and notes come out the same without it, and it cost a median of 31 s
-  # for a 4-minute song in three real jobs (docs/cost-per-song.md), 13% on top of the
-  # separation. On, its scores go into each stem's notes and to Jev. BLOCKED.md D13.
+  # for a 4-minute song in three real jobs (docs/cost-per-song.md). On, its scores go
+  # into each stem's notes and to Jev. BLOCKED.md D13.
   enabled: false
   calibrated:
     presence: false

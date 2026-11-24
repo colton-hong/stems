@@ -22,16 +22,16 @@ Tokens used by one real call of each kind (the live check of 2026-11-24):
 | Call | Input tokens | Output tokens | From |
 |---|---:|---:|---|
 | parse | 1,094 | 241 | `tests/fixtures/jev/parse.recorded.jsonl` |
-| plan | 2,316 | 592 | `tests/fixtures/jev/plan.recorded.jsonl` |
+| plan | 2,338 | 592 | `tests/fixtures/jev/plan.recorded.jsonl` |
 | gate | 767 | 96 | `tests/fixtures/jev/gate.recorded.jsonl` |
 
 A job makes one plan call and one gate call per stem, per attempt; a request in words adds one parse call.
 
 | Job | Input tokens | Cost |
 |---|---:|---:|
-| six ticked stems, no retries | 6,918 | $0.000291 |
-| a request in words, six stems, no retries | 8,012 | $0.000337 |
-| six ticked stems, every stem retried twice | 16,122 | $0.000677 |
+| six ticked stems, no retries | 6,940 | $0.000291 |
+| a request in words, six stems, no retries | 8,034 | $0.000337 |
+| six ticked stems, every stem retried twice | 16,144 | $0.000678 |
 
 Each token count is from a single call on made-up inputs. Real jobs will differ: the plan call grows with the number of stems asked for and of candidate models.
 
@@ -41,7 +41,7 @@ Time to separate a 4-minute song into six stems on this machine, from the median
 
 | Mode | Models run | Seconds | Minutes |
 |---|---|---:|---:|
-| single_best | `mel_roformer_kim_vocals`, `scnet_xl_ihf`, `htdemucs_ft`, `bs_roformer_sw_6stem` | 230 | 3.8 |
+| single_best | `bs_roformer_sw_6stem` | 69 | 1.1 |
 | two_model_blend | `mel_roformer_kim_vocals`, `bs_roformer_viperx_vocals`, `scnet_xl_ihf`, `htdemucs_ft`, `bs_roformer_sw_6stem`, `mel_roformer_guitar_becruily`, `htdemucs_6s`, `scnet_large` | 420 | 7.0 |
 | full_ensemble | `mel_roformer_kim_vocals`, `bs_roformer_viperx_vocals`, `bs_polarformer_vocals`, `scnet_xl_ihf`, `scnet_large`, `htdemucs_ft`, `bs_roformer_sw_6stem`, `mel_roformer_guitar_becruily`, `htdemucs_6s` | 530 | 8.8 |
 
@@ -61,7 +61,7 @@ When `listening.enabled` is on, the tagger (`beats_iter3plus_as2m_cpt2`, on cpu)
 | `01c8ba69` | 249 s | 8 | 30 | 7.3 s |
 | `028c6f6a` | 240 s | 9 | 36 | 8.9 s |
 
-At the median, a 4-minute song costs 31 s of tagger time, beside 230 s of separation in the default mode on the device of the table above (13% more). Those jobs shared the machine with a benchmark, so the figure may be on the high side. What it buys: the gate acts on nothing the tagger hears (`docs/gate-on-real-output.md`); its scores go into each stem's notes and to Jev. `listening.enabled` is **off** in `config/defaults.yaml`.
+At the median, a 4-minute song costs 31 s of tagger time, beside 69 s of separation in the default mode on the device of the table above (45% more). Those jobs shared the machine with a benchmark, so the figure may be on the high side. What it buys: the gate acts on nothing the tagger hears (`docs/gate-on-real-output.md`); its scores go into each stem's notes and to Jev. `listening.enabled` is **off** in `config/defaults.yaml`.
 
 **What this costs on a rented GPU is not known.** Modal charges $0.000164 per second for a T4 and $0.000222 for an L4 (https://modal.com/pricing, read 2026-11-24; CPU and memory are charged on top, and non-preemptible runs at three times the list price). The cost of a song is that price times the seconds a T4 or L4 takes. Those seconds have not been measured: every timing in this repo is from Apple MPS or CPU, and a different GPU can be faster or slower by an amount nobody here has observed. One job on Modal (BLOCKED.md B4) gives the number.
 

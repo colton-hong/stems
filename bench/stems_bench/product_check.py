@@ -320,7 +320,8 @@ def summarise(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
 
 
 def _num(value: float | None, digits: int = 2) -> str:
-    return "-" if value is None else f"{value:.{digits}f}"
+    # Adding 0.0 turns a rounded "-0.00" into "0.00".
+    return "-" if value is None else f"{round(value, digits) + 0.0:.{digits}f}"
 
 
 def render(records: Sequence[Mapping[str, Any]], run: Mapping[str, Any]) -> str:
