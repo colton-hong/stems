@@ -146,10 +146,11 @@ def test_a_real_recording_replays_into_a_valid_decision(kind) -> None:
     assert exchange["status"] == 200
     assert exchange["request"]["model"] == "jev-1.14.0"
     # The reply is in the documented wire format: our parser reads every answer.
-    answers = parse_answers(
+    read = parse_answers(
         exchange["response"], exchange["request"]["questions"], exchange["request"]["model"]
     )
-    assert set(answers) == set(exchange["request"]["questions"])
+    assert set(read["answers"]) == set(exchange["request"]["questions"])
+    assert read["model"] == "jev-1.14.0"
     usage = exchange["response"]["usage"]
     assert usage["input_tokens"] > 0
     # Nothing that identifies the account was kept.
@@ -160,5 +161,5 @@ def test_a_real_recording_replays_into_a_valid_decision(kind) -> None:
         decision = live.decide(kind, client, DEFAULTS, REGISTRY)
     except UnrecordedRequest:
         pytest.skip(f"the {kind} request has changed since it was recorded: record it again")
-    assert decision.record["asked"] is True
+    assert decision.record["asked"] == "mock"  # the recording was what answered
     assert schemas.errors(SCHEMAS[kind], decision.value) == []

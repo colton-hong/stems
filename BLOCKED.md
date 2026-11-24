@@ -14,8 +14,6 @@ unblocked task.
 | # | What I need | Exactly | Unblocks | First needed |
 |---|---|---|---|---|
 | B4 | Modal account and token | Create the account, add a payment method, then set `MODAL_TOKEN_ID` and `MODAL_TOKEN_SECRET` in `.env`. | GPU timings in Phase 2 (without it every timing is Apple MPS), P5.12 live check, P7.3 cost per song | Phase 2, optional until Phase 5 |
-| B5 | Cloudflare account id and Workers AI token | Set `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_AUTH_TOKEN` in `.env`. The report estimates the whole test at under $0.02, inside the free daily allowance. | P3.9 (running the Clef-omni test). The harness itself is built and tested without it. | Phase 3 |
-| B6 | TypeSafe API key with prepaid credit | Create a key at https://console.typesafe.ai, add credit (the report found no free starter credit), set `TYPESAFE_API_KEY` in `.env`. | P4.9 (live Jev check and recording real responses), P7.1 calibration against real Jev answers. Everything else runs on the fallback and the recorded mock. | Phase 4 |
 | B7 | Bucket credentials, only if you want live storage checks | S3-compatible: `S3_ENDPOINT_URL`, `S3_BUCKET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`. Azure: `AZURE_STORAGE_CONNECTION_STRING`, `AZURE_STORAGE_CONTAINER`. | Live verification of P5.2 and P5.3. Without them those backends are tested against stubbed clients only, and PROGRESS.md will say so. | Phase 5, optional |
 | B8 | Listening panel and reference purchases | At least 5 listeners including one who is not you; minimum LALAL.AI Pro and Moises Pro plans for the reference stems (report §9). | Running the listening test. The kit (P7.5) is built without them. | Phase 7 |
 | B9 | Azure quota requests | Yours to file if you want Azure (report §6 has paste-ready texts). The build does not wait for them. | Filling in the Azure Container Apps worker | Whenever |
@@ -41,3 +39,10 @@ I picked a default for each so the work does not stop. Say so if you want a diff
 - **B1 Node.js** (2026-11-22): the owner asked for a project-local install. Node v24.22.3 LTS
   is in `.tools/node` (git-ignored), installed by `tools/install_node.sh`, which verifies the
   nodejs.org checksum. `make` targets pick it up automatically.
+- **B5 Cloudflare account id and Workers AI token** (2026-11-24): in `.env`, written there by
+  the owner's Muse assistant after the owner signed in. Checked without printing them:
+  Cloudflare's token-verify endpoint answers `active`, and a Workers AI read on the account
+  succeeds. The Clef-omni half of P3.9 can run.
+- **B6 TypeSafe API key** (2026-11-24): in `.env`, same route. Three real requests succeeded
+  (P4.9). Whether the account has prepaid credit or a free allowance was not looked at: no
+  purchase was made from here.
