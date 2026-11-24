@@ -87,6 +87,29 @@ What this does not show: a real song in the browser, a long one, the GPU path th
 API, or a first run that has to download its checkpoints (about 16.7 GB for all of them). On a
 24 GB Mac do not run a real job on the GPU while a benchmark is running.
 
+### The longest upload
+
+`python -m stems_bench.long_upload --device mps` makes a synthetic signal exactly as long
+as the limit allows (`uploads.max_duration_seconds`, 20 minutes), puts it in storage as an
+upload and starts the worker the way the API does, as a process of its own, with the real
+default model. Run on 2026-11-24 at 18:39 UTC on this Mac's GPU, while a benchmark was
+using the same GPU; the figures are from `runs/long-upload/long-upload-v1/result.json`
+(not in the repository).
+
+- The job finished: 568 seconds from start to result for 1,200 seconds of audio, 526 of
+  them in the model.
+- All six stems came back at exactly the upload's length.
+- The worker process held at most 6.46 GB, as the operating system counts it. Memory the
+  GPU holds on the worker's behalf may not all be in that figure.
+- One job at this length is what was tried. The local provider runs one job at a time,
+  so two such jobs do not overlap on one machine.
+
+One thing this turned up: as a 24-bit WAV, twenty minutes of stereo is 318 MB, which is
+over the API's size limit (`uploads.max_bytes`, 250 MiB). The API would refuse that file
+before any of this ran; the test put it straight into storage. A twenty-minute upload
+gets through the API as 16-bit WAV (212 MB), FLAC or MP3. The two limits are both in
+`config/defaults.yaml`.
+
 ## 2. Settings
 
 Read from the environment first, then from `.env` in the repository root (never
