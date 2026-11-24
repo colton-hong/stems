@@ -74,6 +74,10 @@ def storage_from_env(getenv: Getter = get_env, *, base_url: str = "/api/files") 
     backend = (getenv(BACKEND_ENV) or "local").strip().lower()
     if backend == "local":
         return local_storage(getenv, base_url=base_url)
+    if backend == "s3":
+        from stems_api.storage.s3 import s3_from_env
+
+        return s3_from_env(getenv)
     if backend in BACKENDS:
         raise StorageConfigError(f"the {backend!r} storage backend is not built yet")
     raise StorageConfigError(

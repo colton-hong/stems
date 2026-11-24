@@ -14,6 +14,7 @@ from __future__ import annotations
 import io
 import json
 import re
+import urllib.parse
 from typing import Any, BinaryIO, Protocol, runtime_checkable
 
 MAX_KEY_LENGTH = 512
@@ -100,6 +101,19 @@ def clean_filename(filename: str | None) -> str | None:
     )
     kept = kept.strip().lstrip(".").strip()
     return kept[:MAX_FILENAME_LENGTH] or None
+
+
+def content_disposition(filename: str | None) -> str:
+    """The ``Content-Disposition`` value that makes a browser save under ``filename``.
+
+    An ASCII name for old clients and the exact name in RFC 5987 form for the rest.
+    """
+    name = clean_filename(filename)
+    if name is None:
+        return "attachment"
+    plain = "".join(ch if ch.isascii() else "_" for ch in name)
+    exact = urllib.parse.quote(name, safe="")
+    return f"attachment; filename=\"{plain}\"; filename*=UTF-8''{exact}"
 
 
 def put_bytes(storage: Storage, key: str, data: bytes, content_type: str) -> None:

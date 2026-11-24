@@ -10,6 +10,7 @@ from __future__ import annotations
 import io
 
 import pytest
+import storage_fakes
 
 from stems_api.storage import (
     InvalidKey,
@@ -21,9 +22,10 @@ from stems_api.storage import (
     read_bytes,
     read_json,
 )
+from stems_api.storage.s3 import S3Storage
 
 SECRET = b"0123456789abcdef0123456789abcdef-test-only"
-BACKENDS = ["local"]
+BACKENDS = ["local", "s3"]
 
 BAD_KEYS = [
     "",
@@ -46,6 +48,9 @@ BAD_KEYS = [
 def make_storage(backend: str, tmp_path) -> Storage:
     if backend == "local":
         return LocalStorage(tmp_path / "store", SECRET)
+    if backend == "s3":
+        # A small page size so that listing a job's folder takes more than one page.
+        return S3Storage(storage_fakes.FakeS3Client(page_size=3), "stems-test")
     raise AssertionError(f"no test double for the {backend!r} backend")
 
 

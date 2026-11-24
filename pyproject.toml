@@ -51,7 +51,11 @@ worker = [
 ]
 # museval only for its metrics module (numpy and scipy); see bench/stems_bench/metrics.py.
 bench = ["museval==0.4.1"]
-api = []
+# Installed and verified on macOS arm64, Python 3.14 (PROGRESS.md P5.2).
+api = [
+  # The S3-compatible storage backend. Imported only when STEMS_STORAGE_BACKEND=s3.
+  "boto3==1.44.10",
+]
 
 [project.scripts]
 separate = "stems_worker.cli:main"
