@@ -48,7 +48,7 @@ def stranger(deps):
 def run_worker(deps, job_id: str, **overrides) -> dict:
     """Do in this process what the worker subprocess would, then report it as exited."""
     options, defaults = fake_pipeline(deps.defaults)
-    settings = {"device": "cpu", "cache_dir": None, "timings_path": None, **options, **overrides}
+    settings = {"device": "cpu", "timings_path": None, **options, **overrides}
     result = worker.run_job(job_id, deps.storage, defaults=defaults, **settings)
     deps.provider.states[f"manual:{job_id}"] = "succeeded"
     return result
@@ -277,7 +277,12 @@ def test_a_failed_job_carries_the_workers_message(client, deps) -> None:
 
     run_worker(deps, job_id, factory=broken)
     job = client.get(f"/api/jobs/{job_id}").json()
-    assert (job["status"], job["error"]) == ("failed", "RuntimeError: the GPU fell over")
+    assert job["status"] == "failed"
+    assert job["error"] == (
+        "The separation failed inside the server (RuntimeError). "
+        "The details are in the server's log."
+    )
+    assert "GPU" not in job["error"]  # the exception's own words stay in the server's log
     assert job["stems"] == []
     assert client.post(f"/api/jobs/{job_id}/links").status_code == 409
 

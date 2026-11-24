@@ -139,13 +139,13 @@ Format: `- [ ] Pn.m Task. **Accept:** how to tell it is done.`
 
 ## Phase 7: calibration and hardening
 
-- [ ] P7.1 Calibrate gate thresholds on labelled clean and deliberately bled stems. **Accept:** `docs/gate-calibration.md` shows the measured trade-off and the chosen values, from a run. **BLOCKED (B3; B6 for real Jev answers).**
-- [ ] P7.2 End-to-end tests across API, worker and web.
+- [ ] P7.1 Calibrate gate thresholds on labelled clean and deliberately bled stems. **Accept:** `docs/gate-calibration.md` shows the measured trade-off and the chosen values, from a run. *Unblocked: the datasets (B3) and the key (B6) are both here. Scoring run `gate-v1` started 2026-11-24T10:18Z.*
+- [ ] P7.2 End-to-end tests across API, worker and web. **Accept:** the browser tests include a job with the vocal split and de-reverb extras; one slow test runs a real checkpoint through the worker's storage entry point on the fixture when its weights are present; `make check`, `make web-check` and `make web-e2e` pass.
 - [ ] P7.3 Cost per song from measured timings and prices checked that day. **Accept:** every figure cites a `runs/` file and a dated price source.
-- [ ] P7.4 Deployment guide (local, Modal, S3 or Azure Blob, the Azure Container Apps seam).
-- [ ] P7.5 Listening-test kit: blind randomised 30-second excerpts and a scoring sheet per report §9.
-- [ ] P7.6 Hardening pass: limits, failure paths, a security review of upload and download handling.
-- [ ] P7.7 Optional: fine-tune the weakest stem on MoisesDB if the benchmark shows a clear gap.
+- [ ] P7.4 Deployment guide (local, Modal, S3 or Azure Blob, the Azure Container Apps seam). **Accept:** `docs/deployment.md` gives the steps for each target, and marks every step as run here (with its date) or not run.
+- [ ] P7.5 Listening-test kit: blind randomised 30-second excerpts and a scoring sheet per report §9. **Accept:** `python -m stems_bench.listening_kit` builds a kit from several systems' stems (the same 30-second excerpt per track for every system, level-matched, anonymous names, the key kept apart, a scoring sheet per listener) and scores returned sheets against the report's pass bar; tested on synthetic audio. Running the test itself needs B8.
+- [x] P7.6 Hardening pass: limits, failure paths, a security review of upload and download handling. **Accept:** `docs/security-review.md` lists what was reviewed, each finding with its fix and the test that holds it, and what was left as it is. — Done: `docs/security-review.md`: a review, by the author of the code, of what a stranger's upload can do to the server and what anyone but the uploader can reach. 12 findings fixed, each named with the test that holds it. The ones that mattered most: separated audio was kept in a shared cache the 7-day deletion never touched (the worker now caches inside the job's own temporary folder); a stopped worker left a copy of the upload in the temp directory; worker logs were never deleted; the media decoders ran inside the API process (the upload check now runs in a child process with a 20-second limit); any sample rate was accepted (now 8 kHz to 192 kHz, at most 8 channels); a failed job showed the exception's own message; nothing capped the queue overall (now 12 jobs). Also: owner-only permissions on a storage folder the code creates, no-store and nosniff headers on every API reply, and frame and permissions policies on the web pages. The review also lists what was found sound and what was left as it is and why (links work without the cookie by design, in-process rate limits, no cap on event streams, no dependency scan). 14 tests in `tests/test_api_hardening.py`, 3 more for the worker, and a browser test of the page headers. Not an independent audit and not a penetration test.
+- [ ] P7.7 Optional: fine-tune the weakest stem on MoisesDB if the benchmark shows a clear gap. **Accept:** done, or a note saying it was not and why.
 
 ---
 

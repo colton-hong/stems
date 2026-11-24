@@ -55,6 +55,12 @@ class UploadSettings(_Strict):
     max_bytes: int = Field(gt=0)
     max_duration_seconds: int = Field(gt=0, le=3600)
     allowed_extensions: list[str] = Field(min_length=1)
+    # Audio outside these is refused: decoded size grows with both.
+    min_sample_rate_hz: int = Field(gt=0)
+    max_sample_rate_hz: int = Field(gt=0)
+    max_channels: int = Field(ge=1)
+    # How long the check of an upload (header and first second) may take.
+    inspect_timeout_seconds: float = Field(gt=0)
 
 
 class RetentionSettings(_Strict):
@@ -255,6 +261,8 @@ class RateLimitSettings(_Strict):
     parses_per_ip_per_minute: int = Field(ge=0)
     # Jobs one browser may have queued or running at the same time.
     max_active_jobs_per_owner: int = Field(ge=1)
+    # Jobs queued or running for everyone together; beyond it uploads are turned away.
+    max_jobs_in_progress: int = Field(ge=1)
 
 
 class Defaults(_Strict):

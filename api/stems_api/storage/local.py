@@ -146,8 +146,14 @@ class LocalStorage:
         self._meta = self.root / "meta"
         self.base_url = base_url.rstrip("/")
         self._clock = clock
+        created = not self.root.exists()
         self._objects.mkdir(parents=True, exist_ok=True)
         self._meta.mkdir(parents=True, exist_ok=True)
+        if created:
+            # Uploads are private to their uploader: no other user of this machine
+            # should be able to read them off the disk. A folder that already existed
+            # is left as its owner set it.
+            os.chmod(self.root, 0o700)
 
     def __repr__(self) -> str:  # never shows the secret
         return f"LocalStorage(root={str(self.root)!r})"

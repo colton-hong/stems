@@ -98,6 +98,9 @@ def make_deps(tmp_path, *, provider=None, clock: Clock | None = None, defaults=N
         provider=provider or ManualProvider(),
         clock=clock,
         web_origins=("http://localhost:3000",),
+        # Checked in this process: the same check, without a process start per upload.
+        # tests/test_api_hardening.py runs it the way the server does.
+        isolate_decoding=False,
     )
 
 

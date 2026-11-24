@@ -24,7 +24,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from stems_api.providers.base import JobSpec, ProviderError, ProviderHandle, ProviderStatus
-from stems_common.jobs import validate_spec
+from stems_common.jobs import ContractError, check_job_id, validate_spec
 from stems_common.paths import REPO_ROOT, RUNS_DIR
 
 DEFAULT_LOG_DIR = RUNS_DIR / "jobs"
@@ -119,6 +119,20 @@ class LocalProvider:
         if entry is not None:
             entry.done.wait(timeout)
         return self.status(handle)
+
+    def forget(self, job_id: str) -> bool:
+        """Remove what this provider kept about a job that is gone: its worker's log.
+
+        A log can name the job's files and show a traceback from its audio, so it goes
+        when the job goes. Returns whether there was a log to remove.
+        """
+        if self._log_dir is None:
+            return False
+        try:
+            (self._log_dir / f"{check_job_id(job_id)}.log").unlink()
+        except (FileNotFoundError, ContractError):
+            return False
+        return True
 
     def close(self) -> None:
         """Cancel everything and stop the dispatcher. For shutdown and for tests."""

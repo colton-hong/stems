@@ -97,7 +97,6 @@ class Models:
             "defaults": self.defaults,
             "clock": Clock(),
             "device": "cpu",
-            "cache_dir": None,
             "timings_path": None,
             **self.options,
             **overrides,
@@ -300,7 +299,81 @@ def test_a_failure_inside_a_model_is_reported_by_type(storage, source_bytes, mod
 
     submit(storage, source_bytes)
     result = models.run(storage, factory=broken)
-    assert (result["state"], result["error"]) == ("failed", "RuntimeError: the GPU fell over")
+    assert result["state"] == "failed"
+    assert result["error"] == (
+        "The separation failed inside the server (RuntimeError). "
+        "The details are in the server's log."
+    )
+
+
+def test_a_failure_tells_the_user_its_kind_and_keeps_the_details_in_the_log(
+    storage, source_bytes, models, capsys
+) -> None:
+    def broken(model_id, stems):
+        raise FileNotFoundError("/srv/stems/models/weights/secret-layout/model.ckpt")
+
+    submit(storage, source_bytes)
+    result = models.run(storage, factory=broken)
+    assert "FileNotFoundError" in result["error"]
+    assert "/srv/stems" not in result["error"]
+    assert "/srv/stems/models/weights/secret-layout/model.ckpt" in capsys.readouterr().err
+
+
+def test_nothing_made_from_the_upload_is_left_on_disk(
+    storage, source_bytes, models, tmp_path, monkeypatch
+) -> None:
+    """The source copy, the stems before upload and the model-output cache all live in the
+    job's temporary folder, which is gone when the job ends: finished, failed or stopped."""
+    import tempfile
+
+    scratch = tmp_path / "tmp"
+    scratch.mkdir()
+    monkeypatch.setattr(tempfile, "tempdir", str(scratch))
+    shared = tmp_path / "shared-cache"
+    monkeypatch.setattr(worker.file_job, "DEFAULT_CACHE_DIR", shared)
+    seen: list[list[str]] = []
+    inner = models.options["factory"]
+
+    def watching(model_id, stems):
+        (job_dir,) = scratch.iterdir()  # while it runs there is exactly one folder
+        seen.append(sorted(p.name for p in job_dir.iterdir()))
+        return inner(model_id, stems)
+
+    submit(storage, source_bytes)
+    assert models.run(storage, factory=watching)["state"] == "ready"
+    assert seen
+    assert "source" in seen[0]
+    assert list(scratch.iterdir()) == []
+    assert not shared.exists()  # the shared cache was never touched
+
+    # A job that fails cleans up too.
+    def broken(model_id, stems):
+        raise RuntimeError("boom")
+
+    submit(storage, source_bytes, job_id=OTHER)
+    assert models.run(storage, job_id=OTHER, factory=broken)["state"] == "failed"
+    assert list(scratch.iterdir()) == []
+
+
+def test_a_worker_told_to_stop_cleans_up_and_writes_no_result(
+    storage, source_bytes, models, tmp_path, monkeypatch
+) -> None:
+    import signal
+    import tempfile
+
+    scratch = tmp_path / "tmp"
+    scratch.mkdir()
+    monkeypatch.setattr(tempfile, "tempdir", str(scratch))
+
+    def stopped(model_id, stems):
+        worker._terminate(signal.SIGTERM, None)  # what the SIGTERM handler does
+
+    submit(storage, source_bytes)
+    with pytest.raises(SystemExit) as caught:
+        models.run(storage, factory=stopped)
+    assert caught.value.code == 128 + signal.SIGTERM
+    assert list(scratch.iterdir()) == []  # the copy of the upload is gone
+    assert not storage.exists(contract.result_key(JOB))  # and the job is not called finished
 
 
 def test_a_job_with_no_spec_or_a_wrong_spec_is_not_run(storage, source_bytes, models) -> None:

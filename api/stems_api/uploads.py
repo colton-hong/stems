@@ -11,8 +11,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from stems_api.probe import ProbeFailed, look, look_isolated
 from stems_common.settings import UploadSettings
-from stems_worker.audio import AudioError, SourceInfo, decode_head, probe
+from stems_worker.audio import SourceInfo
 
 MAX_DISPLAY_NAME = 255
 
@@ -63,19 +64,33 @@ def check_size(size: int, settings: UploadSettings) -> None:
         )
 
 
-def inspect(path: Path, settings: UploadSettings) -> Inspected:
-    """Confirm ``path`` holds audio within the limits. Raises ``UploadRejected`` if not."""
+NOT_AUDIO = "The file could not be read as audio. It may be damaged or not an audio file."
+
+
+def inspect(path: Path, settings: UploadSettings, *, isolate: bool = True) -> Inspected:
+    """Confirm ``path`` holds audio within the limits. Raises ``UploadRejected`` if not.
+
+    With ``isolate`` the decoders run in a child process under a time limit (see
+    ``stems_api.probe``); without it they run here, which only tests should want.
+    """
     size = path.stat().st_size
     check_size(size, settings)
     try:
-        info = probe(path)
-        if info.sample_rate <= 0 or info.channels <= 0:
-            raise AudioError("no usable audio stream")
-        decode_head(path)
-    except AudioError:
+        info = look_isolated(path, settings.inspect_timeout_seconds) if isolate else look(path)
+    except ProbeFailed:
+        raise UploadRejected(415, NOT_AUDIO) from None
+    if not settings.min_sample_rate_hz <= info.sample_rate <= settings.max_sample_rate_hz:
         raise UploadRejected(
-            415, "The file could not be read as audio. It may be damaged or not an audio file."
-        ) from None
+            415,
+            f"A sample rate of {info.sample_rate} Hz is not supported. Use one from "
+            f"{settings.min_sample_rate_hz} to {settings.max_sample_rate_hz} Hz.",
+        )
+    if info.channels > settings.max_channels:
+        raise UploadRejected(
+            415,
+            f"Audio with {info.channels} channels is not supported. "
+            f"The most is {settings.max_channels}.",
+        )
     if info.duration_seconds is not None and info.duration_seconds > settings.max_duration_seconds:
         minutes = settings.max_duration_seconds / 60
         raise UploadRejected(422, f"The audio is longer than the limit of {minutes:.0f} minutes.")

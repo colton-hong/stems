@@ -87,6 +87,9 @@ class Deps:
     web_origins: tuple[str, ...] = ()
     # The Jev client for POST /requests/parse; None means the keyword rules answer.
     parse_client: Any | None = None
+    # Uploads are checked by decoders running in a child process. Tests that make many
+    # uploads turn this off to save the process start; the check itself is the same.
+    isolate_decoding: bool = True
     sync: JobSync = field(init=False)
 
     def __post_init__(self) -> None:
@@ -162,6 +165,37 @@ class Guard:
             return message
 
         await self.app(scope, counted, send)
+
+
+class SecurityHeaders:
+    """Headers every reply carries: do not guess content types, do not send this site's
+    addresses to others as a referrer, and do not keep answers about a browser's jobs in
+    any cache. A route that sets its own caching (the peaks, the downloads) keeps it."""
+
+    ALWAYS = (
+        (b"x-content-type-options", b"nosniff"),
+        (b"referrer-policy", b"no-referrer"),
+    )
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        async def with_headers(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                headers = list(message.get("headers", []))
+                present = {name.lower() for name, _ in headers}
+                headers += [(name, value) for name, value in self.ALWAYS if name not in present]
+                if b"cache-control" not in present:
+                    headers.append((b"cache-control", b"no-store"))
+                message = {**message, "headers": headers}
+            await send(message)
+
+        await self.app(scope, receive, with_headers)
 
 
 async def _plain(send: Send, status: int, detail: str) -> None:
@@ -289,6 +323,7 @@ def create_app(deps: Deps | None = None, *, background: bool = True) -> FastAPI:
         max_body_bytes=defaults.uploads.max_bytes + BODY_OVERHEAD_BYTES,
         allowed_origins=deps.web_origins,
     )
+    app.add_middleware(SecurityHeaders)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(deps.web_origins),
@@ -434,6 +469,14 @@ def create_app(deps: Deps | None = None, *, background: bool = True) -> FastAPI:
                 mine = JobStore(session, known.id).list()
                 active = [job for job in mine if job.status in ("queued", "running")]
         deps.limiter.hit(checks)
+        with deps.sessions.begin() as session:
+            everyone = len(system.jobs_in_progress(session))
+        if everyone >= limits.max_jobs_in_progress:
+            raise HTTPException(
+                503,
+                "The server is busy with other jobs. Please try again in a few minutes.",
+                headers={"Retry-After": "120"},
+            )
         if len(active) >= limits.max_active_jobs_per_owner:
             raise HTTPException(
                 429,
@@ -451,7 +494,7 @@ def create_app(deps: Deps | None = None, *, background: bool = True) -> FastAPI:
             with local.open("wb") as out:
                 while chunk := file.file.read(1024 * 1024):
                     out.write(chunk)
-            inspected = inspect(local, uploads)
+            inspected = inspect(local, uploads, isolate=deps.isolate_decoding)
             spec = contract.build_spec(
                 job_id,
                 created_at=now,

@@ -39,7 +39,6 @@ def ready_job(client, deps) -> str:
         deps.storage,
         defaults=defaults,
         device="cpu",
-        cache_dir=None,
         timings_path=None,
         **options,
     )
@@ -192,7 +191,6 @@ def test_the_maintenance_thread_syncs_and_sweeps_on_its_own(tmp_path) -> None:
             deps.storage,
             defaults=fake_defaults,
             device="cpu",
-            cache_dir=None,
             timings_path=None,
             **options,
         )

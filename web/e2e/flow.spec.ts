@@ -279,3 +279,22 @@ test("terms and privacy are placeholders, say so first, and are linked from ever
     await expect(first).toContainText(/not legal text|not a privacy policy/);
   }
 });
+
+test("every page is sent with the headers that keep it out of frames and caches", async ({
+  page,
+  request,
+}) => {
+  for (const path of ["/", "/jobs", "/terms", "/jobs/0b9c2f6e-58d4-4c58-9d3b-6f3d1c8a7e21"]) {
+    const response = await page.goto(path);
+    const headers = response?.headers() ?? {};
+    expect(headers["x-frame-options"], path).toBe("DENY");
+    expect(headers["x-content-type-options"], path).toBe("nosniff");
+    expect(headers["referrer-policy"], path).toBe("no-referrer");
+    expect(headers["content-security-policy"], path).toContain("frame-ancestors 'none'");
+    expect(headers["permissions-policy"], path).toContain("microphone=()");
+  }
+  // The API's answers about jobs are never cached and never sniffed.
+  const api = await request.get("http://localhost:8787/api/jobs");
+  expect(api.headers()["cache-control"]).toBe("no-store");
+  expect(api.headers()["x-content-type-options"]).toBe("nosniff");
+});

@@ -16,6 +16,7 @@ done, so a job that is submitted twice, or again after a restart, costs nothing.
 from __future__ import annotations
 
 import argparse
+import signal
 import sys
 import tempfile
 import time
@@ -150,9 +151,16 @@ class StatusWriter:
 
 
 def _error_text(exc: BaseException) -> str:
-    """What the user is told. A problem with the audio speaks for itself; anything else is
-    named by its type, and the traceback goes to the worker's log."""
-    text = str(exc) if isinstance(exc, AudioError) else f"{type(exc).__name__}: {exc}"
+    """What the user is told. A problem with the audio speaks for itself. Anything else is
+    named by its type only: an exception's message can hold paths and other details of
+    the server, so it goes to the worker's log with the traceback and not to the browser."""
+    if isinstance(exc, AudioError):
+        text = str(exc)
+    else:
+        text = (
+            f"The separation failed inside the server ({type(exc).__name__}). "
+            "The details are in the server's log."
+        )
     return text[:MAX_ERROR_LENGTH] or type(exc).__name__
 
 
@@ -261,7 +269,6 @@ def run_job(
     defaults: Defaults | None = None,
     clock: Clock = _utcnow,
     device: str | None = None,
-    cache_dir: Path | None = file_job.DEFAULT_CACHE_DIR,
     timings_path: Path | None = file_job.DEFAULT_TIMINGS_PATH,
     **pipeline: Any,
 ) -> dict[str, Any]:
@@ -271,6 +278,11 @@ def run_job(
     ``tagger``, and for tests ``registry``, ``factory``, ``fingerprint`` and ``rates``.
     A job that fails still ends with a result (``state: failed``); the only exceptions
     this raises are for a job that has no spec, or a spec that is not valid.
+
+    Nothing made from the upload outlives the job outside storage: the source copy, the
+    stems before upload and the cache of model outputs (which lets a retry reuse what was
+    already separated) all live in one temporary folder that is removed at the end. The
+    timing log keeps a model, a device and two durations per run, and no audio.
     """
     contract.check_job_id(job_id)
     try:
@@ -321,7 +333,9 @@ def run_job(
                     quality_mode=asked["quality_mode"],
                     fmt=asked["format"],
                     device=device,
-                    cache_dir=cache_dir,
+                    # In the job's own folder, never the shared cache: retention covers
+                    # storage, and a shared cache of separated uploads would escape it.
+                    cache_dir=Path(work) / "cache",
                     timings_path=timings_path,
                 ),
                 defaults=defaults,
@@ -345,6 +359,10 @@ def run_job(
     return result
 
 
+def _terminate(signum: int, _frame: Any) -> None:
+    raise SystemExit(128 + signum)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="python -m stems_worker.jobs",
@@ -353,6 +371,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("job_id")
     parser.add_argument("--device", default=None)
     args = parser.parse_args(argv)
+    # Asked to stop (a deleted job, a shutdown): leave through the normal exits, so the
+    # temporary folder holding the upload is removed on the way out.
+    signal.signal(signal.SIGTERM, _terminate)
 
     from stems_api.storage import storage_from_env
     from stems_common.env import get_env
@@ -367,7 +388,7 @@ def main(argv: list[str] | None = None) -> int:
 
         options, defaults = fake_pipeline(defaults)
         # Stand-in outputs stay out of the separation cache and the timing log.
-        options.update(cache_dir=None, timings_path=None)
+        options.update(timings_path=None)
     else:
         from stems_models.download import DownloadError
         from stems_worker.decision.jev import JevClient

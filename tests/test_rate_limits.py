@@ -196,4 +196,5 @@ def test_the_shipped_limits_are_the_documented_ones() -> None:
         "parses_per_owner_per_minute": 20,
         "parses_per_ip_per_minute": 40,
         "max_active_jobs_per_owner": 3,
+        "max_jobs_in_progress": 12,
     }

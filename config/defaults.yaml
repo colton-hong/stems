@@ -27,6 +27,14 @@ uploads:
   max_bytes: 262144000 # 250 MiB
   max_duration_seconds: 1200
   allowed_extensions: [wav, flac, mp3, m4a, aac, ogg, opus, aiff, aif]
+  # Refused outside these: a 20-minute file at an extreme rate or channel count decodes
+  # to many gigabytes. Proposed bounds, not measurements.
+  min_sample_rate_hz: 8000
+  max_sample_rate_hz: 192000
+  max_channels: 8
+  # The upload check runs the decoders in a child process; one that takes longer is
+  # stopped and the upload refused.
+  inspect_timeout_seconds: 20
 
 retention:
   days: 7
@@ -50,6 +58,9 @@ rate_limits:
   parses_per_ip_per_minute: 40
   # Jobs one browser may have queued or running at once.
   max_active_jobs_per_owner: 3
+  # Jobs queued or running for all browsers together. The local worker runs one at a
+  # time, so this is the longest queue anyone waits behind.
+  max_jobs_in_progress: 12
 
 decision:
   # Always the pinned version, never jev-latest / jev-preview.
