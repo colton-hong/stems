@@ -2,7 +2,7 @@
 
 Single source of truth for where the build is. Read this first, every iteration.
 
-**Current phase: 5 (API and worker), finished 2026-11-24 except for three live checks that need the owner's accounts.** P5.1 to P5.14 are ticked; the live checks of S3 and Azure Blob (B7) and of Modal (B4) are recorded as not done inside P5.2, P5.3 and P5.12. The owner's TypeSafe key and Cloudflare token arrived on 2026-11-24 (B5 and B6 resolved): P4.9, P3.9 and P3.10 are done; P3.11 (optional) is open. Still open from earlier phases: Phase 2's real benchmarks are running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done, the tuning stage on MoisesDB started 2026-11-24T04:53Z; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task). Do not start Phase 6 without the owner's go-ahead.
+**Current phase: 6 (web app), started 2026-11-24 on the owner's go-ahead.** Phases 0, 1, 4 and 5 are complete apart from live checks that need the owner's accounts (S3 and Azure, B7; Modal, B4). Still open from earlier phases: P3.11 (optional); Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done, the tuning stage on MoisesDB started 2026-11-24T04:53Z; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task). Do not start Phase 7 without the owner's go-ahead.
 
 ## How to use this file
 
@@ -123,17 +123,17 @@ Format: `- [ ] Pn.m Task. **Accept:** how to tell it is done.`
 
 ## Phase 6: web app
 
-- [ ] P6.1 App shell, typed API client, error states. **Accept:** `make web-check` passes.
-- [ ] P6.2 Upload page: file drop, stem choices, optional free-text request with confirmation when `needs_review`, format and quality mode.
-- [ ] P6.3 Job page: named stages with per-stem progress, live via server-sent events.
-- [ ] P6.4 Stem player: waveform, solo and mute, all stems sample-synchronised.
-- [ ] P6.5 Quality warnings where the gate was unsure.
-- [ ] P6.6 Download per stem and as a zip, in the chosen format.
-- [ ] P6.7 Deletion countdown, delete now, delete everything.
-- [ ] P6.8 Terms and Privacy placeholder pages that say they are placeholders.
-- [ ] P6.9 Browser test of the whole flow against the API with the fake separator; keyboard and screen-reader pass on the player.
+- [x] P6.1 App shell, typed API client, error states. **Accept:** `make web-check` passes. — Done: The app shell (`web/app/layout.tsx`: skip link, header, navigation, footer with Terms and Privacy on every page; one stylesheet, light and dark), the typed client (`web/lib/api.ts`: every route of PLAN.md section 8, the owner cookie sent on each call, uploads through XMLHttpRequest so progress can be shown), and error states: the API's own message is shown when it gives one, an unreachable server and a 404 each get their own wording, and a 429 says how long to wait. `make web-check` passes: ESLint, TypeScript, 21 unit tests run with Node's own test runner (formatting, the stage list, and the player engine's scheduling), and the Next.js build. The pages for P6.2 to P6.8 are written in the same commit; each is ticked once the browser test shows its acceptance check.
+- [ ] P6.2 Upload page: file drop, stem choices, optional free-text request with confirmation when `needs_review`, format and quality mode. **Accept:** in the browser test a chosen file with ticked stems becomes a job; a request in words fills the ticks from `POST /requests/parse`, and when the parse says `needs_review` the page says so and will not upload until stems are ticked; a file of the wrong type or over the size limit is refused in the page from the API's own limits; a refusal by the API is shown in the API's words.
+- [ ] P6.3 Job page: named stages with per-stem progress, live via server-sent events. **Accept:** the job page names every stage as done, current or to come, with each stem's state, and follows the events stream to Ready without a reload (browser test); a failed job shows its error.
+- [ ] P6.4 Stem player: waveform, solo and mute, all stems sample-synchronised. **Accept:** each stem's waveform is drawn from its peaks; play, pause and seek act on every stem from one audio clock (every source is started at the same context time and offset: unit-tested, and checked in the browser test); solo and mute change gains only and never restart a source.
+- [ ] P6.5 Quality warnings where the gate was unsure. **Accept:** a stem delivered with a warning shows that warning beside it and the page says how many stems carry one; a stem without one shows none (browser test, where the stand-in models give the not-checked warning).
+- [ ] P6.6 Download per stem and as a zip, in the chosen format. **Accept:** each stem and the zip download through freshly signed links, named after the upload and in the format chosen; the browser test downloads a stem and the zip and checks they are audio and a zip.
+- [ ] P6.7 Deletion countdown, delete now, delete everything. **Accept:** the job page shows the time left before automatic deletion, from `expires_at`; Delete now removes the job after a second, confirming click and the page says so; Delete everything on the jobs page empties it (browser test).
+- [ ] P6.8 Terms and Privacy placeholder pages that say they are placeholders. **Accept:** `/terms` and `/privacy` exist, are linked from every page, and each starts by saying it is a placeholder and not legal text.
+- [ ] P6.9 Browser test of the whole flow against the API with the fake separator; keyboard and screen-reader pass on the player. **Accept:** `make web-e2e` runs the browser tests against the real API with `STEMS_WORKER_FAKE_MODELS=1` and they pass; one test works the player with the keyboard alone; axe reports no violations on the upload and job pages; every player control is found by role with a name and state. A real screen reader is not run, and the note says so.
 
-(Acceptance checks for P6.2 to P6.9 are written when Phase 6 starts.)
+(Acceptance checks for P6.2 to P6.9 were written on 2026-11-24, when Phase 6 started.)
 
 ## Phase 7: calibration and hardening
 

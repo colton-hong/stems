@@ -69,4 +69,4 @@ web-setup: ## install web dependencies exactly as locked
 	cd web && npm ci --no-fund --no-audit
 
 web-check:
-	cd web && npm run lint && npm run typecheck && npm run build
+	cd web && npm run lint && npm run typecheck && npm test && npm run build
