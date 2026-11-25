@@ -67,8 +67,7 @@ TAKEN_OUT = ("guitar", "piano")
 # The benchmark's own name for the subtraction it scored, among its blends' results.
 SCORED_SLOT = "other_composed.single_best"
 # The commit that holds everything above, made before any kept output was read for this.
-# Filled in by the commit after it.
-RULES_COMMIT: str | None = None
+RULES_COMMIT: str | None = "3b37fcd51f6949e6e5ea19f83707a874bd4a01b3"
 
 
 class OtherError(ValueError):

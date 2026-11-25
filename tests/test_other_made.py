@@ -225,6 +225,8 @@ def test_the_report_sets_the_ways_beside_the_defaults_own(counted) -> None:
     assert analysis["own_tracks"] == 3
     assert analysis["beside_own"][FOUR]["present"]["stems"] == 2
     text = om.render(analysis, RUN)
+    assert om.RULES_COMMIT.startswith("3b37fcd51f69")
+    assert "and committed (`3b37fcd`) before any kept output was read for this." in text
     assert "from the run `r`, made at commit `abcdef0`. No model was run" in text
     assert "## Beside the default's own, on the product's 3 tracks" in text
     assert (
