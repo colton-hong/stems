@@ -88,7 +88,9 @@ They are not comparable with figures published elsewhere.
   from the instrument resting. The instrument is then in another of the six stems.
 - **Whether any blend of models beats the single default.** None of the untuned ones
   does, so "fastest", "balanced" and "best quality" all give the same model for now. The
-  tuner that could change that is still running.
+  tuner found nothing better on the first of its two lists (the best blend gained 0.07 dB).
+  The second list was stopped part-way and dropped by the owner: it would have taken a
+  day or two more of this laptop.
 - **What each model was trained on.** A checkpoint that met these datasets' songs in
   training scores higher on them than it would on new music. Nothing here can tell.
 - **What it costs on a rented GPU.** Nothing has run on one.

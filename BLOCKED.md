@@ -44,6 +44,17 @@ I picked a default for each so the work does not stop. Say so if you want a diff
 
 ## Resolved
 
+- **D18 The second tuning list** (2026-11-25): the owner, worried about what running
+  around the clock does to the laptop, asked whether a smaller sample would do and had
+  the benchmark stopped (06:29Z, 297 of 3,000 jobs of the MUSDB18-HQ tuning stage, 12
+  hours in; an estimated 25 to 40 more to go). Offered a 30-track sample (an estimated
+  8 to 10 hours) or nothing, the owner said "Drop it". So blend tuning rests on the one
+  tuning list, the 30 MoisesDB tracks, where the best any blend did against the single
+  default was 11.55 dB against 11.48 dB (`docs/benchmarks/tuning-moisesdb.md`). What
+  was computed stays on disk and `sh tools/run_real_benchmarks.sh` would take it up
+  again. **No long GPU job is to be started on this Mac without the owner saying so.**
+  That also holds for the script's two last stages (every other separator on both test
+  lists) and for P2.14b.
 - **B1 Node.js** (2026-11-22): the owner asked for a project-local install. Node v24.22.3 LTS
   is in `.tools/node` (git-ignored), installed by `tools/install_node.sh`, which verifies the
   nodejs.org checksum. `make` targets pick it up automatically.
