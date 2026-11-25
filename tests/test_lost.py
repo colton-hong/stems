@@ -131,10 +131,62 @@ def test_the_report_pools_by_dropped_time_and_lists_the_long_ones(song) -> None:
     assert "| drums | - | - | - | - | - | - | - | - |" in text
     assert "| `aaaaaaaa` | bass | 10.0 | 0% | 0% | 0% | 0% | 0% | 50% | 50% | 100% |" in text
     assert "bass 100%" in text
+    # How far the long table can be trusted, and the figure the owner's choice turns on.
+    assert "1 of the 1 stems listed are within 10 points of 100%" in text
+    assert "they hold 0.2 of the 0.2 minutes dropped; 0 have a share below zero" in text
+    assert "**In none of the six: 58% of what is dropped**" in text
+    assert "is 50% (`aaaaaaaa` bass, a row that adds up to 100%)" in text
     assert "more than 21.68 dB under the song" in text
     assert "(median; the most in one song is 25.0%)" in text
     nothing = lost.render(lost.analyse([{"track_id": "c", "lost": clean}]), run)
     assert "None." in nothing
+    assert "In none of the six" not in nothing
+
+
+def test_a_row_that_does_not_add_up_is_counted_as_one_that_cannot_be_read() -> None:
+    def entry(found: dict[str, float]) -> dict:
+        shares = dict.fromkeys(lost.PLACES, 0.0) | found
+        return {"sounding": 60.0, "dropped": 30.0, "longest": 6.0, "found_in": shares}
+
+    quiet = {"sounding": 0.0, "dropped": 0.0, "longest": 0.0}
+    records = [
+        {
+            "track_id": f"{name}-0000",
+            "lost": {
+                "true_stems_minus_song_db": -95.0,
+                "in_no_stem": {"below_song_db": -30.0, "share_of_time": 0.0},
+                "stems": dict.fromkeys(PRODUCT_STEMS, quiet) | {"drums": entry(found)},
+            },
+        }
+        for name, found in (
+            ("adds", {"other": 0.94, lost.NONE: 0.02}),
+            ("over", {"guitar": 0.9, "piano": 0.5, lost.NONE: 0.04}),
+            ("under", {"bass": -0.79, "vocals": 0.83, lost.NONE: 0.19}),
+        )
+    ]
+    run = {"run_id": "r", "empty_below_mix_db": LIMIT}
+    text = lost.render(lost.analyse(records), run)
+    assert "1 of the 3 stems listed are within 10 points of 100%" in text
+    assert "they hold 0.5 of the 1.5 minutes dropped; 1 have a share below zero" in text
+    assert "is 19% (`under-00` drums, a row that adds up to 23%)" in text
+    assert "it is 2% (`adds-000` drums)" in text
+    assert "or lower in every song (median 95.0 dB)" in text
+
+
+def test_the_report_names_the_commit_that_fixed_the_measures(song) -> None:
+    mix, true, made = song
+    records = [{"track_id": "a", "lost": lost.measure_track(mix, true, made, SR,
+                                                            empty_below_mix_db=LIMIT)}]  # fmt: skip
+    assert lost.RULES_COMMIT.startswith("17908793fbe7")
+    run = {"run_id": "r", "empty_below_mix_db": LIMIT}
+    at = {"git": {"commit": lost.RULES_COMMIT, "dirty": False}}
+    plain = lost.render(lost.analyse(records), run)
+    assert "committed (`1790879`) before any real song was measured." in plain
+    assert "the run's own record" not in plain
+    made_there = lost.render(lost.analyse(records), run | at)
+    assert "was made at that commit, with nothing uncommitted." in made_there
+    dirty = {"git": {"commit": lost.RULES_COMMIT, "dirty": True}}
+    assert "the run's own record" not in lost.render(lost.analyse(records), run | dirty)
 
 
 def test_the_product_check_records_it_when_asked(tmp_path) -> None:

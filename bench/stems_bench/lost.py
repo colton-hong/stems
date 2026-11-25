@@ -52,6 +52,7 @@ import numpy as np
 
 from stems_bench.dropouts import LONG_SECONDS, measure
 from stems_common.levels import (
+    SILENCE_DBFS,
     SILENCE_WINDOW_SECONDS,
     level_below_mix_db,
     sounding_windows,
@@ -61,6 +62,12 @@ from stems_common.stems import PRODUCT_STEMS
 
 NONE = "none"
 PLACES = (*PRODUCT_STEMS, NONE)
+# The commit that holds the measures above, made before any real song was measured. The
+# paragraph of the report on reading the sum, and its count of the rows near 100%, came
+# after the run: they say how far a row can be trusted and change no figure in it.
+RULES_COMMIT = "17908793fbe749c1bee41f2ff8d423469628a863"
+# A row's shares are read one by one only when they add up to within this of 100%.
+SUM_POINTS = 10
 
 
 class LostError(ValueError):
@@ -212,6 +219,53 @@ def _places(found: Mapping[str, float] | None) -> str:
     return " | ".join([*cells, _percent(sum(found[place] for place in PLACES))])
 
 
+def _whole(value: float) -> int:
+    """A share as the whole percent the tables show."""
+    return round(100 * value)
+
+
+def _reading(analysis: Mapping[str, Any]) -> list[str]:
+    """How far the rows of the long table can be trusted, and what is in none of the six."""
+    listed = analysis["listed"]
+    close = [
+        e
+        for e in listed
+        if abs(_whole(sum(e["found_in"][place] for place in PLACES)) - 100) <= SUM_POINTS
+    ]
+    below = sum(1 for e in listed if any(_whole(e["found_in"][place]) < 0 for place in PLACES))
+    seconds = sum(e["dropped"] for e in close)
+    lines = [
+        "",
+        "How to read the sum (this paragraph was added after the run; it changes no figure). "
+        "The six delivered stems and what is in none of them add up to the song, so a row's "
+        "sum is `<true, song> / <true, true>`. It leaves 100% by as much as the true stem "
+        "resembles the other true stems over its dropped time, by sound they share or by "
+        "chance. A row far from 100%, or with a share below zero, cannot be read share by "
+        f"share. {len(close)} of the {len(listed)} stems listed are within {SUM_POINTS} "
+        f"points of 100%, and they hold {seconds / 60.0:.1f} of the "
+        f"{analysis['dropped_minutes']:.1f} minutes dropped; {below} have a share below zero. "
+        f"A stem's own column is not zero because a stem that counts as silent (under "
+        f"{SILENCE_DBFS:g} dBFS) is not empty.",
+    ]
+    found = analysis["found_in"]
+    if found is not None:
+        most = max(listed, key=lambda e: e["found_in"][NONE])
+        text = (
+            f"**In none of the six: {_percent(found[NONE])} of what is dropped**, over all "
+            f"stems. The most for one stem listed is {_percent(most['found_in'][NONE])} "
+            f"(`{most['track_id'][:8]}` {most['stem']}, a row that adds up to "
+            f"{_percent(sum(most['found_in'][place] for place in PLACES))})"
+        )
+        if close:
+            best = max(close, key=lambda e: e["found_in"][NONE])
+            text += (
+                f"; among the rows within {SUM_POINTS} points of 100% it is "
+                f"{_percent(best['found_in'][NONE])} (`{best['track_id'][:8]}` {best['stem']})"
+            )
+        lines += ["", text + "."]
+    return lines
+
+
 def render(analysis: Mapping[str, Any], run: Mapping[str, Any]) -> str:
     songs = analysis["songs"]
     limit = run.get("empty_below_mix_db")
@@ -222,7 +276,14 @@ def render(analysis: Mapping[str, Any], run: Mapping[str, Any]) -> str:
         f"of the frozen `{run.get('dataset', '?')}` list put through the worker's own path "
         f"with the real default model on `{run.get('device', '?')}`, all six stems asked for, "
         "and measured against the true stems before the audio was deleted. The measures were "
-        "written into `bench/stems_bench/lost.py` before the run.",
+        f"written into `bench/stems_bench/lost.py` and committed (`{RULES_COMMIT[:7]}`) before "
+        "any real song was measured"
+        + (
+            "; the run's own record shows it was made at that commit, with nothing uncommitted."
+            if (run.get("git") or {}).get("commit") == RULES_COMMIT
+            and (run.get("git") or {}).get("dirty") is False
+            else "."
+        ),
         "",
         "## How long a stem is silent while its instrument plays",
         "",
@@ -271,6 +332,7 @@ def render(analysis: Mapping[str, Any], run: Mapping[str, Any]) -> str:
                 f"| `{entry['track_id'][:8]}` | {entry['stem']} | {entry['dropped']:.1f} | "
                 f"{_places(entry['found_in'])} |"
             )
+        lines += _reading(analysis)
     else:
         lines.append("None.")
     kept = {
@@ -314,8 +376,9 @@ def render(analysis: Mapping[str, Any], run: Mapping[str, Any]) -> str:
         "same notes resemble one another, and then the shares do not add up to 100%.",
         *(
             [
-                "- The dataset's six true stems add up to its mix to within "
-                f"{-max(sums):.0f} dB in every song (median {-statistics.median(sums):.0f} dB)."
+                "- The dataset's six true stems add up to its mix: what they leave out is "
+                f"{-max(sums):.1f} dB under the song or lower in every song (median "
+                f"{-statistics.median(sums):.1f} dB)."
             ]
             if sums
             else []
