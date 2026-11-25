@@ -61,6 +61,7 @@ Every figure is from a run in this repository; the report named beside it has th
 | `other` as the model makes it, against the song minus the five other stems | no clear difference by SDR: 2.61 against 2.56 dB on 27 tuning tracks, 2.80 against 2.76 on 16 test tracks | [docs/leftover-other.md](docs/leftover-other.md) |
 | Where the instrument plays and the product's stem is silent, six songs | 5.7% of the time the true stems sound; 3 of 31 stems have a stretch of 5 s or more, and 2 of those 3 are delivered with no note | [docs/dropouts.md](docs/dropouts.md) |
 | Where the instrument is when its stem is silent, and what is in no stem at all, 20 songs | a stem is silent for 5.5% of the time its instrument plays; 2% of the instrument is then in none of the six stems and 93% in a stem of another name; what is in no stem is 34.2 dB under the song (median) | [docs/what-is-lost.md](docs/what-is-lost.md) |
+| Telling a dropout from an instrument that rests, without the true stem: bass, guitar and piano on 80 tracks | not shown. A silent stretch of 5 s or more is a dropout 1 time in 10 (9 of 81 on the tuning tracks, 11 of 110 on the test tracks); where a second model sounds in it, 2 in 10 | [docs/dropout-or-rest.md](docs/dropout-or-rest.md) |
 | Telling a stem whose instrument is not in the song, by its level | right 90.2% of the time, finds 92.2% | [docs/gate-on-real-output.md](docs/gate-on-real-output.md) |
 | Whether the audio tagger can judge a stem's quality | no: it fails on bleed twice over, and on naming instruments in a mix | [docs/gate-calibration.md](docs/gate-calibration.md), [docs/gate-on-real-output.md](docs/gate-on-real-output.md) |
 | Clef-omni as the listening model | rejected by its pre-registered test | [docs/clef-omni-test.md](docs/clef-omni-test.md) |
@@ -77,6 +78,10 @@ They are not comparable with figures published elsewhere.
   ready: `make listen` serves 30 steps from six songs, what the product makes now and what
   it made before against the true stems. It waits for the owner; the test with a panel and
   two paid tools waits on B8.
+- **When a stem is missing its instrument for part of a song.** On 20 songs, 11 of the
+  100 stems whose instrument is in the song are silent for 5 seconds or more while it
+  plays. The product does not say so, and nothing tried so far lets it tell such a stretch
+  from the instrument resting. The instrument is then in another of the six stems.
 - **Whether any blend of models beats the single default.** None of the untuned ones
   does, so "fastest", "balanced" and "best quality" all give the same model for now. The
   tuner that could change that is still running.

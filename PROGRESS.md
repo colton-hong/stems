@@ -2,7 +2,7 @@
 
 Single source of truth for where the build is. Read this first, every iteration.
 
-**Current phase: 15 (a dropout or a rest?), started 2026-11-25.** Phase 14 (what the six stems lose) is complete: see its summary. Phase 13 (a listening test the owner can do alone) has one open task and it is the owner's: the kit is built and checked (P13.4): `make listen`, then http://127.0.0.1:8765; P13.5 is the listening itself, and its report follows when the marks are there. Phase 12 (the edges) is complete: see its summary. The owner asked on 2026-11-24 for each phase to follow the last without waiting, and for new phases to be added when none is left; Phases 8 to 15 were added that way. Phases 0, 1, 3 and 4 to 12 are complete apart from checks that need the owner's accounts (S3 and Azure, B7; Modal, B4; the panel listening test, B8). Still open from earlier phases: Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done; the MoisesDB tuning stage is done and reported; the MUSDB18-HQ tuning stage started at 18:27Z on 2026-11-24 and was at 196 of 3,000 jobs at 01:46Z on the 25th, having shared the GPU with other runs for most of that time (19 jobs between 00:20Z and 01:35Z, an hour of which it shared with Phase 14's run); the MoisesDB stage took 8.8 hours for 30 tracks, so 100 tracks alone would take about 30; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task). **This Mac cannot hold three GPU jobs at once**: beside the benchmark, run one heavy job at a time.
+**Phase 15 (a dropout or a rest?) is complete: see its summary. A Phase 16 is added next under rule 6.** Phase 14 (what the six stems lose) is complete too. Phase 13 (a listening test the owner can do alone) has one open task and it is the owner's: the kit is built and checked (P13.4): `make listen`, then http://127.0.0.1:8765; P13.5 is the listening itself, and its report follows when the marks are there; since 2026-11-25 the same test is also a private page for the owner's phone (see "Phase 13 so far"). Phase 12 (the edges) is complete: see its summary. The owner asked on 2026-11-24 for each phase to follow the last without waiting, and for new phases to be added when none is left; Phases 8 to 15 were added that way. Phases 0, 1, 3 and 4 to 12 are complete apart from checks that need the owner's accounts (S3 and Azure, B7; Modal, B4; the panel listening test, B8). Still open from earlier phases: Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done; the MoisesDB tuning stage is done and reported; the MUSDB18-HQ tuning stage started at 18:27Z on 2026-11-24 and was at 196 of 3,000 jobs at 01:46Z on the 25th, having shared the GPU with other runs for most of that time (19 jobs between 00:20Z and 01:35Z, an hour of which it shared with Phase 14's run); the MoisesDB stage took 8.8 hours for 30 tracks, so 100 tracks alone would take about 30; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task). **This Mac cannot hold three GPU jobs at once**: beside the benchmark, run one heavy job at a time.
 
 **Asked for by the owner on 2026-11-24, during Phase 12:** "after this next phase finishes, i'd like to do a listening test myself". So the phase after 12 is a listening test the owner can do alone: no panel, nothing bought (B8 asks for both; this is the part that needs neither).
 
@@ -267,7 +267,7 @@ model is run. Nothing in the product changes in this phase.
 
 - [x] P15.1 The definitions, the rules and what follows, fixed first. **Accept:** `bench/stems_bench/gaps.py` says what a gap, a dropout and a rest are, the three rules that flag gaps, the bar a rule must clear on the tuning tracks and then once on the test tracks, and what is done with each outcome; tested on tones and made-up rows where the answer is known. Committed before any kept output is read for this. — Done: `bench/stems_bench/gaps.py`. A gap is an unbroken stretch in which the default model's stem is silent while the song sounds for 5 s or more, in a stem the gate does not already note; it is a dropout when the true stem sounds for 5 s or more inside it, and a rest otherwise. Three rules flag gaps: every gap; gaps in which the fallback model's stem sounds for 5 s or more; gaps over which the fallback's stem is at least T dB against the song, T being the lowest level that is reliable on the tuning tracks. Reliable means 10 gaps or more flagged and at least 90% of them dropouts, the bar the empty-stem note was held to. A rule reliable on the tuning tracks is tried once on the test tracks (the one that finds the most dropouts, if several); it stands only if it is reliable there too, and otherwise the answer is that nothing here shows the product can tell, with the report saying for each rule whether it was wrong too often or flagged too few. Tested on tones (a ten-second dropout, a rest that runs into the song's end, silence while the song is silent, a stem the gate notes) and on made-up rows for each of the three outcomes, and its collecting step on a made-up benchmark folder. No kept output has been read for this: this commit comes first. 16 tests.
 - [x] P15.2 The count. **Accept:** `python -m stems_bench.gaps collect` over the kept outputs of the 30 tuning and 50 test tracks, for every stem whose default and fallback outputs are both kept; `docs/dropout-or-rest.md` written from it, naming the commit that fixed the rules and the stems it could not count. — Done: `docs/dropout-or-rest.md`, from the run `gaps-v1`, made at the rules commit `131fbfa` with nothing uncommitted: under four minutes on the CPU, no model run. Counted: bass, guitar and piano on the 30 tuning and 50 test tracks; vocals, drums and `other` could not be, because the default model's outputs for them were not kept. **No rule is reliable on the tuning tracks, so none was tried on the test tracks.** Silence alone: 81 gaps on the tuning tracks, 9 of them dropouts (11%); 110 and 11 on the test tracks (10%). The second model sounding in the gap: 18 flagged, 4 dropouts (22%), and it finds 4 of the 9; on the test tracks 27, 5 (19%) and 5 of 11. The second model being loud there: no level is reliable; the nearest flags 12 gaps of which 3 are dropouts (25%). In a dropout the second model holds little of the true stem (4% at the median on the tuning tracks, 11% on the test tracks). The dropouts are few and come in clusters (9 in 2 songs, 11 in 6), and with 9 on the tuning tracks the bar could only just have been met; the report says both. Checked by a second count from the raw rows, and against P14.2: on the 60 stems the two runs share, the benchmark's outputs and the product's agree on every long dropout. Three information-only lines were added to the report after the run; no figure changed. 17 tests.
-- [ ] P15.3 What follows. **Accept:** the README has the result. If a rule stands, what a note built on it would say and cost is written down for a later phase and nothing is built yet; if none stands, the report and this file say so plainly. Nothing in the product is changed.
+- [x] P15.3 What follows. **Accept:** the README has the result. If a rule stands, what a note built on it would say and cost is written down for a later phase and nothing is built yet; if none stands, the report and this file say so plainly. Nothing in the product is changed. — Done: No rule stands, so nothing is built and nothing in the product is changed. The README has the result as a row (a silent stretch of 5 s or more is a dropout 1 time in 10; where a second model sounds in it, 2 in 10) and, under what is not known, says plainly that a stem can be missing its instrument for part of a song (11 of 100 stems on 20 songs) with no note, and that nothing tried so far tells such a stretch from a rest. What was not tried, and what it would take, is in the phase summary: the default model's own other stems, where Phase 14 found the dropped instrument, need all six of its stems kept for the tuning and test tracks.
 
 ---
 
@@ -1137,6 +1137,61 @@ Still open from earlier phases: P2.12, P2.13 and P2.14b (the MUSDB18-HQ tuning s
 running; see the top of this file), and P13.5.
 
 **Next:** Phase 15, added under rule 6: can the product tell a dropout from a rest?
+
+## Phase 15 summary (2026-11-25)
+
+Done: P15.1 to P15.3.
+
+- **The rules first** (P15.1): what a gap, a dropout and a rest are, three rules that flag
+  gaps, the bar, and what each outcome would lead to, committed (`131fbfa`) before any
+  kept output was read for it.
+- **The count** (P15.2, `docs/dropout-or-rest.md`, run `gaps-v1`): the benchmark's kept
+  outputs for bass, guitar and piano on the 30 tuning and 50 test tracks, read beside the
+  true stems. No model was run.
+- **What follows** (P15.3): no rule stands, so no note is built. The README says so, in
+  its results and in what is not known.
+
+What the phase found:
+
+- **Silence does not tell.** A stretch of 5 seconds or more in which the stem is silent
+  and the song goes on is the instrument resting nine times in ten: 9 dropouts in 81 gaps
+  on the tuning tracks, 11 in 110 on the test tracks.
+- **A second model does not tell either.** Where the fallback model's stem sounds in the
+  gap it is a dropout 22% of the time on the tuning tracks and 19% on the test tracks, and
+  it is silent in more than half of the dropouts (it finds 4 of 9, and 5 of 11). No level
+  of its loudness does better than 25%.
+- **And it has little to fill a gap with**: in a dropout the fallback's stem holds 4% of
+  the true stem at the median on the tuning tracks, 11% on the test tracks.
+- **Dropouts are few and come in clusters**: the 9 on the tuning tracks are in 2 songs,
+  the 11 on the test tracks in 6.
+- **The bar was sized blind.** It asked for 10 flagged gaps of which 90% are dropouts, and
+  with 9 dropouts on the tuning tracks that left room for exactly one way of passing. The
+  rules were nowhere near it, so it changed nothing here; but a bar fixed before the count
+  should be checked against how many cases there can be, and this one was not.
+- **The benchmark's outputs and the product's agree** on every long dropout, on the 60
+  stems this count shares with the twenty songs of Phase 14.
+
+Not verified, and why:
+
+- **Vocals, drums and `other`.** The benchmark did not keep the default model's outputs
+  for them, so they were not counted; and `other` is where most long dropouts are (6 of
+  the 11 in Phase 14).
+- **Whether the default model's own other stems could tell.** Phase 14 found the dropped
+  instrument in a stem of another name. Nothing here looked there: it needs all six stems
+  of the default model for the tuning and test tracks, which is a run on the GPU.
+- **The listening test on a phone.** The owner asked for it during this phase and has the
+  page; when this was written they had reported no sound, a fix was published, and whether
+  it plays on their phone was not yet known.
+- As before: six 20-minute stems in the browser player, Jev beyond the recorded requests,
+  S3 and Azure (B7), Modal (B4), the panel test (B8), and why CI failed once on Python
+  3.12.
+
+Still open from earlier phases: P2.12, P2.13 and P2.14b (the MUSDB18-HQ tuning stage is
+running; see the top of this file), and P13.5.
+
+**Next:** Phase 16, added under rule 6: the owner is taking the listening test on a phone,
+so its marks need a tested way back into the report, and the report has to say how the
+clips were heard.
 
 ## A correction about CI (2026-11-24)
 
