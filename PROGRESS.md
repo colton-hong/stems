@@ -2,7 +2,7 @@
 
 Single source of truth for where the build is. Read this first, every iteration.
 
-**Current phase: 19 (`other`, made the other way), started 2026-11-25.** Phases 14 (what the six stems lose), 15 (a dropout or a rest?), 16 (the listening test on a phone), 17 (dropouts by model) and 18 (a phone page that finds out whether it can be heard) are complete: see their summaries. Phase 13 (a listening test the owner can do alone) has one open task and it is the owner's: the kit is built and checked (P13.4): `make listen`, then http://127.0.0.1:8765; P13.5 is the listening itself, and its report follows when the marks are there; since 2026-11-25 the same test is also a private page for the owner's phone (see "Phase 13 so far"). Phase 12 (the edges) is complete: see its summary. The owner asked on 2026-11-24 for each phase to follow the last without waiting, and for new phases to be added when none is left; Phases 8 to 19 were added that way. Phases 0, 1, 3 and 4 to 12 are complete apart from checks that need the owner's accounts (S3 and Azure, B7; Modal, B4; the panel listening test, B8). Still open from earlier phases: Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done; the MoisesDB tuning stage is done and reported; the MUSDB18-HQ tuning stage started at 18:27Z on 2026-11-24 and was at 242 of 3,000 jobs at 03:32Z on the 25th, having shared the GPU with other runs for most of that time (19 jobs between 00:20Z and 01:35Z, an hour of which it shared with Phase 14's run); the MoisesDB stage took 8.8 hours for 30 tracks, so 100 tracks alone would take about 30; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task). **This Mac cannot hold three GPU jobs at once**: beside the benchmark, run one heavy job at a time.
+**Phase 19 (`other`, made the other way) is complete: see its summary. The next phase is added under rule 6 by the iteration after it.** Phases 14 (what the six stems lose), 15 (a dropout or a rest?), 16 (the listening test on a phone), 17 (dropouts by model) and 18 (a phone page that finds out whether it can be heard) are complete too. Phase 13 (a listening test the owner can do alone) has one open task and it is the owner's: the kit is built and checked (P13.4): `make listen`, then http://127.0.0.1:8765; P13.5 is the listening itself, and its report follows when the marks are there; since 2026-11-25 the same test is also a private page for the owner's phone (see "Phase 13 so far"). Phase 12 (the edges) is complete: see its summary. The owner asked on 2026-11-24 for each phase to follow the last without waiting, and for new phases to be added when none is left; Phases 8 to 19 were added that way. Phases 0, 1, 3 and 4 to 12 are complete apart from checks that need the owner's accounts (S3 and Azure, B7; Modal, B4; the panel listening test, B8). Still open from earlier phases: Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done; the MoisesDB tuning stage is done and reported; the MUSDB18-HQ tuning stage started at 18:27Z on 2026-11-24 and was at 242 of 3,000 jobs at 03:32Z on the 25th, having shared the GPU with other runs for most of that time (19 jobs between 00:20Z and 01:35Z, an hour of which it shared with Phase 14's run); the MoisesDB stage took 8.8 hours for 30 tracks, so 100 tracks alone would take about 30; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task). **This Mac cannot hold three GPU jobs at once**: beside the benchmark, run one heavy job at a time.
 
 **Asked for by the owner on 2026-11-24, during Phase 12:** "after this next phase finishes, i'd like to do a listening test myself". So the phase after 12 is a listening test the owner can do alone: no panel, nothing bought (B8 asks for both; this is the part that needs neither).
 
@@ -324,7 +324,7 @@ costs where a song has no `other`. No model is run. Nothing in the product chang
 
 - [x] P19.1 What is counted, fixed first. **Accept:** `bench/stems_bench/other_made.py` says which lists and which ways (each kept four-stem `other` minus the default's kept guitar and piano, subtracted as the product subtracts them), what is counted where a song has an `other` (dropped time and long dropouts as in P12.5, with the benchmark's SDR where it scored that very stem) and where it has none (the stem's level against the song, and whether the product's rule would note it), where the default's own figures come from (the product's run on twenty tracks), and that nothing is decided by it. Tested on synthetic songs with a made-up benchmark folder. Committed before any kept output is read for this. — Done: `bench/stems_bench/other_made.py`. Lists: the MoisesDB test and tuning tracks. Ways: every model whose four-stem `other` was kept for every track of a list, with the default model's kept guitar and piano subtracted sample by sample, as `stems_worker.compose` does. Where the song has an `other` (its true stem sounds for 5 s or more): sounding time, dropped time and long dropouts by the measure of P12.5, and the benchmark's own SDR where it scored that very stem (its `other_composed` result with the same model and the same guitar and piano). Where the song has none: the stem's level against the song, and whether the product's rule would note it as silent or very quiet. The default's own `other` was not kept, so its row is from the product's run on twenty test tracks, with the SDR and the note that run recorded, and the ways are counted again on those tracks. Nothing is decided by it. Tested on the synthetic songs, one of them with its `other` taken out, and a made-up benchmark folder: a four-stem `other` that gives the true `other` back, one with no `other` in it (all dropped), and one that leaves vocals where the song has no `other` (loud enough to pass). No kept output has been read for this: this commit comes first. 6 tests.
 - [x] P19.2 The count. **Accept:** `python -m stems_bench.other_made collect` over the two lists; `docs/other-by-subtraction.md` written from it, naming the commit that fixed the count; its figures checked by a second count from the rows. — Done: `docs/other-by-subtraction.md`, from the run `other-made-v1`, made at the rules commit `3b37fcd` with nothing uncommitted: three minutes on the CPU, no model run; 50 test tracks and 30 tuning tracks, and three four-stem models (`scnet_xl_ihf`, `scnet_large`, `htdemucs_ft`). **Made by subtraction, `other` hardly drops out, scores lower, and is seldom empty where it should be.** On the product's twenty tracks: the default's own `other` is silent for 16.1% of the time the true one sounds, with a long dropout in 6 of 16 songs, and scores 2.80 dB; `scnet_xl_ihf` minus the default's guitar and piano is silent for 1.2%, with no long dropout, and scores 1.27 dB (0.2% for `scnet_large`, 1.3% for `htdemucs_ft`). On all 50 test tracks the subtracted `scnet_xl_ihf` drops 0.9% and scores 1.99 dB over the 33 songs with an `other`; on the 27 tuning songs 1.4%. Where the song has no `other`, the default's own carried the product's note in 4 of 4 songs; the subtracted one is 20.2 dB under the song at the median and would carry the note in 5 of 17 (`scnet_large` 1 of 17, `htdemucs_ft` 0 of 17). Checked by a second count from the rows, and by making one song's stem again from the files (2.8 s dropped both times, where the default's own drops 62.9 s). 6 tests.
-- [ ] P19.3 What follows. **Accept:** the README has the result; D15 and D16 in BLOCKED.md say, with both numbers, what the other way of making `other` would give and cost; nothing is changed.
+- [x] P19.3 What follows. **Accept:** the README has the result; D15 and D16 in BLOCKED.md say, with both numbers, what the other way of making `other` would give and cost; nothing is changed. — Done: Nothing changes: `other` stays the default model's own. D15 in BLOCKED.md now has the third way, the one from before Phase 10, with all its numbers: silent for 1.2% of the time the true `other` sounds against 16.1% on the same twenty songs; 1.27 dB against 2.80 dB there, and 1.99 against 2.97 in the benchmark's 33; and where a song has no `other`, 20.2 dB under the song and noted as empty in 5 of 17 songs, where the default's own was noted in 4 of 4. It says what the change would be (`other_method: subtract` with a four-stem model in the `other` slot, which runs a second model). D16 points there for `other`. The README has the result as a row.
 
 ---
 
@@ -1380,6 +1380,52 @@ running; see the top of this file), and P13.5.
 count `other` because no six-stem `other` was kept. The four-stem `other` of three models
 was, and so were the default's guitar and piano, which is all the product's other way of
 making the stem needs.
+
+## Phase 19 summary (2026-11-25)
+
+Done: P19.1 to P19.3.
+
+- **What is counted, first** (P19.1), committed (`3b37fcd`) before any kept output was
+  read for it.
+- **The count** (P19.2, `docs/other-by-subtraction.md`, run `other-made-v1`): the
+  four-stem `other` of three models with the default's guitar and piano subtracted, on
+  the 50 test and 30 tuning tracks of MoisesDB, beside the default's own `other` from the
+  product's run on twenty of them. No model was run.
+- **What follows** (P19.3): nothing changes. D15 has the third way with all its numbers,
+  D16 points to it, and the README has the result.
+
+What the phase found:
+
+- **Subtraction hardly drops out.** On the same twenty songs the default's own `other`
+  is silent for 16.1% of the time the true one sounds and has a long dropout in 6 of 16
+  songs; `scnet_xl_ihf` minus guitar and piano is silent for 1.2% and has none. Over all
+  50 test tracks it drops 0.9%, and 1.4% on the tuning tracks.
+- **It scores lower**: 1.27 dB against 2.80 dB on those songs, 1.99 against 2.97 in the
+  benchmark's 33.
+- **And it is seldom empty where it should be.** In the 17 test songs with no `other` it
+  is 20.2 dB under the song at the median, just above the level at which the product
+  says a stem is very quiet, so it would carry the note in 5 of them; the default's own
+  carried it in 4 of 4. With `scnet_large` or `htdemucs_ft` it would carry it in 1 and
+  in none.
+- **So the two ways fail in opposite directions.** The model's own `other` goes missing
+  while the instrument plays; the subtracted one is there when nothing should be. Which
+  is the better fault is the question the owner's listening test asks of `other` in five
+  of its steps.
+
+Not verified, and why:
+
+- **Whether the two could be joined**: the default's own, with the subtracted one put in
+  where the default's own is silent and the subtracted one is loud. It would need the
+  default's own `other` for these tracks, which was not kept; that is a run on the GPU.
+- **What either sounds like.** The owner's listening test has `other` made both ways in
+  its steps; nobody has listened yet (P13.5).
+- **Whether the phone plays the listening test**: the owner had not opened the new page
+  when this was written.
+- As before: six 20-minute stems in the browser player; Jev beyond the recorded requests;
+  S3 and Azure (B7), Modal (B4), the panel test (B8); why CI failed once on Python 3.12.
+
+Still open from earlier phases: P2.12, P2.13 and P2.14b (the MUSDB18-HQ tuning stage is
+running; see the top of this file), and P13.5.
 
 ## A correction about CI (2026-11-24)
 
