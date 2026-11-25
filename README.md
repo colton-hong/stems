@@ -64,6 +64,7 @@ Every figure is from a run in this repository; the report named beside it has th
 | Telling a dropout from an instrument that rests, without the true stem: bass, guitar and piano on 80 tracks | not shown. A silent stretch of 5 s or more is a dropout 1 time in 10 (9 of 81 on the tuning tracks, 11 of 110 on the test tracks); where a second model sounds in it, 2 in 10 | [docs/dropout-or-rest.md](docs/dropout-or-rest.md) |
 | Whether another model drops out less than the default, on the outputs the benchmark kept | no. The default beside the best of the rest, as the share of the instrument's playing time its stem is silent: vocals 4.0% against 3.9%, drums 2.7% against 2.8%, bass 1.7% against 1.7%, guitar 1.4% against 0.9%, piano 9.6% against 8.8% | [docs/dropouts-by-model.md](docs/dropouts-by-model.md) |
 | `other` made the way it was before the defaults were chosen (a four-stem model's `other` minus guitar and piano), against the default's own, on the same 20 songs | silent for 1.2% of the time the true `other` sounds against 16.1%; 1.27 dB against 2.80 dB; and where a song has no `other` it would carry the empty-stem note in 5 of 17 songs, where the default's own carried it in 4 of 4 | [docs/other-by-subtraction.md](docs/other-by-subtraction.md) |
+| A blind listening test by one listener, the owner: 28 steps from six songs, on a phone | mean mark out of 5: the true stem 3.71, the product now 2.79, the product before 2.64. Now against before: higher in 10 steps, lower in 7, the same in 4, which is no clear difference. By stem: `other` higher in 5 of 5, vocals lower in 4 of 6 | [docs/listening-owner.md](docs/listening-owner.md) |
 | Telling a stem whose instrument is not in the song, by its level | right 90.2% of the time, finds 92.2% | [docs/gate-on-real-output.md](docs/gate-on-real-output.md) |
 | Whether the audio tagger can judge a stem's quality | no: it fails on bleed twice over, and on naming instruments in a mix | [docs/gate-calibration.md](docs/gate-calibration.md), [docs/gate-on-real-output.md](docs/gate-on-real-output.md) |
 | Clef-omni as the listening model | rejected by its pre-registered test | [docs/clef-omni-test.md](docs/clef-omni-test.md) |
@@ -76,11 +77,11 @@ They are not comparable with figures published elsewhere.
 
 ## What is not known
 
-- **How it sounds to people.** Nobody has listened yet. A blind test for one listener is
-  ready: `make listen` serves 30 steps from six songs, what the product makes now and what
-  it made before against the true stems, and `python -m stems_bench.listen pack` writes
-  the same test for a phone, with the clips as 320 kbps MP3. It waits for the owner; the
-  test with a panel and two paid tools waits on B8.
+- **How it sounds to more than one person.** One listener, the owner, has taken the
+  blind test (the row above): 28 steps in 17 minutes, on a phone, from 320 kbps MP3. That
+  is one quick opinion, not a measurement. `make listen` serves the same test from the
+  lossless clips, and `python -m stems_bench.listen pack` writes it for a phone. The test
+  with a panel and two paid tools waits on B8.
 - **When a stem is missing its instrument for part of a song.** On 20 songs, 11 of the
   100 stems whose instrument is in the song are silent for 5 seconds or more while it
   plays. The product does not say so, and nothing tried so far lets it tell such a stretch
@@ -100,7 +101,7 @@ They are not comparable with figures published elsewhere.
 
 [BLOCKED.md](BLOCKED.md) has the details: a Modal account (B4), bucket credentials (B7),
 listeners and reference purchases for the listening test (B8), Azure quota (B9), and
-sixteen decisions made for you that you can overrule (D1 to D16).
+seventeen decisions made for you that you can overrule (D1 to D17).
 
 ## Where things are
 

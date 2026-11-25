@@ -537,38 +537,69 @@ def _when(value: Any) -> datetime | None:
     return moment if moment.tzinfo else moment.replace(tzinfo=UTC)
 
 
-def take_marks(run_dir: Path, taken: Mapping[str, Any], *, heard: str, via: str) -> dict[str, int]:
+def take_marks(
+    run_dir: Path,
+    taken: Mapping[str, Any],
+    *,
+    heard: str,
+    via: str,
+    since: str | None = None,
+    since_why: str = "",
+) -> dict[str, int]:
     """Write marks made elsewhere into the run's ``ratings.json``.
 
     Every step gets the checks the server gives its own page, and all of them are checked
     before anything is written. Of two sets of marks for a step the later one stays.
     ``via`` names where these were made and ``heard`` says, for the report, how the clips
-    were heard there. Returns how many steps were new, replaced, unchanged or older.
+    were heard there. Marks saved before ``since`` are not taken: a step that has no other
+    marks is written down as not counted, with ``since_why``, and the report says so.
+    Returns how many steps were new, replaced, unchanged, older or set aside.
     """
     if not via.isidentifier() or via == VIA_HERE:
         raise ListenError(f"--via must be one word other than '{VIA_HERE}', not {via!r}")
     heard = " ".join(heard.split())
     if not heard or len(heard) > 300:
         raise ListenError("--heard must say how the clips were heard, in at most 300 characters")
+    start = None
+    if since is not None:
+        start = _when(since)
+        since_why = " ".join(since_why.split())
+        if start is None:
+            raise ListenError("--since must be a time, such as 2026-11-25T04:29:23Z")
+        if not since_why or len(since_why) > 300:
+            raise ListenError("--since needs --since-why, in at most 300 characters")
     kit = load_kit(run_dir / "kit")
     items = {item["id"]: item for item in presentation_order(kit)}
     unknown = sorted(set(taken) - set(items))
     if unknown:
         raise ListenError(f"the kit has no step {', '.join(unknown)}")
     checked: dict[str, dict[str, Any]] = {}
+    early: dict[str, str] = {}
     for item_id, body in taken.items():
+        moment = _when(body.get("saved_at")) if isinstance(body, dict) else None
+        if moment is not None and start is not None and moment < start:
+            early[item_id] = moment.astimezone(UTC).isoformat(timespec="seconds")
+            continue
         try:
             marks = check_marks(items[item_id], body)
         except ListenError as error:
             raise ListenError(f"{item_id}: {error}") from None
-        moment = _when(body.get("saved_at"))
         if moment is None:
             raise ListenError(f"{item_id}: the marks do not say when they were saved")
         saved_at = moment.astimezone(UTC).isoformat(timespec="seconds")
         checked[item_id] = {**marks, "saved_at": saved_at, "via": via}
     path = run_dir / "ratings.json"
     data = read_ratings(path)
-    counts = {"new": 0, "replaced": 0, "unchanged": 0, "older": 0}
+    counts = {"new": 0, "replaced": 0, "unchanged": 0, "older": 0, "set_aside": 0}
+    aside = data.setdefault("not_counted", {})
+    for item_id, saved_at in early.items():
+        if item_id not in data["items"] and item_id not in checked:
+            aside[item_id] = {"saved_at": saved_at, "why": since_why, "via": via}
+            counts["set_aside"] += 1
+    for item_id in checked:
+        aside.pop(item_id, None)  # marks that count have come for it
+    if not aside:
+        del data["not_counted"]
     for item_id, entry in checked.items():
         before = data["items"].get(item_id)
         if before is None:
@@ -705,6 +736,8 @@ def analyse(
             "note": marks.get("note") or "",
             "twins": twins,
             "via": marks.get("via") or VIA_HERE,
+            "saved_at": marks.get("saved_at"),
+            "clips": list(marks["ratings"].values()),
         }
         for label, system in labels.items():
             entry[system] = marks["ratings"][label]
@@ -730,9 +763,10 @@ def analyse(
         if (mine := [row for row in rows if row["stem"] == stem])
     }
 
-    def versus(a: str, b: str) -> dict[str, Any]:
+    def versus(a: str, b: str, among: Sequence[Mapping[str, Any]] | None = None) -> dict[str, Any]:
         # Only the steps where the two were two clips: one clip cannot differ from itself.
-        mine = [row for row in rows if row["twins"].get(a) != b and row["twins"].get(b) != a]
+        among = rows if among is None else among
+        mine = [row for row in among if row["twins"].get(a) != b and row["twins"].get(b) != a]
         wins = sum(1 for row in mine if row[a][REQUIRED] > row[b][REQUIRED])
         losses = sum(1 for row in mine if row[a][REQUIRED] < row[b][REQUIRED])
         return {
@@ -744,6 +778,11 @@ def analyse(
         }
 
     one_clip = [row for row in rows if row["twins"].get("old") == "new"]
+    if {"new", "old"} <= set(systems):
+        for stem, entry in by_stem.items():
+            entry["now_vs_before"] = versus(
+                "new", "old", [row for row in rows if row["stem"] == stem]
+            )
 
     top = sum(
         1
@@ -753,9 +792,28 @@ def analyse(
     )
     # Where the steps were marked: here first, then the others as they come.
     places = sorted(dict.fromkeys(row["via"] for row in rows), key=lambda via: via != VIA_HERE)
+    # How long the marking took, from when the first and the last step were saved.
+    moments = sorted(m for row in rows if (m := _when(row["saved_at"])) is not None)
+    span = None
+    if len(moments) > 1 and len(moments) == len(rows):
+        span = {"steps": len(rows), "minutes": (moments[-1] - moments[0]).total_seconds() / 60.0}
+    # In how many clips the two optional marks only repeat the overall one.
+    clips = [clip for row in rows for clip in row["clips"]]
+    echoed = sum(
+        1 for clip in clips if all(clip.get(rating) == clip[REQUIRED] for rating in RATINGS)
+    )
+    marked_ids = {row["id"] for row in rows}
     return {
         "steps": len(kit["items"]),
         "marked": len(rows),
+        "excerpt_seconds": kit.get("excerpt_seconds"),
+        "span": span,
+        "clips": {"marked": len(clips), "optional_same_as_overall": echoed},
+        "not_counted": [
+            {"id": item_id, "why": entry.get("why") or ""}
+            for item_id, entry in (ratings.get("not_counted") or {}).items()
+            if item_id not in marked_ids
+        ],
         "heard": [
             {
                 "via": via,
@@ -806,6 +864,43 @@ def _heard(analysis: Mapping[str, Any]) -> list[str]:
     return ["**How the clips were heard.** " + " ".join(parts), ""]
 
 
+def _not_counted(analysis: Mapping[str, Any]) -> list[str]:
+    """Steps whose marks were set aside when they were brought in, and why."""
+    by_why: dict[str, list[str]] = {}
+    for entry in analysis.get("not_counted") or []:
+        by_why.setdefault(entry["why"], []).append(f"`{entry['id']}`")
+    return [
+        line
+        for why, steps in by_why.items()
+        for line in (f"**Not counted:** {', '.join(steps)}. Their marks were {why}.", "")
+    ]
+
+
+def _how_it_went(analysis: Mapping[str, Any]) -> list[str]:
+    """What the marks themselves say about how the test was taken."""
+    lines = []
+    span, excerpt = analysis.get("span"), analysis.get("excerpt_seconds")
+    if span and span["minutes"] > 0:
+        each = 60.0 * span["minutes"] / span["steps"]
+        lines.append(
+            f"- The {span['steps']} steps were marked in {span['minutes']:.0f} minutes, about "
+            f"{each:.0f} seconds a step"
+            + (
+                f". A step has two or three clips of {excerpt:g} seconds, so that is less "
+                "than hearing each clip through once."
+                if excerpt and each < 2 * excerpt
+                else "."
+            )
+        )
+    clips = analysis.get("clips") or {}
+    if clips.get("marked") and clips["optional_same_as_overall"] == clips["marked"]:
+        lines.append(
+            f"- In all {clips['marked']} clips the marks for bleed and artifacts are the same "
+            "as the overall mark, so those two columns say nothing of their own."
+        )
+    return lines
+
+
 def render(analysis: Mapping[str, Any], run: Mapping[str, Any]) -> str:
     systems = analysis["systems"]
     marked = analysis["marked"]
@@ -821,8 +916,15 @@ def render(analysis: Mapping[str, Any], run: Mapping[str, Any]) -> str:
         "",
         f"Songs: {run.get('tracks', '?')}, the first of the frozen `{DATASET}` list. "
         f"Steps marked: {marked} of {analysis['steps']}."
-        + ("" if marked == analysis["steps"] else " **The test was not finished.**"),
+        + (
+            ""
+            if marked == analysis["steps"]
+            else " The others are not counted, for the reason below."
+            if marked + len(analysis.get("not_counted") or []) == analysis["steps"]
+            else " **The test was not finished.**"
+        ),
         "",
+        *_not_counted(analysis),
         *heard,
         "| Version | Overall | Bleed | Artifacts |",
         "|---|---:|---:|---:|",
@@ -870,16 +972,33 @@ def render(analysis: Mapping[str, Any], run: Mapping[str, Any]) -> str:
     lines += [
         "## By stem",
         "",
-        "Mean overall mark.",
+        "Mean overall mark"
+        + (
+            ", and in how many steps the version the product makes now was marked above, below "
+            "or the same as the one it made before (a dash where the two are the same audio)."
+            if versus
+            else "."
+        ),
         "",
-        "| Stem | Steps | " + " | ".join(SYSTEM_NAMES.get(s, s) for s in systems) + " |",
-        "|---|---:|" + "---:|" * len(systems),
+        "| Stem | Steps | "
+        + " | ".join(SYSTEM_NAMES.get(s, s) for s in systems)
+        + (" | Now above | Now below | The same |" if versus else " |"),
+        "|---|---:|" + "---:|" * (len(systems) + (3 if versus else 0)),
     ]
     for stem, entry in analysis["by_stem"].items():
+        counted = entry.get("now_vs_before")
+        tail = ""
+        if versus:
+            tail = (
+                f" {counted['higher']} | {counted['lower']} | {counted['same']} |"
+                if counted and counted["steps"]
+                else " - | - | - |"
+            )
         lines.append(
             f"| {stem} | {entry['steps']} | "
             + " | ".join(_mark(entry[system]) for system in systems)
             + " |"
+            + tail
         )
     reference = analysis["new_vs_reference"]
     if reference:
@@ -901,6 +1020,7 @@ def render(analysis: Mapping[str, Any], run: Mapping[str, Any]) -> str:
         "",
         "- One listener, who knows the project and what was being compared, though not which "
         "letter was which.",
+        *_how_it_went(analysis),
         "- Songs from one dataset; 30 seconds of each stem, chosen where its true recording "
         "is loudest.",
         *(
@@ -1016,10 +1136,18 @@ def cmd_pack(args: argparse.Namespace) -> int:
 
 def cmd_take(args: argparse.Namespace) -> int:
     run_dir = LISTEN_DIR / args.run_id
-    counts = take_marks(run_dir, read_taken(Path(args.source)), heard=args.heard, via=args.via)
+    counts = take_marks(
+        run_dir,
+        read_taken(Path(args.source)),
+        heard=args.heard,
+        via=args.via,
+        since=args.since,
+        since_why=args.since_why,
+    )
     print(
         f"{counts['new']} new, {counts['replaced']} replaced, {counts['unchanged']} unchanged, "
-        f"{counts['older']} left as they were (saved later here): {run_dir / 'ratings.json'}"
+        f"{counts['older']} left as they were (saved later here), {counts['set_aside']} set "
+        f"aside as not counted: {run_dir / 'ratings.json'}"
     )
     return 0
 
@@ -1075,6 +1203,14 @@ def main(argv: list[str] | None = None) -> int:
         "--heard",
         required=True,
         help="how the clips were heard there; it finishes the sentence 'N steps were marked ...'",
+    )
+    take_parser.add_argument(
+        "--since", help="leave out marks saved before this time (2026-11-25T04:29:23Z)"
+    )
+    take_parser.add_argument(
+        "--since-why",
+        default="",
+        help="why; it finishes the sentence 'Their marks were ...' in the report",
     )
     take_parser.set_defaults(run=cmd_take)
     report_parser = sub.add_parser("report", help="unblind the marks and write the report")

@@ -262,6 +262,11 @@ def test_the_report_unblinds_the_marks(made, tmp_path) -> None:
     # Where one clip stood for both, its mark is the old version's mark too.
     assert analysis["by_stem"]["guitar"]["old"] == analysis["by_stem"]["guitar"]["new"] == 4.0
     assert analysis["by_stem"]["bass"]["old"] < analysis["by_stem"]["bass"]["new"]
+    # Now against before, stem by stem: nothing to count where the two are the same audio.
+    assert analysis["by_stem"]["guitar"]["now_vs_before"]["steps"] == 0
+    counted = [entry["now_vs_before"] for entry in analysis["by_stem"].values()]
+    assert sum(c["higher"] for c in counted) == two_clips - 1
+    assert sum(c["lower"] for c in counted) == 1
     assert analysis["notes"] == [{"id": flipped, "note": "hiss"}]
     text = listen.render(analysis, {"run_id": "owner-test", "tracks": 2})
     assert f"Steps marked: {marked} of {len(items)}. **The test was not finished.**" in text
@@ -271,10 +276,17 @@ def test_the_report_unblinds_the_marks(made, tmp_path) -> None:
     assert f"In {one_clip} of the marked steps (guitar, piano) the product makes the stem" in text
     assert f"- `{flipped}`: hiss" in text
     assert "One listener" in text
+    assert "| Now above | Now below | The same |" in text
+    assert "| guitar | " in text
+    guitar_row = next(line for line in text.splitlines() if line.startswith("| guitar | "))
+    assert guitar_row.endswith("| - | - | - |")
     # Every step was marked on this machine: the report says so and has nothing to add.
     assert analysis["heard"] == [{"via": "here", "steps": marked, "how": None}]
     assert "listened blind on their own machine: for each stem" in text
     assert "How the clips were heard" not in text
+    assert analysis["not_counted"] == []
+    assert "Not counted" not in text
+    assert "seconds a step" not in text  # marks without a time of saving say nothing of pace
     empty = listen.render(listen.analyse(kit, key, {"items": {}}), {"run_id": "r"})
     assert "Nothing has been marked yet." in empty
     assert "the product makes the stem with the same model" not in empty
@@ -414,6 +426,7 @@ def test_marks_made_elsewhere_are_checked_and_taken_in(away, tmp_path) -> None:
         "replaced": 0,
         "unchanged": 0,
         "older": 0,
+        "set_aside": 0,
     }
     saved = json.loads((run_dir / "ratings.json").read_text())
     assert saved["heard"] == {"phone": PHONE}
@@ -439,7 +452,7 @@ def test_marks_made_elsewhere_are_checked_and_taken_in(away, tmp_path) -> None:
         run_dir, listen.read_taken(tmp_path / "store"), heard=PHONE, via="phone"
     )
     # The later marks replace what was there; the earlier ones do not.
-    assert counts == {"new": 0, "replaced": 1, "unchanged": 0, "older": 1}
+    assert counts == {"new": 0, "replaced": 1, "unchanged": 0, "older": 1, "set_aside": 0}
     saved = json.loads((run_dir / "ratings.json").read_text())["items"]
     assert saved[first["id"]]["ratings"][first["samples"][0]]["overall"] == 5
     assert saved[second["id"]]["ratings"][second["samples"][0]]["overall"] == 2
@@ -460,6 +473,7 @@ def test_marks_made_elsewhere_are_checked_and_taken_in(away, tmp_path) -> None:
         "replaced": 1,
         "unchanged": 0,
         "older": 1,
+        "set_aside": 0,
     }
     saved = json.loads((run_dir / "ratings.json").read_text())["items"]
     assert "via" not in saved[second["id"]]
@@ -553,6 +567,72 @@ def test_the_report_says_how_the_clips_were_heard(away, tmp_path, monkeypatch, c
         == 2
     )
     assert "is missing" in capsys.readouterr().err
+
+
+def test_marks_from_before_a_time_are_set_aside_and_the_report_says_so(away, tmp_path) -> None:
+    run_dir, items = away
+    key = json.loads((run_dir / "key.json").read_text())
+    kit = listen.load_kit(run_dir / "kit")
+    early, first, second = items[0], items[1], items[2]
+
+    def given(step, mark: int, at: str) -> dict:
+        ratings = {s: dict.fromkeys(listen.RATINGS, mark) for s in step["samples"]}
+        return {"ratings": ratings, "note": "", "saved_at": at}
+
+    taken = {
+        early["id"]: given(early, 3, "2026-11-25T02:21:16Z"),  # before anything was heard
+        first["id"]: given(first, 4, "2026-11-25T04:30:00Z"),
+        second["id"]: given(second, 2, "2026-11-25T04:31:10Z"),
+    }
+    options = {"heard": PHONE, "via": "phone", "since": "2026-11-25T04:29:23Z"}
+    why = "saved before the listener could hear anything"
+    assert listen.take_marks(run_dir, taken, since_why=why, **options) == {
+        "new": 2,
+        "replaced": 0,
+        "unchanged": 0,
+        "older": 0,
+        "set_aside": 1,
+    }
+    saved = json.loads((run_dir / "ratings.json").read_text())
+    assert set(saved["items"]) == {first["id"], second["id"]}
+    assert saved["not_counted"] == {
+        early["id"]: {"saved_at": "2026-11-25T02:21:16+00:00", "why": why, "via": "phone"}
+    }
+    analysis = listen.analyse(kit, key, listen.read_ratings(run_dir / "ratings.json"))
+    assert analysis["marked"] == 2
+    assert analysis["not_counted"] == [{"id": early["id"], "why": why}]
+    assert analysis["span"] == {"steps": 2, "minutes": pytest.approx(70 / 60)}
+    clips = len(first["samples"]) + len(second["samples"])
+    assert analysis["clips"] == {"marked": clips, "optional_same_as_overall": clips}
+    text = listen.render(analysis, {"run_id": "owner", "tracks": 2})
+    assert f"**Not counted:** `{early['id']}`. Their marks were {why}." in text
+    # Other steps are simply unmarked, so the test is not finished.
+    assert "**The test was not finished.**" in text
+    # With every step either marked or set aside, it is finished, and the report says which.
+    whole = {
+        item["id"]: given(item, 4, "2026-11-25T04:40:00Z") for item in items if item is not early
+    }
+    listen.take_marks(run_dir, whole, since_why=why, **options)
+    done = listen.render(
+        listen.analyse(kit, key, listen.read_ratings(run_dir / "ratings.json")),
+        {"run_id": "owner", "tracks": 2},
+    )
+    assert (
+        f"Steps marked: {len(items) - 1} of {len(items)}. The others are not counted, for" in done
+    )
+    assert "The test was not finished" not in done
+    assert "- The 2 steps were marked in 1 minutes, about 35 seconds a step. A step has two" in text
+    assert "less than hearing each clip through once." in text
+    assert f"- In all {clips} clips the marks for bleed and artifacts are the same as" in text
+    # Marks that count arrive for the step later: it is no longer set aside.
+    later = {early["id"]: given(early, 5, "2026-11-25T05:00:00Z")}
+    assert listen.take_marks(run_dir, later, since_why=why, **options)["new"] == 1
+    assert "not_counted" not in json.loads((run_dir / "ratings.json").read_text())
+    # A time needs its reason, and has to be a time.
+    with pytest.raises(listen.ListenError, match="--since needs --since-why"):
+        listen.take_marks(run_dir, taken, **options)
+    with pytest.raises(listen.ListenError, match="--since must be a time"):
+        listen.take_marks(run_dir, taken, since_why=why, **{**options, "since": "before"})
 
 
 def test_the_phone_page_keeps_to_itself() -> None:
