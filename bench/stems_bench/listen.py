@@ -417,8 +417,10 @@ def pack(run_dir: Path, out_dir: Path, *, run_id: str) -> dict[str, Any]:
     """Write the test as a folder a file host can serve: the page and the clips as MP3.
 
     ``page.html`` is the page as a host that wraps pages takes it; ``index.html`` is the
-    same inside a whole document. Nothing of the key goes into the folder. Clips already
-    there are not made again. Returns the number of clips and their size.
+    same inside a whole document. Beside them go ``silence.wav`` and ``tone.wav``, which
+    the page's full player and its sound check need. Nothing of the key goes into the
+    folder. Clips already there are not made again. Returns the number of clips and
+    their size.
     """
     import soundfile as sf
 
@@ -427,7 +429,8 @@ def pack(run_dir: Path, out_dir: Path, *, run_id: str) -> dict[str, Any]:
     if "MP3" not in sf.available_formats():
         raise ListenError("the audio library here cannot write MP3 (libsndfile 1.1 or later)")
     kit_dir = run_dir / "kit"
-    items = presentation_order(load_kit(kit_dir))
+    kit = load_kit(kit_dir)
+    items = presentation_order(kit)
     sizes: dict[str, int] = {}
     for item in items:
         for name in ("song", *item["samples"]):
@@ -452,6 +455,11 @@ def pack(run_dir: Path, out_dir: Path, *, run_id: str) -> dict[str, Any]:
             sizes[place.as_posix()] = target.stat().st_size
     # Two seconds of silence for the media element that keeps an iPhone's sound on.
     sf.write(str(out_dir / "silence.wav"), np.zeros((16000, 1)), 8000, subtype="PCM_16")
+    # One second of a 440 Hz tone, faded in and out, for the sound check's media element.
+    t = np.arange(kit_tools.SAMPLE_RATE) / kit_tools.SAMPLE_RATE
+    fade = np.minimum(1.0, np.minimum(t, 1.0 - t) / 0.05)
+    tone = 0.2 * fade * np.sin(2 * np.pi * 440.0 * t)
+    sf.write(str(out_dir / "tone.wav"), tone[:, None], kit_tools.SAMPLE_RATE, subtype="PCM_16")
     total = sum(sizes.values())
     data = {
         "run": run_id,
@@ -461,6 +469,7 @@ def pack(run_dir: Path, out_dir: Path, *, run_id: str) -> dict[str, Any]:
         "short": PHONE_SHORT_HELP,
         "clip_format": PHONE_SUFFIX,
         "song_format": PHONE_SUFFIX,
+        "excerpt_seconds": kit["excerpt_seconds"],
         "size_note": (
             f"Each step loads about {total / len(items) / 1e6:.0f} MB of audio, about "
             f"{total / 1e6:.0f} MB over the {len(items)} steps, so Wi-Fi is kinder than "

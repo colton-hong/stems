@@ -569,6 +569,19 @@ def test_the_phone_page_keeps_to_itself() -> None:
     assert "`audio/${item.track}/${item.stem}/${name}." in PAGE
     assert 'src="silence.wav"' in PAGE
     assert "/api/" not in PAGE
+    # It asks whether it can be heard, has a second player for when it cannot, says so
+    # when neither works, and leaves what it found in the store.
+    assert 'src="tone.wav"' in PAGE
+    for words in (
+        "Did you hear it?",
+        "I heard nothing",
+        "Did you hear that one?",
+        "The page will use its simple player",
+        "not playing this page's sound either way",
+        "No sound? Use the simple player",
+        '"checks/sound"',
+    ):
+        assert words in PAGE, words
 
 
 def test_the_test_is_packed_for_a_phone_and_stays_blind(
@@ -585,7 +598,8 @@ def test_the_test_is_packed_for_a_phone_and_stays_blind(
     assert made["bytes"] == sum((out / name).stat().st_size for name in made["files"])
     # The folder holds the two pages, the silent file and the clips, and nothing else.
     found = sorted(p.relative_to(out).as_posix() for p in out.rglob("*") if p.is_file())
-    assert found == sorted(["index.html", "page.html", "silence.wav", *made["files"]])
+    extras = ["index.html", "page.html", "silence.wav", "tone.wav"]
+    assert found == sorted([*extras, *made["files"]])
     first = items[0]
     assert f"audio/{first['track']}/{first['stem']}/song.mp3" in made["files"]
 
@@ -599,6 +613,7 @@ def test_the_test_is_packed_for_a_phone_and_stays_blind(
     ]
     assert kit["ratings"] == list(listen.RATINGS)
     assert (kit["clip_format"], kit["song_format"]) == ("mp3", "mp3")
+    assert kit["excerpt_seconds"] == listen.load_kit(run_dir / "kit")["excerpt_seconds"]
     assert f"over the {len(items)} steps" in kit["size_note"]
     index = (out / "index.html").read_text()
     assert index.startswith("<!doctype html>")
@@ -609,7 +624,8 @@ def test_the_test_is_packed_for_a_phone_and_stays_blind(
     key = json.loads((run_dir / "key.json").read_text())
     assert all(set(item) == {"id", "track", "stem", "samples"} for item in kit["items"])
     assert set(kit) == {
-        "run", "items", "ratings", "help", "short", "clip_format", "song_format", "size_note"
+        "run", "items", "ratings", "help", "short", "clip_format", "song_format",
+        "excerpt_seconds", "size_note",
     }  # fmt: skip
     for track in key["tracks"].values():
         assert track["id"] not in index
@@ -627,6 +643,10 @@ def test_the_test_is_packed_for_a_phone_and_stays_blind(
     quiet, _ = sf.read(str(out / "silence.wav"))
     assert quiet.size > 0
     assert not quiet.any()
+    # The check's tone: a second long, and loud enough to hear.
+    tone, tone_rate = sf.read(str(out / "tone.wav"))
+    assert len(tone) == tone_rate
+    assert 0.1 < float(np.sqrt(np.mean(tone**2))) < 0.2
 
     # Packing again makes no clip again; the command says what it wrote.
     stamps = {name: (out / name).stat().st_mtime_ns for name in made["files"]}

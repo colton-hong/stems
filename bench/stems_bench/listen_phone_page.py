@@ -10,11 +10,23 @@ text. Either way ``stems_bench.listen take`` brings them back.
 It is written as a host that wraps pages takes it: the content alone, with no doctype
 or ``<html>`` of its own. ``pack`` also writes it inside a whole document.
 
-Phones need three things the other page does not: sound may start only from a tap; an
-iPhone mutes a page's own sound with its silent switch unless the page is also playing a
-media element (so this one plays a silent file while a clip plays); and there is no
-keyboard. The test tone and the level bar are there to tell "the page is making no sound"
-from "the phone is not playing it".
+A phone is not a place this project can test, so the page finds out for itself whether
+it can be heard. It has two players:
+
+- the *full* player makes the sound itself (Web Audio): every version of a step plays at
+  once and only the levels change, so switching loses nothing. A phone lets a page do
+  that only from a tap, and an iPhone mutes it with the silent switch unless the page is
+  also playing a media element, so a silent file plays while a clip does;
+- the *simple* player is media elements and nothing else, one at a time, which a phone
+  plays after a tap whatever else it refuses. Switching versions then has a short gap.
+
+The sound check plays a tone with the first and asks whether it was heard; if not, a
+second tone with a media element, and asks again. It chooses the player by the answers,
+says so plainly when neither tone was heard, and leaves what it found (which tone, the
+state of the page's sound, the browser's name for itself) in the store as
+``checks/sound``, so that a silent phone can be put right from what it reported. The
+level bar under the full player tells "the page is making no sound" from "the phone is
+not playing it". The listener can change players during a step.
 """
 
 PAGE = """<title>Stems Listening Test</title>
@@ -119,6 +131,8 @@ PAGE = """<title>Stems Listening Test</title>
     border-radius: 10px; width: 100%; min-height: 4.5rem; padding: 10px; box-sizing: border-box;
   }
   .nav { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; }
+  .nav.even { grid-template-columns: 1fr 1fr; }
+  button.quiet { min-height: 40px; font-size: .875rem; color: var(--muted); align-self: start; }
   .problem { color: var(--warn); font-weight: 500; }
   .problem:empty, .note:empty { display: none; }
   ul.plain { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 6px; }
@@ -146,7 +160,11 @@ PAGE = """<title>Stems Listening Test</title>
     <p class="muted small">Your marks are saved after every step, so you can stop and come back.
 </p>
     <button id="tone">Play a test tone</button>
-    <p class="muted small" id="tone-note">Try this first: you should hear a short tone.</p>
+    <p class="muted small" id="tone-note" aria-live="polite">Try this first: you should hear a short tone.</p>
+    <div class="nav even" id="heard" hidden>
+      <button id="heard-no">I heard nothing</button>
+      <button id="heard-yes">I heard it</button>
+    </div>
     <button class="primary" id="start">Start</button>
   </section>
 
@@ -161,8 +179,9 @@ PAGE = """<title>Stems Listening Test</title>
         </div>
       </div>
       <div class="choices" id="choices" role="group" aria-label="Which version is playing"></div>
-      <div class="meter" aria-hidden="true"><span id="level"></span></div>
+      <div class="meter" id="meter" aria-hidden="true"><span id="level"></span></div>
       <p class="muted small note" id="sound"></p>
+      <button class="quiet" id="other-player">No sound? Use the simple player</button>
     </div>
     <div class="stack" id="marks"></div>
     <div class="card stack">
@@ -189,6 +208,7 @@ PAGE = """<title>Stems Listening Test</title>
 </div>
 
 <audio id="unmute" src="silence.wav" loop playsinline preload="auto" x-webkit-airplay="deny"></audio>
+<audio id="beep" src="tone.wav" playsinline preload="auto" x-webkit-airplay="deny"></audio>
 <script type="application/json" id="kit">__KIT__</script>
 <script>
 "use strict";
@@ -205,6 +225,12 @@ let context = null, buffers = {}, sources = [], gains = {};
 let playing = false, startedAt = 0, offset = 0, chosen = null, loading = 0, seeking = false;
 let wake = null;
 let master = null, analyser = null, meter = null;
+// The simple player: one media element at a time, for a phone that will not play the sound
+// the page makes itself. Switching versions then has a short gap.
+const SOUND_KEY = "stems-listening-sound";
+let simple = false, players = {};
+let check = 0;             // the sound check: 0 the page's own tone, 1 a media element's
+let finding = null;        // what the check found, to leave in the store
 
 // -- marks: this phone first, then the store ------------------------------------------------
 
@@ -285,6 +311,7 @@ async function connect() {
   showWhere();
   if ($("step").hidden) offerStart();
   await pushAll();
+  await tell();
 }
 
 // -- the page ------------------------------------------------------------------------------
@@ -321,13 +348,31 @@ function address(item, name) {
   return `audio/${item.track}/${item.stem}/${name}.${name === "song" ? KIT.song_format : KIT.clip_format}`;
 }
 function length() {
+  if (simple) {
+    if (!Object.keys(players).length) return 0;
+    const known = Object.values(players).map((player) => player.duration).filter(Number.isFinite);
+    return known.length ? Math.min(...known) : KIT.excerpt_seconds;
+  }
   const all = Object.values(buffers).map((buffer) => buffer.duration);
   return all.length ? Math.min(...all) : 0;
 }
 function position() {
   if (!playing) return offset;
+  if (simple) return players[chosen] ? players[chosen].currentTime : offset;
   const whole = length();
   return whole ? (offset + context.currentTime - startedAt) % whole : 0;
+}
+function setSimple(value) {
+  simple = value;
+  try { localStorage.setItem(SOUND_KEY, simple ? "simple" : "full"); } catch (error) { /* private mode */ }
+  $("meter").hidden = simple;
+  $("other-player").textContent = simple ? "Back to the full player" : "No sound? Use the simple player";
+}
+function begin(player, at) {
+  // Start a media element at a place. A phone may refuse; then nothing is playing.
+  try { player.currentTime = at; } catch (error) { /* not loaded yet: it starts at 0 */ }
+  const begun = player.play();
+  if (begun && begun.catch) begun.catch(() => { if (playing) stop(); });
 }
 function unlock() {
   // Called inside every tap that should make sound. A phone lets a page make sound only
@@ -362,6 +407,7 @@ function loudness() {
 }
 function stop() {
   if (playing) offset = position();
+  for (const player of Object.values(players)) { try { player.pause(); } catch (error) { /* idle */ } }
   for (const source of sources) { try { source.stop(); } catch (error) { /* not started */ } }
   sources = []; playing = false;
   $("play").textContent = "Play";
@@ -373,6 +419,14 @@ function play() {
   const whole = length();
   if (!whole) return;
   stop();
+  if (simple) {
+    if (!players[chosen]) return;
+    playing = true;
+    begin(players[chosen], offset % whole);
+    $("play").textContent = "Pause";
+    $("play").setAttribute("aria-pressed", "true");
+    return;
+  }
   unlock();
   const when = context.currentTime + 0.06;
   gains = {};
@@ -396,9 +450,18 @@ function play() {
   }
 }
 function choose(name) {
+  const before = chosen;
   chosen = name;
-  for (const [other, gain] of Object.entries(gains)) {
-    gain.gain.setTargetAtTime(other === name ? 1 : 0, context.currentTime, 0.01);
+  if (simple) {
+    if (playing && before !== name && players[before] && players[name]) {
+      const at = players[before].currentTime;
+      players[before].pause();
+      begin(players[name], at % (length() || 1));
+    }
+  } else {
+    for (const [other, gain] of Object.entries(gains)) {
+      gain.gain.setTargetAtTime(other === name ? 1 : 0, context.currentTime, 0.01);
+    }
   }
   for (const button of document.querySelectorAll("[data-choose]")) {
     button.setAttribute("aria-pressed", String(button.dataset.choose === name));
@@ -413,8 +476,9 @@ function tick() {
   const what = chosen === "song" ? "the song" : `version ${chosen}`;
   $("clock").textContent = `${at.toFixed(0)} s of ${whole.toFixed(0)} s · ${playing ? "playing" : "paused on"} ${what}`;
   if (!seeking) $("seek").value = String(at);
-  $("level").style.width = `${playing ? Math.min(100, Math.round(Math.sqrt(loudness()) * 250)) : 0}%`;
+  $("level").style.width = `${playing && !simple ? Math.min(100, Math.round(Math.sqrt(loudness()) * 250)) : 0}%`;
   $("sound").textContent = !playing ? ""
+    : simple ? "The simple player: switching between versions has a short gap."
     : context.state !== "running"
       ? `The phone has not let this page play yet (${context.state}). Tap Pause, then Play.`
       : "No sound while the bar above moves? Turn off silent mode, turn the volume up, and check Bluetooth.";
@@ -425,14 +489,50 @@ function decode(data) {
     if (answer && answer.catch) answer.catch(reject);
   });
 }
+function loadPlayers(item, wanted, mine) {
+  // The simple player's clips. A phone may load nothing until play is pressed, so a clip
+  // that has not answered in a few seconds counts as ready.
+  const made = {};
+  let ready = 0;
+  const all = wanted.map((name) => new Promise((resolve, reject) => {
+    const player = new Audio();
+    player.preload = "auto";
+    player.loop = true;
+    const done = () => {
+      ready += 1;
+      if (mine === loading) $("clock").textContent = `Loading the audio… ${ready} of ${wanted.length}`;
+      resolve();
+    };
+    const patience = setTimeout(done, 4000);
+    player.addEventListener("loadedmetadata", () => { clearTimeout(patience); done(); }, { once: true });
+    player.addEventListener("error", () => {
+      clearTimeout(patience);
+      reject(new Error(`${label(name)} could not be loaded`));
+    }, { once: true });
+    player.src = address(item, name);
+    player.load();
+    made[name] = player;
+  }));
+  return Promise.all(all).then(() => made);
+}
 async function loadAudio(item) {
   stop();
-  buffers = {}; gains = {}; offset = 0;
+  for (const player of Object.values(players)) { player.removeAttribute("src"); player.load(); }
+  buffers = {}; gains = {}; players = {}; offset = 0;
   const mine = ++loading;
   $("play").disabled = true; $("seek").disabled = true; $("seek").value = "0";
   const wanted = names(item);
   let ready = 0;
   $("clock").textContent = `Loading the audio… 0 of ${wanted.length}`;
+  if (simple) {
+    const made = await loadPlayers(item, wanted, mine);
+    if (mine !== loading) return false;
+    players = made;
+    $("seek").max = String(length());
+    $("play").disabled = false; $("seek").disabled = false;
+    return true;
+  }
+  if (!context) unlock();
   const decoded = await Promise.all(wanted.map(async (name) => {
     const response = await fetch(address(item, name));
     if (!response.ok) throw new Error(`${label(name)}: ${response.status}`);
@@ -588,11 +688,64 @@ function finish() {
 }
 
 $("start").addEventListener("click", async () => {
-  unlock();
-  quiet();
+  if (!simple) { unlock(); quiet(); }
   await show(marked() === KIT.items.length ? 0 : firstOpen());
 });
+function found(heard) {
+  // What the sound check found, kept in the store beside the marks so that a page that
+  // stays silent on some phone can be put right without guessing.
+  finding = {
+    heard, at: new Date().toISOString(),
+    context: context ? context.state : null,
+    session: Boolean(navigator.audioSession),
+    agent: String(navigator.userAgent || "").slice(0, 300),
+  };
+  tell();
+}
+async function tell() {
+  if (!db || !finding) return;
+  const what = finding;
+  try { await within(db.doc("checks/sound").set(what), 10000); if (finding === what) finding = null; }
+  catch (error) { /* it is tried again when the store next answers */ }
+}
+function beep() {
+  const player = $("beep");
+  try { player.currentTime = 0; } catch (error) { /* not loaded yet */ }
+  const begun = player.play();
+  if (begun && begun.catch) begun.catch(() => {});
+}
+$("heard-yes").addEventListener("click", () => {
+  setSimple(check === 1);
+  found(check === 1 ? "media element" : "the page's own sound");
+  $("heard").hidden = true;
+  $("tone-note").textContent = check === 1
+    ? "Good. The page will use its simple player: switching between versions has a short gap."
+    : "Good. The sound works.";
+});
+$("heard-no").addEventListener("click", () => {
+  if (check === 0) {
+    check = 1;
+    beep();  // inside this tap, so the phone lets it play
+    $("tone").textContent = "Play the second tone again";
+    $("tone-note").textContent = "Trying another way: a second tone was played. Did you hear that one?";
+    return;
+  }
+  found("nothing");
+  $("heard").hidden = true;
+  $("tone-note").textContent = "The phone is not playing this page's sound either way. Check that silent mode is off, that the volume is up and that the sound is not going to a Bluetooth device; or open this page in the phone's own browser. Then tell Claude that neither tone was heard.";
+});
+$("other-player").addEventListener("click", async () => {
+  const keep = chosen;
+  stop();
+  setSimple(!simple);
+  if (!simple) unlock();
+  quiet();
+  try { if (await loadAudio(KIT.items[index])) choose(keep); }
+  catch (error) { $("problem").textContent = `The audio could not be loaded (${error.message}).`; }
+});
 $("tone").addEventListener("click", () => {
+  $("heard").hidden = false;
+  if (check === 1) { beep(); return; }
   unlock();
   const tone = context.createOscillator();
   const gain = context.createGain();
@@ -607,9 +760,10 @@ $("tone").addEventListener("click", () => {
   tone.stop(at + 1.05);
   tone.onended = () => { if (!playing) quiet(); };
   setTimeout(() => {
+    if (check !== 0 || $("heard").hidden) return;
     $("tone-note").textContent = context.state === "running"
-      ? "A tone was played. If you did not hear it, turn off silent mode, turn the volume up, and check that the sound is not going to a Bluetooth speaker. Then try again."
-      : `The phone has not let this page make sound yet (${context.state}). Tap the button again.`;
+      ? "A tone was played. Did you hear it?"
+      : `The phone has not let this page make sound yet (${context.state}). Tap the button again, or say that you heard nothing.`;
   }, 500);
 });
 $("play").addEventListener("click", () => (playing ? stop() : play()));
@@ -647,6 +801,8 @@ $("copy").addEventListener("click", async () => {
 document.addEventListener("visibilitychange", () => { if (document.hidden && playing) stop(); });
 
 saved = readLocal();
+try { simple = localStorage.getItem(SOUND_KEY) === "simple"; } catch (error) { simple = false; }
+setSimple(simple);
 $("size").textContent = KIT.size_note;
 showWhere();
 offerStart();
