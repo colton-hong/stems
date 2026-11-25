@@ -2,7 +2,7 @@
 
 Single source of truth for where the build is. Read this first, every iteration.
 
-**Current phase: 20 (the default's six stems, kept), started 2026-11-25.** Phases 14 (what the six stems lose), 15 (a dropout or a rest?), 16 (the listening test on a phone), 17 (dropouts by model), 18 (a phone page that finds out whether it can be heard) and 19 (`other`, made the other way) are complete: see their summaries. Phase 13 (a listening test the owner can do alone) is complete: the owner took it on 2026-11-25, on a phone (see its summary and `docs/listening-owner.md`). Phase 12 (the edges) is complete: see its summary. The owner asked on 2026-11-24 for each phase to follow the last without waiting, and for new phases to be added when none is left; Phases 8 to 20 were added that way. Phases 0, 1, 3 and 4 to 12 are complete apart from checks that need the owner's accounts (S3 and Azure, B7; Modal, B4; the panel listening test, B8). Still open from earlier phases: Phase 2's real benchmarks (P2.10 and P2.11 are done; the MoisesDB tuning stage is done and reported). **The benchmark is stopped.** The owner, worried about what running around the clock does to the laptop, asked on 2026-11-25 whether a smaller sample would do and whether the job could stop; it was stopped at 06:29Z, at 297 of 3,000 jobs of the MUSDB18-HQ tuning stage after 12 hours. Nothing computed is lost: `sh tools/run_real_benchmarks.sh` skips every job that has a result. By this repository's own timings the stage had 25 to 40 hours left, and two more stages after it. Offered a 30-track sample or nothing for the second tuning list, the owner said "Drop it" (BLOCKED.md, resolved D18). **Do not start it again, or any other long GPU job, without the owner saying so.** What is left of P2.12 and P2.13 needs no GPU; P2.14b does and waits for the owner. **This Mac cannot hold three GPU jobs at once.**
+**The project is paused.** On 2026-11-25 the owner said: "after this phase stops, pause the project". That phase, 20 (the default's six stems, kept), is complete: see its summary. **Start nothing, add no phase and run nothing until the owner says to resume**; then ask whether phases are to follow one another again. Phases 14 (what the six stems lose), 15 (a dropout or a rest?), 16 (the listening test on a phone), 17 (dropouts by model), 18 (a phone page that finds out whether it can be heard) and 19 (`other`, made the other way) are complete too: see their summaries. Phase 13 (a listening test the owner can do alone) is complete: the owner took it on 2026-11-25, on a phone (see its summary and `docs/listening-owner.md`). Phase 12 (the edges) is complete: see its summary. The owner asked on 2026-11-24 for each phase to follow the last without waiting, and for new phases to be added when none is left; Phases 8 to 20 were added that way. Phases 0, 1, 3 and 4 to 12 are complete apart from checks that need the owner's accounts (S3 and Azure, B7; Modal, B4; the panel listening test, B8). Still open from earlier phases: Phase 2's real benchmarks (P2.10 and P2.11 are done; the MoisesDB tuning stage is done and reported). **The benchmark is stopped.** The owner, worried about what running around the clock does to the laptop, asked on 2026-11-25 whether a smaller sample would do and whether the job could stop; it was stopped at 06:29Z, at 297 of 3,000 jobs of the MUSDB18-HQ tuning stage after 12 hours. Nothing computed is lost: `sh tools/run_real_benchmarks.sh` skips every job that has a result. By this repository's own timings the stage had 25 to 40 hours left, and two more stages after it. Offered a 30-track sample or nothing for the second tuning list, the owner said "Drop it" (BLOCKED.md, resolved D18). **Do not start it again, or any other long GPU job, without the owner saying so.** What is left of P2.12 and P2.13 needs no GPU; P2.14b does and waits for the owner. **This Mac cannot hold three GPU jobs at once.**
 
 **Asked for by the owner on 2026-11-24, during Phase 12:** "after this next phase finishes, i'd like to do a listening test myself". So the phase after 12 is a listening test the owner can do alone: no panel, nothing bought (B8 asks for both; this is the part that needs neither).
 
@@ -18,7 +18,8 @@ Single source of truth for where the build is. Read this first, every iteration.
 6. When the current phase has no unticked unblocked tasks, write the phase summary at the
    bottom of this file, then start the next phase. If no phase is left, add one here with
    tasks and acceptance checks, and work it. (Owner's instruction of 2026-11-24. Until then
-   the rule was to stop and wait for a go-ahead.)
+   the rule was to stop and wait for a go-ahead.) **Suspended since 2026-11-25: the owner
+   paused the project after Phase 20. Start and add nothing until they say to resume.**
 
 Long jobs (downloads, benchmark runs) start in the background, write a log and a
 `status.json` under `runs/<kind>/<run-id>/`, and are checked by a later iteration.
@@ -337,10 +338,10 @@ sounds and the subtracted one where it does not. The benchmark's own command sep
 again and keeps every stem of a model without scoring anew. That is one job on the GPU,
 beside the benchmark and alone: this Mac was at 16.6 GB of swap when the phase was written.
 
-- [x] P20.1 Keep them. **Accept:** `bench run --models bs_roformer_sw_6stem --keep-estimates bs_roformer_sw_6stem` on the MoisesDB tuning list and then the test list, in the background with a log and a status file; all six stems of the default model are under `runs/bench/estimates` for all 80 tracks; the scores the benchmark already had are as they were. Nothing else heavy runs beside it and the benchmark, and no full check is run while it does. *(Amended on 2026-11-25: one full check was run beside it after all, to commit the owner's listening result when the owner said to continue; the note says what memory did.)* — Done: Runs `keep-default-tuning-v1` (30 tracks, 04:15Z to 05:06Z) and `keep-default-test-v1` (50 tracks, 05:06Z to 06:36Z on 2026-11-25), on this Mac's GPU, no job failed. All 80 job folders of `bs_roformer_sw_6stem` now hold vocals, drums, bass, guitar, piano and `other`. The benchmark's scores are as they were: both runs report every job as already scored, and none of the 80 result files was written after the runs began. One track's bass, guitar and piano had been set aside beforehand: the files separated again are bit for bit the same. Against the task as first written: one full check was run beside it (06:08Z to 06:14Z, for the listening commit, memory 38% free before and 19% after, nothing stalled); and the benchmark itself was stopped at 06:29Z at the owner's wish, so the last seven tracks ran with the GPU to themselves. About 17 GB more on disk; 209 GB free.
-- [ ] P20.2 Dropouts by model, with the default in every row. **Accept:** `dropouts_by_model collect` again under a new run id, by the rules already fixed (`af0a950`); the report regenerated; the default's vocals, drums and `other` are counted on every track; D16 and the README follow the new figures where they differ.
-- [ ] P20.3 A dropout or a rest, for the stems that could not be counted. **Accept:** `gaps collect` again under a new run id, by the rules already fixed (`131fbfa`); the report regenerated for every stem whose two models are kept, its verdict reached by the same procedure; the README and this file follow it.
-- [ ] P20.4 The two ways of making `other`, joined. **Accept:** how they are joined, the bar, and what each outcome leads to are fixed and committed before the default's kept `other` is read for it; any level is chosen on the tuning tracks and tried once on the test tracks; the report says what joining does to dropped time, to SDR and to songs with no `other`; D15 gets the result; nothing in the product changes.
+- [x] P20.1 Keep them. **Accept:** `bench run --models bs_roformer_sw_6stem --keep-estimates bs_roformer_sw_6stem` on the MoisesDB tuning list and then the test list, in the background with a log and a status file; all six stems of the default model are under `runs/bench/estimates` for all 80 tracks; the scores the benchmark already had are as they were. Nothing else heavy runs beside it and the benchmark, and no full check is run while it does. *(Amended on 2026-11-25: one full check was run beside it after all, to commit the owner's listening result when the owner said to continue; the note says what memory did.)* — Done: Runs `keep-default-tuning-v1` (30 tracks, 04:15Z to 05:06Z) and `keep-default-test-v1` (50 tracks, 05:06Z to 06:36Z on 2026-11-25), on this Mac's GPU, no job failed. All 80 job folders of `bs_roformer_sw_6stem` now hold vocals, drums, bass, guitar, piano and `other`. The benchmark's scores are as they were: both runs report every job as already scored, and none of the 80 result files was written after the runs began. One track's bass, guitar and piano had been set aside beforehand: the files separated again are bit for bit the same. Against the task as first written: one full check was run beside it (06:08Z to 06:14Z, for the listening commit, memory 38% free before and 19% after, nothing stalled); and the benchmark itself was stopped at 06:29Z at the owner's wish, so the last seven tracks ran with the GPU to themselves. The 240 files it added take 18.7 GB; 209 GB of the disk was free afterwards.
+- [x] P20.2 Dropouts by model, with the default in every row. **Accept:** `dropouts_by_model collect` again under a new run id, by the rules already fixed (`af0a950`); the report regenerated; the default's vocals, drums and `other` are counted on every track; D16 and the README follow the new figures where they differ. — Done: `docs/dropouts-by-model.md` regenerated from the run `by-model-v2` (made at `5c539a1` with nothing uncommitted; five minutes on the CPU), by the rules fixed at `af0a950`. The default is now a row for every stem on both MoisesDB lists, and the section that borrowed it from the product's twenty tracks is gone. On the 50 test tracks, the default beside the best of the rest: vocals 4.4% against 4.5%, drums 2.3% against 2.3%, bass 1.7% against 1.7%, guitar 1.4% against 0.9%, piano 9.6% against 8.8%. `other` drops 13.6% on the 33 test songs that have one and 22.3% on the 27 tuning songs, with a long dropout in 10 and 13 of them, and no other six-stem `other` was kept to set beside it. Checked by a second count from the rows; the default's bass, guitar and piano agree with the first count on all 290 stems. D16 and the README carry the new figures.
+- [x] P20.3 A dropout or a rest, for the stems that could not be counted. **Accept:** `gaps collect` again under a new run id, by the rules already fixed (`131fbfa`); the report regenerated for every stem whose two models are kept, its verdict reached by the same procedure; the README and this file follow it. — Done: `docs/dropout-or-rest.md` regenerated from the run `gaps-v2` (made at `5c539a1` with nothing uncommitted; three minutes), by the rules fixed at `131fbfa`: vocals, drums, bass, guitar and piano. `other` is still not counted there, because the second model the plan names for it makes a four-stem `other`; P20.4 asks the question of `other`. The verdict, by the same procedure: no rule is reliable on the tuning tracks, so none was tried on the test tracks. Silence alone: 14 dropouts in 195 gaps on the tuning tracks, 14 in 333 on the test tracks. The second model sounding: 4 of 22, and 5 of 34. The second model being loud: no level; the nearest flags 14 gaps of which 4 are dropouts. For bass, guitar and piano the gaps and dropouts are those of the first count. One sentence of the report, on what the bar allowed, was reworded; no figure changed. Checked by a second count from the rows.
+- [x] P20.4 The two ways of making `other`, joined. **Accept:** how they are joined, the bar, and what each outcome leads to are fixed and committed before the default's kept `other` is read for it; any level is chosen on the tuning tracks and tried once on the test tracks; the report says what joining does to dropped time, to SDR and to songs with no `other`; D15 gets the result; nothing in the product changes. — Done: `docs/other-joined.md`, from the run `other-joined-v1`, made at the rules commit `5c539a1` with nothing uncommitted. The default's own `other` has 64 gaps on the tuning tracks, 25 of them dropouts, and 111 on the test tracks, 28 of them dropouts. No level of the subtracted stem's loudness is reliable on the tuning tracks: the nearest, -20.19 dB, fills 17 gaps of which 12 are dropouts (71%), against the bar of 90%. So, as the rule said, nothing was joined, nothing was tried on the test tracks and nothing was scored. The report gives each way's dropped time and what it leaves in songs with no `other` (the default's own: 22.3% and 13.6% dropped, noted as empty in 3 of 3 and 17 of 17 such songs; subtracted: 1.4% and 0.9%, noted in 1 of 3 and 5 of 17). Checked by a second count from the rows; on the twenty tracks shared with the product's run the default's own `other` drops the same seconds. D15 has the result. 7 tests.
 
 ---
 
@@ -1485,6 +1486,68 @@ Not verified, and why:
 - **The two bass steps not counted**, by the owner's choice.
 - As before: six 20-minute stems in the browser player, Jev beyond the recorded requests,
   S3 and Azure (B7), Modal (B4), and why CI failed once on Python 3.12.
+
+## Phase 20 summary (2026-11-25)
+
+Done: P20.1 to P20.4. **The project is paused here, at the owner's word.**
+
+- **Kept** (P20.1): all six stems of the default model for the 80 MoisesDB tracks, from
+  one job on the GPU. The benchmark's scores were not touched, and the stems that had
+  been kept before came out the same.
+- **Dropouts by model, with the default in every row** (P20.2,
+  `docs/dropouts-by-model.md`, run `by-model-v2`).
+- **A dropout or a rest, for five stems** (P20.3, `docs/dropout-or-rest.md`, run
+  `gaps-v2`).
+- **The two ways of making `other`, joined** (P20.4, `docs/other-joined.md`, run
+  `other-joined-v1`).
+
+What the phase found:
+
+- **The default drops out no more than anything else, on every stem that could be
+  compared.** On the 50 test tracks: vocals 4.4% against 4.5% for the best of the rest,
+  drums 2.3% against 2.3%, bass 1.7% against 1.7%, guitar 1.4% against 0.9% (a blend),
+  piano 9.6% against 8.8% (a blend). The figures taken from twenty songs in Phase 17
+  for vocals and drums said the same.
+- **`other` is the stem that goes missing**: the default's own is silent for 13.6% of
+  the time the true one sounds on the test tracks and 22.3% on the tuning tracks, with a
+  long dropout in 10 of 33 and 13 of 27 songs.
+- **Nothing tells a dropout from a rest, for any of five stems.** A silent stretch of
+  5 seconds or more is a dropout in 14 of 195 cases on the tuning tracks and 14 of 333
+  on the test tracks. Where a second model sounds in the stretch it is a dropout in 4 of
+  22 and 5 of 34. No level of the second model's loudness does better than 4 in 14.
+- **The two ways of making `other` cannot be joined by loudness.** The subtracted stem
+  is about as loud in a rest as in a dropout: the nearest level fills 17 gaps of which
+  12 are dropouts (71%), against a bar of 90%. So D15 has two ways, each with its own
+  fault, and no third.
+- **Separating again gives the same audio.** The default's bass, guitar and piano,
+  counted from the first kept files and from the ones separated again, agree on all 290
+  stems to the tenth of a second; one track compared file against file was bit for bit
+  the same.
+
+What happened beside the phase, on 2026-11-25:
+
+- **The owner took the listening test** (Phase 13's summary; `docs/listening-owner.md`).
+- **The benchmark was stopped and its second tuning list dropped**, at the owner's word
+  (BLOCKED.md, resolved D18). No long GPU job is to start on this Mac without the owner
+  saying so.
+- **The owner asked how the project could go on with the laptop shut.** The agent can
+  move to a cloud session; the datasets (272 GB), the weights (16 GB) and the kept
+  outputs (224 GB) are only on this Mac, and benchmarks need them and a GPU.
+  A rented GPU needs accounts and money that are the owner's (B4, B7). Nothing was set up.
+
+Not verified, and why:
+
+- **A tuned blend on the test lists.** P2.12's last step and P2.13 need no GPU, but a
+  couple of hours of this Mac's CPU; they were not started before the pause.
+- **Device spread on real tracks** (P2.14b): long jobs on this Mac, the owner's to call.
+- **Whether a cloud session can work on this repository.** None has been run.
+- As before: a second listener (B8); six 20-minute stems in the browser player; Jev
+  beyond the recorded requests; S3 and Azure (B7), Modal (B4); why CI failed once on
+  Python 3.12.
+
+**Next:** nothing, until the owner says to resume. Open then: P2.12 (score what the
+tuner chose on the test lists), P2.13, P2.14b, and the decisions in BLOCKED.md, of which
+D15 (`other`) and D17 (vocals) have a listener's answer beside the measured one.
 
 ## A correction about CI (2026-11-24)
 

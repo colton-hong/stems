@@ -9,10 +9,11 @@ quality open models can give, shown with reproducible benchmarks.
 2. Take the first unticked, unblocked task in the current phase. One task per iteration.
 3. Implement it, run `make check`, commit with a clear message, tick the task with a
    one-line note. Tick only when the acceptance check passes.
-4. If the phase has no unticked unblocked tasks left, write the phase summary in
-   `PROGRESS.md`, then start the next phase. If no phase is left, add one to `PROGRESS.md`
-   with tasks and acceptance checks, and work it. (The owner asked for this on 2026-11-24;
-   before that the rule was to stop and wait for a go-ahead.)
+4. **The project is paused.** On 2026-11-25 the owner said "after this phase stops,
+   pause the project"; that phase was Phase 20 and it is complete. Do not start a phase,
+   add one or run anything until the owner says to resume. When they do, ask whether
+   phases are to follow one another again: from 2026-11-24 until the pause the rule was
+   to write the phase summary, start the next phase, and add one when none was left.
 5. If the same task fails three iterations in a row, write what you tried in `BLOCKED.md`
    and move on.
 
@@ -47,6 +48,10 @@ was wrong. Where the report and `PLAN.md` disagree, `PLAN.md` wins.
   before redoing work.
 - Long jobs run in the background, log under `runs/`, write a `status.json`, and are
   checked by a later iteration instead of being waited on.
+- No long GPU job on this Mac without the owner saying so (2026-11-25: they had the
+  benchmark stopped, out of care for the laptop). Estimate a run's hours from this
+  repository's own timings first, and offer a smaller sample chosen by a rule fixed
+  beforehand.
 
 ## Commands
 
@@ -94,6 +99,9 @@ make listen             # serve the blind listening page on http://127.0.0.1:876
 .venv/bin/python -m stems_bench.dropouts_by_model report --out docs/dropouts-by-model.md   # its report
 .venv/bin/python -m stems_bench.other_made collect   # `other` made by subtraction, put together from the kept outputs and counted (no model runs; resumable)
 .venv/bin/python -m stems_bench.other_made report --out docs/other-by-subtraction.md   # its report
+.venv/bin/python -m stems_bench.other_joined collect   # the default's own `other` and the subtracted one: the gaps of the first (no model runs; resumable)
+.venv/bin/python -m stems_bench.other_joined join      # choose the level on the tuning tracks, join and score (resumable)
+.venv/bin/python -m stems_bench.other_joined report --out docs/other-joined.md   # its report
 make api                # serve the API on http://127.0.0.1:8000 (python -m stems_api)
 .venv/bin/python -m stems_api.db.migrate    # bring the database to the newest schema (the API does this at startup)
 .venv/bin/python -m stems_worker.jobs JOB_ID   # run one job from storage: what the local provider starts

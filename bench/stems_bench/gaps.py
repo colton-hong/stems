@@ -370,9 +370,9 @@ def _few(analysis: Mapping[str, Any]) -> list[str]:
     else:
         span = f"exactly {most}" if most == MIN_FLAGGED else f"from {MIN_FLAGGED} to {most}"
         lines.append(
-            f"- With {found['tuning']} dropouts on the tuning tracks, a rule clears the bar "
-            f"there only by flagging {span} gaps and missing almost no dropout. The bar was "
-            "set before the count; the rules above are nowhere near it."
+            f"- With {found['tuning']} dropouts on the tuning tracks, a rule can clear the "
+            f"bar there only by flagging {span} gaps. The bar was set before the count; the "
+            "rules above are nowhere near it."
         )
     noted = analysis["noted_with_a_dropout"]
     lines.append(

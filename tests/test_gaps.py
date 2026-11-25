@@ -246,7 +246,7 @@ def test_what_is_said_beside_the_verdict() -> None:
     assert "way, 0 on the tuning tracks and 1 on the test tracks hold a stretch" in text
     # Nine dropouts leave room for exactly ten flagged gaps.
     nine = gaps.render(gaps.analyse(world([DROPOUT, REST], [DROPOUT, REST], tracks=9)), RUN)
-    assert "only by flagging exactly 10 gaps and missing almost no dropout" in nine
+    assert "a rule can clear the bar there only by flagging exactly 10 gaps." in nine
     assert gaps.nearest_level([DROPOUT] * 9) is None
     # Several levels as good as each other: the lowest is the one named.
     assert gaps.nearest_level([gap(20.0, level=-10.0 - i) for i in range(12)])["level"] == -21.0

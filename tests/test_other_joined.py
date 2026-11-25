@@ -241,6 +241,9 @@ def test_the_three_outcomes_and_what_the_report_says() -> None:
         "no level is. The nearest: at -8.00 dB, 24 gaps filled, 12 of them dropouts (50%)." in text
     )
     assert "| no: no level found |" in text
+    assert "No stem was scored in this run: scoring is part of joining" in text
+    assert "No stem was scored in this run" not in oj.render(stands, RUN)
+    assert oj.RULES_COMMIT.startswith("5c539a1d25f1")
     # Joined rows made at another level than the one now chosen are not used.
     stale = [{"id": "test/t0", "set": "test", "level": -99.0, "joined": {}, "scores": {}}]
     assert oj.analyse(rows_of([dropout, rest], [dropout, rest]), stale)["joined_tracks"] == {

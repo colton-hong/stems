@@ -72,8 +72,8 @@ BAR = gap_rules.BAR
 MIN_FLAGGED = gap_rules.MIN_FLAGGED
 RULE = "loud_second"  # the rule of stems_bench.gaps that the join is: fill where it is loud
 # The commit that holds everything above, made before the default's kept `other` was read
-# for this. Filled in by the commit after it.
-RULES_COMMIT: str | None = None
+# for this.
+RULES_COMMIT: str | None = "5c539a1d25f15fbbb1e409e83cb83a10e01683bc"
 
 
 class JoinError(ValueError):
@@ -450,6 +450,12 @@ def render(analysis: Mapping[str, Any], run: Mapping[str, Any]) -> str:
                 f"{windows} | {gone['songs']} | {'-' if under is None else f'{-under:.1f}'} | "
                 f"{gone['noted']} of {gone['songs']} |"
             )
+    if level is None:
+        lines += [
+            "",
+            "No stem was scored in this run: scoring is part of joining, and nothing was "
+            "joined. `docs/other-by-subtraction.md` has the SDR of the two ways.",
+        ]
     lines += [
         "",
         "## What this is and is not",
