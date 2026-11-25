@@ -2,7 +2,7 @@
 
 Single source of truth for where the build is. Read this first, every iteration.
 
-**Current phase: 17 (dropouts by model), started 2026-11-25.** Phases 14 (what the six stems lose), 15 (a dropout or a rest?) and 16 (the listening test on a phone) are complete: see their summaries. Phase 13 (a listening test the owner can do alone) has one open task and it is the owner's: the kit is built and checked (P13.4): `make listen`, then http://127.0.0.1:8765; P13.5 is the listening itself, and its report follows when the marks are there; since 2026-11-25 the same test is also a private page for the owner's phone (see "Phase 13 so far"). Phase 12 (the edges) is complete: see its summary. The owner asked on 2026-11-24 for each phase to follow the last without waiting, and for new phases to be added when none is left; Phases 8 to 17 were added that way. Phases 0, 1, 3 and 4 to 12 are complete apart from checks that need the owner's accounts (S3 and Azure, B7; Modal, B4; the panel listening test, B8). Still open from earlier phases: Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done; the MoisesDB tuning stage is done and reported; the MUSDB18-HQ tuning stage started at 18:27Z on 2026-11-24 and was at 217 of 3,000 jobs at 02:35Z on the 25th, having shared the GPU with other runs for most of that time (19 jobs between 00:20Z and 01:35Z, an hour of which it shared with Phase 14's run); the MoisesDB stage took 8.8 hours for 30 tracks, so 100 tracks alone would take about 30; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task). **This Mac cannot hold three GPU jobs at once**: beside the benchmark, run one heavy job at a time.
+**Phase 17 (dropouts by model) is complete: see its summary. The next phase is added under rule 6 by the iteration after it.** Phases 14 (what the six stems lose), 15 (a dropout or a rest?) and 16 (the listening test on a phone) are complete too. Phase 13 (a listening test the owner can do alone) has one open task and it is the owner's: the kit is built and checked (P13.4): `make listen`, then http://127.0.0.1:8765; P13.5 is the listening itself, and its report follows when the marks are there; since 2026-11-25 the same test is also a private page for the owner's phone (see "Phase 13 so far"). Phase 12 (the edges) is complete: see its summary. The owner asked on 2026-11-24 for each phase to follow the last without waiting, and for new phases to be added when none is left; Phases 8 to 17 were added that way. Phases 0, 1, 3 and 4 to 12 are complete apart from checks that need the owner's accounts (S3 and Azure, B7; Modal, B4; the panel listening test, B8). Still open from earlier phases: Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done; the MoisesDB tuning stage is done and reported; the MUSDB18-HQ tuning stage started at 18:27Z on 2026-11-24 and was at 217 of 3,000 jobs at 02:35Z on the 25th, having shared the GPU with other runs for most of that time (19 jobs between 00:20Z and 01:35Z, an hour of which it shared with Phase 14's run); the MoisesDB stage took 8.8 hours for 30 tracks, so 100 tracks alone would take about 30; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task). **This Mac cannot hold three GPU jobs at once**: beside the benchmark, run one heavy job at a time.
 
 **Asked for by the owner on 2026-11-24, during Phase 12:** "after this next phase finishes, i'd like to do a listening test myself". So the phase after 12 is a listening test the owner can do alone: no panel, nothing bought (B8 asks for both; this is the part that needs neither).
 
@@ -295,7 +295,7 @@ blends, with no model run. Nothing in the product changes in this phase.
 
 - [x] P17.1 What is counted, fixed first. **Accept:** `bench/stems_bench/dropouts_by_model.py` says which lists, which choices (every model kept for every track of a list, and each stem's configured two-model blend made as the product would make it), which tracks (the instrument is in the song), and what is counted for each (dropped time and long dropouts as in P12.5, with the benchmark's own SDR beside it); that nothing is decided by it; and which comparison the report makes (the choice that drops least on the tuning tracks, beside the default on the test lists). Tested on synthetic songs and a made-up benchmark folder. Committed before any kept output is read for this. — Done: `bench/stems_bench/dropouts_by_model.py`. Lists: the MoisesDB test and tuning tracks and the MUSDB18-HQ test tracks. Choices for a stem on a list: every model whose output of that stem was kept for every track, and the stem's configured two-model blend, made from its members' kept outputs by the product's own blending code with the configured method and weights. Tracks: those where the true stem sounds for 5 s or more. Counted for each choice: the true stem's sounding time, the dropped time and the stems with a long dropout, by the measure of P12.5, with the median of the benchmark's own SDR for the same outputs beside it. Where the default model's stem was not kept, its row comes from the product's own run on twenty test tracks (`lost-v1`) and the other choices are counted again on those tracks. Nothing is decided by it; the report names, for each stem, the choice that drops least on the tuning tracks and shows it beside the default on the two test lists. Tested on the synthetic songs with a made-up benchmark folder: a model with a seven-second hole, one without, and their blend, which has none. No kept output has been read for this: this commit comes first. 7 tests.
 - [x] P17.2 The count. **Accept:** `python -m stems_bench.dropouts_by_model collect` over the three lists; `docs/dropouts-by-model.md` written from it, naming the commit that fixed the count; its figures checked by a second count from the rows. — Done: `docs/dropouts-by-model.md`, from the run `by-model-v1`, made at the definitions commit `af0a950` with nothing uncommitted: seven minutes on the CPU, no model run; 50 MoisesDB test tracks, 30 tuning tracks and 50 MUSDB18-HQ test tracks. **No other kept choice drops meaningfully less than the default.** The default beside the best of the rest on the same songs: vocals 4.0% against 3.9% and drums 2.7% against 2.8% (the product's own twenty tracks, because the default's vocals and drums were not kept); bass 1.7% against 1.7%, guitar 1.4% against 0.9% and piano 9.6% against 8.8% (48, 45 and 20 MoisesDB test songs; the three others are the configured two-model blends). The piano is the stem that drops out, whatever makes it: `htdemucs_6s` drops 36.0% of it on the test tracks (13 of 20 songs with a long dropout) and 28.2% on the tuning tracks. On MUSDB18-HQ the default's bass drops 3.1% (6 of 50 with a long dropout) and its blend with `htdemucs_ft` 1.5% (3). Least on the tuning tracks: the two vocal models' blend (6.0%), `scnet_xl_ihf` for drums (2.7%), the default for bass (1.2%) and piano (9.2%), the default's blend with `mel_roformer_guitar_becruily` for guitar (1.3% against the default's 2.0%). `other` has no kept output and is not counted. Checked by a second count from the rows; and the default's bass, guitar and piano on the twenty tracks the product's run shares are the same to the tenth of a second from the benchmark's outputs as from the product's (60 stems). One table was added to the report after the run, from figures already in it. 7 tests.
-- [ ] P17.3 What follows. **Accept:** the README has the result; where another choice drops less than a stem's default, that is put to the owner in BLOCKED.md with both numbers, SDR and dropouts, and nothing is changed.
+- [x] P17.3 What follows. **Accept:** the README has the result; where another choice drops less than a stem's default, that is put to the owner in BLOCKED.md with both numbers, SDR and dropouts, and nothing is changed. — Done: Nothing changes: no other kept choice drops meaningfully less than a default. The README has the result as a row and now counts sixteen decisions. BLOCKED.md has D16, "Should any stem's default change so that it drops out less?", answered no, with both numbers for the three places where a blend does drop less: guitar with `mel_roformer_guitar_becruily` (0.9% against 1.4% dropped on the test songs; 7.98 dB against 9.19 dB), bass with `htdemucs_ft` on MUSDB18-HQ (1.5% against 3.1%; 11.87 dB against 12.47 dB; no difference on MoisesDB), and piano with `htdemucs_6s` (less on the test songs, more on the tuning songs). The blends' SDR is the benchmark's own, from its reports. `other` could not be counted and D16 says so.
 
 ---
 
@@ -1264,6 +1264,54 @@ running; see the top of this file), and P13.5.
 **Next:** Phase 17, added under rule 6: dropouts by model. The benchmark chose the default
 by SDR, and SDR does not see a stem that goes silent while its instrument plays. The kept
 outputs can say, with no model run, which models drop out least on each stem.
+
+## Phase 17 summary (2026-11-25)
+
+Done: P17.1 to P17.3.
+
+- **What is counted, first** (P17.1): the lists, the choices, the tracks and the
+  comparison, committed (`af0a950`) before any kept output was read for it.
+- **The count** (P17.2, `docs/dropouts-by-model.md`, run `by-model-v1`): every model the
+  benchmark kept an output of, and each stem's configured two-model blend, on 50 MoisesDB
+  test tracks, 30 tuning tracks and 50 MUSDB18-HQ test tracks. No model was run.
+- **What follows** (P17.3): nothing changes. The README has the result, and BLOCKED.md
+  has D16 with both numbers for the three places where a blend drops less.
+
+What the phase found:
+
+- **Dropouts are not the price of the default model.** Beside the best of the other
+  choices on the same songs, the default is silent 4.0% of the time the vocals sound
+  against 3.9%, 2.7% against 2.8% for drums, 1.7% against 1.7% for bass, 1.4% against
+  0.9% for guitar and 9.6% against 8.8% for piano.
+- **The piano drops out whatever makes it.** The default drops 9.6% on the test songs
+  and 9.2% on the tuning songs; `htdemucs_6s` drops 36.0% and 28.2%, with a long dropout
+  in 13 of 20 and 9 of 15 songs.
+- **A blend drops a little less and scores lower.** Guitar with
+  `mel_roformer_guitar_becruily`: 0.9% against 1.4% dropped, 7.98 dB against 9.19 dB.
+  Bass with `htdemucs_ft` on MUSDB18-HQ: 1.5% against 3.1%, 11.87 dB against 12.47 dB,
+  and no difference on MoisesDB.
+- **The hard songs are hard for every model.** In the song whose bass the default drops
+  for 110 of 144 seconds, `htdemucs_ft` drops 94 and `scnet_xl_ihf` 81.
+- **The benchmark's outputs and the product's are the same** for this count: the
+  default's bass, guitar and piano on the twenty shared tracks agree to the tenth of a
+  second (60 stems).
+
+Not verified, and why:
+
+- **`other`.** It is the stem that drops out most in the product (16.1% on twenty songs)
+  and no output of it was kept, from any model, so nothing here speaks for it.
+- **The default's vocals and drums on all the tracks.** They were not kept; their rows
+  are from the product's own run on twenty tracks.
+- **What any of it sounds like.** A model that is never silent may be letting everything
+  through; SDR stands beside the count for that reason, and neither is a listener.
+- **Whether the phone plays the listening test.** The owner had not answered. I tried an
+  iPhone simulator to check the page in the phone's own browser engine; this Mac has the
+  command-line tools only, not Xcode, and installing it is not mine to do.
+- As before: six 20-minute stems in the browser player; Jev beyond the recorded requests;
+  S3 and Azure (B7), Modal (B4), the panel test (B8); why CI failed once on Python 3.12.
+
+Still open from earlier phases: P2.12, P2.13 and P2.14b (the MUSDB18-HQ tuning stage is
+running; see the top of this file), and P13.5.
 
 ## A correction about CI (2026-11-24)
 

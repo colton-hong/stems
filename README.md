@@ -62,6 +62,7 @@ Every figure is from a run in this repository; the report named beside it has th
 | Where the instrument plays and the product's stem is silent, six songs | 5.7% of the time the true stems sound; 3 of 31 stems have a stretch of 5 s or more, and 2 of those 3 are delivered with no note | [docs/dropouts.md](docs/dropouts.md) |
 | Where the instrument is when its stem is silent, and what is in no stem at all, 20 songs | a stem is silent for 5.5% of the time its instrument plays; 2% of the instrument is then in none of the six stems and 93% in a stem of another name; what is in no stem is 34.2 dB under the song (median) | [docs/what-is-lost.md](docs/what-is-lost.md) |
 | Telling a dropout from an instrument that rests, without the true stem: bass, guitar and piano on 80 tracks | not shown. A silent stretch of 5 s or more is a dropout 1 time in 10 (9 of 81 on the tuning tracks, 11 of 110 on the test tracks); where a second model sounds in it, 2 in 10 | [docs/dropout-or-rest.md](docs/dropout-or-rest.md) |
+| Whether another model drops out less than the default, on the outputs the benchmark kept | no. The default beside the best of the rest, as the share of the instrument's playing time its stem is silent: vocals 4.0% against 3.9%, drums 2.7% against 2.8%, bass 1.7% against 1.7%, guitar 1.4% against 0.9%, piano 9.6% against 8.8% | [docs/dropouts-by-model.md](docs/dropouts-by-model.md) |
 | Telling a stem whose instrument is not in the song, by its level | right 90.2% of the time, finds 92.2% | [docs/gate-on-real-output.md](docs/gate-on-real-output.md) |
 | Whether the audio tagger can judge a stem's quality | no: it fails on bleed twice over, and on naming instruments in a mix | [docs/gate-calibration.md](docs/gate-calibration.md), [docs/gate-on-real-output.md](docs/gate-on-real-output.md) |
 | Clef-omni as the listening model | rejected by its pre-registered test | [docs/clef-omni-test.md](docs/clef-omni-test.md) |
@@ -98,7 +99,7 @@ They are not comparable with figures published elsewhere.
 
 [BLOCKED.md](BLOCKED.md) has the details: a Modal account (B4), bucket credentials (B7),
 listeners and reference purchases for the listening test (B8), Azure quota (B9), and
-fifteen decisions made for you that you can overrule (D1 to D15).
+sixteen decisions made for you that you can overrule (D1 to D16).
 
 ## Where things are
 
