@@ -151,11 +151,14 @@ def run_track(
     benchmark: Callable[[str], Mapping[str, Mapping[str, Any]]],
     pipeline: Mapping[str, Any],
     leftover: bool = False,
+    lost: bool = False,
 ) -> dict[str, Any]:
     """One track through the worker's storage entry point; scored; its audio deleted.
 
     With ``leftover``, the mix minus the five other delivered stems is scored as an
-    alternative ``other`` as well.
+    alternative ``other`` as well. With ``lost``, the record also says how long each stem
+    is silent while its instrument plays, where the instrument is then, and how much of
+    the song is in none of the six stems (``stems_bench.lost``).
     """
     from stems_api.storage import put_json, read_bytes
     from stems_bench.run import score_estimates
@@ -237,6 +240,16 @@ def run_track(
                 "level_below_mix_db": round(level_below_mix_db(left, mix), 2),
                 "own_level_below_mix_db": round(level_below_mix_db(scorable["other"], mix), 2),
             }
+        if lost and set(PRODUCT_STEMS) <= set(scorable):
+            from stems_bench.lost import measure_track
+
+            record["lost"] = measure_track(
+                mix,
+                track.references,
+                scorable,
+                rate,
+                empty_below_mix_db=defaults.gate.rules.empty_below_mix_db,
+            )
         return record
     finally:
         # Real music: nothing of it outlives the track's scoring.
@@ -255,6 +268,7 @@ def run(
     pipeline: Mapping[str, Any] | None = None,
     progress: Callable[[str], None] | None = None,
     leftover: bool = False,
+    lost: bool = False,
 ) -> int:
     """Run and score each track that has no result yet. Returns how many were run."""
     from stems_api.storage import LocalStorage
@@ -288,6 +302,7 @@ def run(
                 benchmark=benchmark,
                 pipeline=pipeline or {},
                 leftover=leftover,
+                lost=lost,
             )
         write_json(out, record)
         ran += 1
@@ -703,6 +718,7 @@ def cmd_run(args: argparse.Namespace) -> int:
             pipeline={"client": None, "tagger": tagger},
             progress=progress,
             leftover=args.leftover,
+            lost=args.lost,
         )
     except BaseException as error:
         write_json(
@@ -783,6 +799,11 @@ def main(argv: list[str] | None = None) -> int:
         "--leftover",
         action="store_true",
         help="also score the mix minus the five other stems as an alternative `other`",
+    )
+    run_parser.add_argument(
+        "--lost",
+        action="store_true",
+        help="also record dropouts, where a dropped instrument is, and what is in no stem",
     )
     run_parser.set_defaults(run=cmd_run)
     report_parser = sub.add_parser("report", help="write the report from a finished run")

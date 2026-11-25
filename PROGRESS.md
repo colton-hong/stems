@@ -2,7 +2,7 @@
 
 Single source of truth for where the build is. Read this first, every iteration.
 
-**Current phase: 13 (a listening test the owner can do alone), whose one open task waits for the owner.** The kit is built and checked (P13.4): `make listen`, then http://127.0.0.1:8765; P13.5 is the listening itself. Phase 12 (the edges) is complete: see its summary. The owner asked on 2026-11-24 for each phase to follow the last without waiting, and for new phases to be added when none is left; Phases 8 to 13 were added that way, and the next one is added the same way while P13.5 waits. Phases 0, 1, 3 and 4 to 12 are complete apart from checks that need the owner's accounts (S3 and Azure, B7; Modal, B4; the panel listening test, B8). Still open from earlier phases: Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done; the MoisesDB tuning stage is done and reported; the MUSDB18-HQ tuning stage started at 18:27Z on 2026-11-24 and was at 173 of 3,000 jobs at 00:20Z on the 25th, having shared the GPU with other runs for most of that time; the MoisesDB stage took 8.8 hours for 30 tracks, so 100 tracks alone would take about 30; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task). **This Mac cannot hold three GPU jobs at once**: beside the benchmark, run one heavy job at a time.
+**Current phase: 14 (what the six stems lose), started 2026-11-24.** Phase 13 (a listening test the owner can do alone) has one open task and it is the owner's: the kit is built and checked (P13.4): `make listen`, then http://127.0.0.1:8765; P13.5 is the listening itself, and its report follows when the marks are there. Phase 12 (the edges) is complete: see its summary. The owner asked on 2026-11-24 for each phase to follow the last without waiting, and for new phases to be added when none is left; Phases 8 to 14 were added that way. Phases 0, 1, 3 and 4 to 12 are complete apart from checks that need the owner's accounts (S3 and Azure, B7; Modal, B4; the panel listening test, B8). Still open from earlier phases: Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done; the MoisesDB tuning stage is done and reported; the MUSDB18-HQ tuning stage started at 18:27Z on 2026-11-24 and was at 173 of 3,000 jobs at 00:20Z on the 25th, having shared the GPU with other runs for most of that time; the MoisesDB stage took 8.8 hours for 30 tracks, so 100 tracks alone would take about 30; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task). **This Mac cannot hold three GPU jobs at once**: beside the benchmark, run one heavy job at a time.
 
 **Asked for by the owner on 2026-11-24, during Phase 12:** "after this next phase finishes, i'd like to do a listening test myself". So the phase after 12 is a listening test the owner can do alone: no panel, nothing bought (B8 asks for both; this is the part that needs neither).
 
@@ -237,6 +237,21 @@ GPU time and need nobody; Phase 12 is still the current phase until those are in
 - [x] P13.3 The report. **Accept:** `python -m stems_bench.listen report` unblinds the marks: mean marks per version and per stem, the product now against before with a sign test, and how often the true stem was marked highest; it says plainly that this is one listener; tested on made-up marks. — Done: `python -m stems_bench.listen report [--out FILE]`: joins the marks with the key and writes mean marks per version (overall, bleed, artifacts), mean overall per stem, the product now against before (steps higher, lower, the same, and an exact two-sided sign test on the steps that differ), how often the true stem had the highest mark, and any notes. It says in its first paragraph and again at the end that this is one listener who knows the project, and marks an unfinished test as unfinished. Tested on made-up marks with a known answer, on an empty marks file, and the sign test against hand-computed values.
 - [x] P13.4 The real kit. **Accept:** the kit built from six songs with the real models on this machine, its audio only under `runs/` (never in the repository); the page serves it; the owner is told the one command that starts it. — Done: kit `owner-v1` (`python -m stems_bench.listen make --tracks 6 --device cpu`, 2026-11-24, 20:38Z to 23:06Z on this Mac's CPU, then rebuilt from the same audio at 23:13Z after the fixes below): the first six songs of the frozen subset, the true stems and the product's stems now and before, all under `runs/listening/owner-v1/` (git-ignored; nothing of it is in the repository). **30 steps, 83 clips.** The first build was checked by its levels before anyone listened, and three things were wrong with it; each is fixed in the builder and tested. (1) The 30 seconds were the song's loudest, and in two steps the true stem does not play there (song 2's piano, song 4's `other`): three silent clips. Each stem's 30 seconds are now where its true recording is loudest, and the same stretch of the song sits beside them (`window_by` in `listening_kit.build_kit`). (2) Guitar and piano have the same model now as before, so two of the three clips were the same audio, which gives the true stem away: such a version is now played once (7 steps have two clips), its mark counts for both versions, and "now against before" counts only the 23 steps where the models differ. The builder believes the config only where the files agree. (3) Song 4's true `other` is 35.5 dB under the song, and the product's own rule calls a stem empty at 21.68 dB under: that step is left out, by that rule, and the report says so (`left_out.json` beside the key). A kit is no longer rebuilt once marks exist. **One thing the levels show that is the product's, not the kit's:** in song 6 the true bass plays in seven of the song's eight half-minutes; the model the product uses now delivers bass in two of them and next to nothing (-75 dB or lower) in the rest, and the model it used before in three. In the step's 30 seconds the product's bass now is silence. The gate does not flag it (the whole stem is 15.5 dB under the song). It stays in the kit: it is what the product delivers. The page was tried on the real kit in the app's browser: the four files of a step load, the position advances 2.00 s in 2 s, versions switch by button and key, a step without marks is refused, and the key and `left_out.json` are not served; no mark was saved. The owner starts it with `make listen` and opens http://127.0.0.1:8765. 3 new tests, 2 changed; I heard none of it.
 - [ ] P13.5 The listening itself, and its report. **Accept:** `docs/listening-owner.md` generated from the owner's marks. *Waits for the owner: only they can listen.*
+
+## Phase 14: what the six stems lose
+
+Added on 2026-11-24 under rule 6: Phase 13's one open task is the owner's, and no other
+phase was left. Phase 12 counted how long a stem is silent while its instrument plays
+(`docs/dropouts.md`, six songs) and put a choice to the owner (D15: is `other` the model's
+own output, or what is left of the song?). What decides between the two is not known:
+when a stem drops out, is the instrument in another of the six stems, where the user
+still has it, or in none of them? And how much of a song is in none of its six stems at
+all? Both can be measured on the twenty test songs with the true stems beside them.
+Nothing in the product changes in this phase; it gives the owner what D15 needs.
+
+- [x] P14.1 The measures, fixed first. **Accept:** `bench/stems_bench/lost.py` says what is measured (the share of a dropped true stem found in each of the six delivered stems and in none of them, with a check of that share where the stem is not dropped; the level, and the share of time, of what is in no stem), `product_check run --lost` records it for each song, and it is tested on synthetic audio where the answer is known. Committed before any real song is measured. — Done: `bench/stems_bench/lost.py` and `python -m stems_bench.product_check run --lost`. For each stem of a song: its dropped time as in P12.5; over that time, the share of the true stem found in each of the six delivered stems and in what is left of the song after the six (`<true, place> / <true, true>`); and, as a check, the same share for its own stem where it is not dropped. For the song: the level of what is in no stem against the song, and the share of the sounding time in which it is louder than the level the product calls very quiet. Tested on six tones where the answer is known (a bass missing for ten seconds, half of that time put into `other` and half into nothing: 50% and 50%, summing to 100%; five of the song's twenty seconds in no stem), on pooling over songs, and through the product check with the stand-in models, whose bands add back to the song. No real song has been measured: this commit comes first. 6 tests.
+- [ ] P14.2 Twenty songs. **Accept:** the 20 tracks of the frozen test subset through the worker's own path with `--lost`, on this Mac's GPU and alone beside the benchmark; `docs/what-is-lost.md` written from that run, naming the commit that fixed the measures.
+- [ ] P14.3 What it means for D15. **Accept:** D15 in BLOCKED.md says, from the report, what a leftover `other` would give back and what it would not; the README has the result; nothing in the product is changed.
 
 ---
 
@@ -1027,6 +1042,21 @@ running; see the top of this file).
 
 **Next:** Phase 13 has one task left and it is the owner's. A Phase 14 is added under
 rule 6 so that the work does not wait.
+
+## Phase 13 so far (2026-11-24)
+
+Done: P13.1 to P13.4. Open: P13.5, which is the owner's (only they can listen); the phase
+is summarised properly when its report exists.
+
+- **The kit** (`runs/listening/owner-v1/`, not in the repository): six songs, 30 steps,
+  83 clips of 30 seconds; the true stem, the product now and the product before, blind.
+  `make listen` serves it on this machine only.
+- **Its first build was wrong in three ways**, found by reading its levels before anyone
+  listened: silent clips where the stem does not play in the song's loudest half minute,
+  two identical clips where the model did not change, and one true stem too faint to
+  judge. All three are fixed in the builder and tested (see P13.4).
+- **Not verified:** how any of it sounds. I have no ears; the page was driven in a browser
+  and its audio measured, nothing more.
 
 ## A correction about CI (2026-11-24)
 

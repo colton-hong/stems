@@ -32,6 +32,28 @@ def peak_dbfs(audio: np.ndarray) -> float:
     return _db(float(np.abs(audio).max())) if audio.size else FLOOR_DBFS
 
 
+def window_power(
+    audio: np.ndarray,
+    sample_rate: int,
+    *,
+    window_seconds: float = SILENCE_WINDOW_SECONDS,
+) -> np.ndarray:
+    """The mean power (over channels and samples) of each short window of the audio.
+
+    The last window may be shorter than the others; it counts as one. Empty audio has no
+    windows.
+    """
+    samples = audio.shape[-1]
+    if samples == 0:
+        return np.zeros(0, dtype=np.float64)
+    window = max(1, round(window_seconds * sample_rate))
+    starts = np.arange(0, samples, window)
+    power = np.square(audio, dtype=np.float64).reshape(-1, samples).mean(axis=0)
+    sums = np.add.reduceat(power, starts)
+    lengths = np.diff(np.append(starts, samples))
+    return np.asarray(sums / lengths)
+
+
 def sounding_windows(
     audio: np.ndarray,
     sample_rate: int,
@@ -44,16 +66,8 @@ def sounding_windows(
     The last window may be shorter than the others; it counts as one. Empty audio has no
     windows.
     """
-    samples = audio.shape[-1]
-    if samples == 0:
-        return np.zeros(0, dtype=bool)
-    window = max(1, round(window_seconds * sample_rate))
-    starts = np.arange(0, samples, window)
-    power = np.square(audio, dtype=np.float64).reshape(-1, samples).mean(axis=0)
-    sums = np.add.reduceat(power, starts)
-    lengths = np.diff(np.append(starts, samples))
-    limit = 10.0 ** (threshold_dbfs / 10.0)
-    return np.asarray(sums / lengths >= limit)
+    power = window_power(audio, sample_rate, window_seconds=window_seconds)
+    return np.asarray(power >= 10.0 ** (threshold_dbfs / 10.0))
 
 
 def silence_fraction(
