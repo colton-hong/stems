@@ -2,7 +2,7 @@
 
 Single source of truth for where the build is. Read this first, every iteration.
 
-**Current phase: 12 (the edges), started 2026-11-24.** The owner asked on 2026-11-24 for each phase to follow the last without waiting, and for new phases to be added when none is left; Phases 8 to 12 were added that way. Phases 0, 1, 3 and 4 to 11 are complete apart from checks that need the owner's accounts (S3 and Azure, B7; Modal, B4; the listening test, B8). Still open from earlier phases: Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done; the MoisesDB tuning run finished its 900 jobs at 13:39Z on 2026-11-24 and the tuner was still scoring candidate blends at 17:45Z; the MUSDB18-HQ tuning stage follows and will start with the new single-model defaults; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task).
+**Current phase: 13 (a listening test the owner can do alone), whose one open task waits for the owner.** The kit is built and checked (P13.4): `make listen`, then http://127.0.0.1:8765; P13.5 is the listening itself. Phase 12 (the edges) is complete: see its summary. The owner asked on 2026-11-24 for each phase to follow the last without waiting, and for new phases to be added when none is left; Phases 8 to 13 were added that way, and the next one is added the same way while P13.5 waits. Phases 0, 1, 3 and 4 to 12 are complete apart from checks that need the owner's accounts (S3 and Azure, B7; Modal, B4; the panel listening test, B8). Still open from earlier phases: Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done; the MoisesDB tuning stage is done and reported; the MUSDB18-HQ tuning stage started at 18:27Z on 2026-11-24 and was at 173 of 3,000 jobs at 00:20Z on the 25th, having shared the GPU with other runs for most of that time; the MoisesDB stage took 8.8 hours for 30 tracks, so 100 tracks alone would take about 30; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task). **This Mac cannot hold three GPU jobs at once**: beside the benchmark, run one heavy job at a time.
 
 **Asked for by the owner on 2026-11-24, during Phase 12:** "after this next phase finishes, i'd like to do a listening test myself". So the phase after 12 is a listening test the owner can do alone: no panel, nothing bought (B8 asks for both; this is the part that needs neither).
 
@@ -221,7 +221,7 @@ weakest stem, `other`, where the model often finds next to nothing.
 - [x] P12.2 The longest upload. **Accept:** a synthetic signal as long as `uploads.max_duration_seconds` allows goes through the worker's storage entry point with the real default model; the job finishes, all six stems have the right length, and its wall time and the worker's peak memory are recorded with the device; the result is in `docs/deployment.md`. If it does not finish, the limit and what stopped it are written down instead. — Done: `python -m stems_bench.long_upload` (`bench/stems_bench/long_upload.py`): a synthetic signal exactly `uploads.max_duration_seconds` long (20 minutes; one minute of tones and noise, repeated) is put in storage as an upload and the worker is started as the local provider starts it, `python -m stems_worker.jobs JOB_ID`, in its own process, with the real default model. Run `long-upload-v1`, 2026-11-24 at 18:39Z, on this Mac's GPU while the benchmark was using it too: **the job finished**, 568 s from start to result (526 s in the model), all six stems exactly the upload's length, and the worker process held at most 6.46 GB as the operating system counts it (which may not include everything the GPU holds for it). `docs/deployment.md` has the run. **One thing it turned up:** twenty minutes of 24-bit stereo WAV is 318 MB, over the API's 250 MiB size limit, so the API would have refused this very file; the test put it straight into storage. The duration limit is reachable through the API only as 16-bit WAV (212 MB), FLAC or MP3. Nothing was changed about that: both limits are the owner's (BLOCKED.md D2). One job, one length, synthetic audio; the browser player with six 20-minute stems was not tried. 2 tests with the stand-in models.
 - [x] P12.3 Is what is left over a better `other`? **Accept:** with the comparison and what counts as better fixed first, a run on the tuning tracks scores the default model's own `other` beside the mix minus its five other stems, and a report states the result and what the test tracks then show. PLAN.md decides that a six-stem model's `other` is used as it is, so nothing changes in the product: the result goes to the owner as a question in BLOCKED.md. — Done: the rule was committed first (`4bee9b0`: the leftover is better if its median SDR is at least 0.3 dB above the model's own and it is the higher on more than half of the tracks; worse is the mirror image; at least 10 tracks). Runs `leftover-tuning-v1` (the 30 tuning tracks, 2026-11-24 18:50Z to 20:38Z) and `leftover-test-v1` (the 20 test tracks, 23:07Z to 00:14Z), both `python -m stems_bench.product_check run --device mps --leftover` through the worker's own path; all 50 jobs finished. Report `docs/leftover-other.md`. **No clear difference.** Tuning, 27 tracks with an `other`: the model's own 2.61 dB, the leftover 2.56 dB (medians), the model's own the higher on 25. Test, 16 tracks, deciding nothing: 2.80 against 2.76, the model's own higher on 12. Where a song has no `other` (3 and 4 songs) the model's own stem is 78.3 and 81.3 dB under the song and the leftover 34.2 and 35.8 dB under: the leftover is never near silence. Nothing changed in the product (PLAN.md); the choice is put to the owner as D15 in BLOCKED.md, with the one thing SDR does not see: with the leftover the six stems add up to the song, so what another stem drops is in `other`. The tuning run's wall times are not timings: it stalled for most of an hour when I started a third GPU job beside it and the machine ran out of memory.
 - [x] P12.5 Where the instrument plays and the product delivers silence. Added on 2026-11-24, after the listening kit's levels showed it in one song (P13.4): a bass stem that is there for a minute and missing for the rest, which neither SDR's one number nor the gate's whole-song level says. **Accept:** with what counts as dropped and as a long dropout fixed in code first, the six songs of the listening run are counted for the product now and before, and a report (`docs/dropouts.md`) gives the share of the true stems' sounding time that is dropped, every long dropout, and whether the product's own note would be on that stem. A count only: nothing in the product changes. — Done: `python -m stems_bench.dropouts --out docs/dropouts.md`, run on 2026-11-24 over the audio of the listening run `owner-v1` (six songs, 31 song-stems, each as the product makes it now and as it made it before). The definitions were committed first (`dc9ee6c`): a tenth of a second is dropped when the true stem reaches -60 dBFS and the product's does not; a dropout is one unbroken stretch of the product's silence and is long from 5 seconds of true-stem sound inside it. **The product now drops 5.8 of the 101.7 minutes in which the true stems sound (5.7%); before, 3.7 minutes (3.7%).** By stem, now: `other` 18.0% (before, with another model, 0.5%), bass 9.4% (before 8.9%), vocals 5.5% (6.2%), drums 1.8% (2.1%), piano 0.8%, guitar 0.2%. Five stems have a long dropout: song 4's `other` now (83.4 of 83.5 s; but its true stem is 35.5 dB under the song, so near-silence is close to right, and it is the one stem of the five that carries the product's note), song 6's bass now (110.0 of 144.0 s, longest 54.4 s) and before (93.7 s), song 3's `other` now (24.1 of 203.9 s) and song 2's drums before (12.2 of 231.0 s). The four that are not near-silent overall are delivered with no note: the gate measures a stem over the whole song, and they are 6.5 to 15.8 dB under it. Nothing in the product can catch this as it is, since the count needs the true stem. Six songs of one dataset: it shows the thing happens, not how often in general. A column with the true stem's own level was added to the table after the first count; no figure changed. 5 tests.
-- [ ] P12.4 The README and the cost report after these. **Accept:** every figure that changed is corrected from its file.
+- [x] P12.4 The README and the cost report after these. **Accept:** every figure that changed is corrected from its file. — Done: README.md: four rows added to "What has been measured", each from its report (the GPU check, `docs/product-on-gpu.md`; the 20-minute upload, `docs/deployment.md`; the leftover as `other`, `docs/leftover-other.md`; dropouts, `docs/dropouts.md`); "How it sounds to people" now says that a blind test for one listener is ready and waits for the owner; `make listen` is among the commands; the decisions are fifteen (D15). The cost report was generated again (`python -m stems_bench.cost`) and came out the same to the byte: nothing Phase 12 measured feeds it, so it is unchanged.
 
 ## Phase 13: a listening test the owner can do alone
 
@@ -979,6 +979,54 @@ Not verified, and why:
 Still open from earlier phases: P2.12, P2.13 and P2.14b (the tuner is still scoring).
 
 **Next:** Phase 12, added under rule 6.
+
+## Phase 12 summary (2026-11-24)
+
+Done: P12.1 to P12.5.
+
+- **The GPU** (P12.1, `docs/product-on-gpu.md`): 15 of 15 stems within 0.02 dB of the
+  benchmark; 88 to 120 s a song where the CPU took 303 to 411 s.
+- **The longest upload** (P12.2, `docs/deployment.md`): twenty minutes of audio through a
+  worker process in 568 s on the GPU, every stem the right length, 6.46 GB at most.
+- **The leftover as `other`** (P12.3, `docs/leftover-other.md`): no clear difference by
+  SDR (2.61 against 2.56 dB on 27 tuning tracks; 2.80 against 2.76 on 16 test tracks). Put
+  to the owner as D15.
+- **Dropouts** (P12.5, `docs/dropouts.md`, added during the phase): on six songs the
+  product is silent for 5.7% of the time the true stems sound; 3 of 31 stems have a
+  stretch of 5 s or more, and 2 of those 3 carry no note.
+- **The README** (P12.4) has these; the cost report did not change.
+
+What the phase found:
+
+- **The two upload limits disagree.** Twenty minutes of 24-bit stereo WAV is 318 MB, over
+  the API's 250 MiB limit: the duration limit can be reached only as 16-bit WAV, FLAC or
+  MP3. Both limits are the owner's (D2); nothing was changed.
+- **A stem can be missing for most of a song and say nothing.** In the sixth listening
+  song the bass is delivered for about a quarter of the time it plays (34 of 144 s). The gate looks at a
+  stem's level over the whole song, and over the whole song that stem is loud enough.
+- **The model's `other` goes silent far more than the one it replaced** (18.0% against
+  0.5% of the true stem's time on six songs; 7.6% against 0.5% without the one song whose
+  `other` is next to nothing). SDR prefers it all the same. Whether silence or bleed is the better
+  fault there is for a listener.
+- **Three heavy jobs do not fit this Mac.** I started the listening kit on the GPU beside
+  the benchmark and the leftover run; swap filled, all three stalled for most of an hour,
+  and the kit was made on the CPU instead. One heavy job beside the benchmark, never two.
+
+Not verified, and why:
+
+- **Nobody has listened.** The owner's test is ready and waits for them (P13.5).
+- **Where a dropped instrument goes**: into another stem, or out of the six altogether.
+  Not looked at; it bears on D15.
+- **Six 20-minute stems in the browser player.** The long job was run through the worker
+  only.
+- As before: Jev beyond the recorded requests, S3 and Azure (B7), Modal (B4), the panel
+  test (B8), and why CI failed once on Python 3.12.
+
+Still open from earlier phases: P2.12, P2.13 and P2.14b (the MUSDB18-HQ tuning stage is
+running; see the top of this file).
+
+**Next:** Phase 13 has one task left and it is the owner's. A Phase 14 is added under
+rule 6 so that the work does not wait.
 
 ## A correction about CI (2026-11-24)
 

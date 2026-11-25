@@ -38,6 +38,7 @@ make web-check                              # web lint, types, unit tests, build
 make web-e2e                                # browser tests in Chrome, stand-in models
 make web-e2e-real                           # one job with the real models through the browser (slow)
 .venv/bin/bench status                      # progress of the benchmark run in flight
+make listen                                 # the blind listening test for one listener (see below)
 ```
 
 [docs/deployment.md](docs/deployment.md) covers settings, HTTPS, proxies, buckets and
@@ -52,9 +53,13 @@ Every figure is from a run in this repository; the report named beside it has th
 | Best single model per stem, MoisesDB subset, SDR in dB | vocals 10.82, drums 12.95, bass 15.09, guitar 9.19, piano 5.80, other 2.97 | [docs/benchmarks/moisesdb.md](docs/benchmarks/moisesdb.md) |
 | Best single model per stem, MUSDB18-HQ test, SDR in dB | vocals 12.30, drums 13.35, bass 12.47 | [docs/benchmarks/musdb18hq.md](docs/benchmarks/musdb18hq.md) |
 | What a user downloads against what the benchmark scored | 100 of 100 stems of 20 real songs within 0.15 dB | [docs/product-vs-benchmark.md](docs/product-vs-benchmark.md) |
+| The same on this Mac's GPU, three songs | 15 of 15 stems within 0.02 dB; 88 to 120 s a song, where the CPU took 303 to 411 s | [docs/product-on-gpu.md](docs/product-on-gpu.md) |
+| The longest upload the limits allow, 20 minutes, through a worker process | finished in 568 s on the GPU, every stem the right length; the worker held at most 6.46 GB | [docs/deployment.md](docs/deployment.md) |
 | The gate's note on those 20 songs | all 20 stems whose instrument is not in the song flagged; 7 of 100 that are in it flagged too, 6 of them stems the model found almost nothing for | [docs/product-vs-benchmark.md](docs/product-vs-benchmark.md) |
 | The default model, chosen on 30 tuning tracks by a rule fixed first | one model for all six stems, `bs_roformer_sw_6stem`; against the models it replaced, on the test lists: drums +1.4 dB, bass +1.9 and +2.5 dB, vocals -0.27 and +0.34 dB | [docs/benchmarks/recommendation.md](docs/benchmarks/recommendation.md) |
 | Time for a 4-minute song, six stems, the default model, this Mac's GPU | 69 s | [docs/cost-per-song.md](docs/cost-per-song.md) |
+| `other` as the model makes it, against the song minus the five other stems | no clear difference by SDR: 2.61 against 2.56 dB on 27 tuning tracks, 2.80 against 2.76 on 16 test tracks | [docs/leftover-other.md](docs/leftover-other.md) |
+| Where the instrument plays and the product's stem is silent, six songs | 5.7% of the time the true stems sound; 3 of 31 stems have a stretch of 5 s or more, and 2 of those 3 are delivered with no note | [docs/dropouts.md](docs/dropouts.md) |
 | Telling a stem whose instrument is not in the song, by its level | right 90.2% of the time, finds 92.2% | [docs/gate-on-real-output.md](docs/gate-on-real-output.md) |
 | Whether the audio tagger can judge a stem's quality | no: it fails on bleed twice over, and on naming instruments in a mix | [docs/gate-calibration.md](docs/gate-calibration.md), [docs/gate-on-real-output.md](docs/gate-on-real-output.md) |
 | Clef-omni as the listening model | rejected by its pre-registered test | [docs/clef-omni-test.md](docs/clef-omni-test.md) |
@@ -67,7 +72,10 @@ They are not comparable with figures published elsewhere.
 
 ## What is not known
 
-- **How it sounds to people.** No listening test has been run. The kit for one is built.
+- **How it sounds to people.** Nobody has listened yet. A blind test for one listener is
+  ready: `make listen` serves 30 steps from six songs, what the product makes now and what
+  it made before against the true stems. It waits for the owner; the test with a panel and
+  two paid tools waits on B8.
 - **Whether any blend of models beats the single default.** None of the untuned ones
   does, so "fastest", "balanced" and "best quality" all give the same model for now. The
   tuner that could change that is still running.
@@ -83,7 +91,7 @@ They are not comparable with figures published elsewhere.
 
 [BLOCKED.md](BLOCKED.md) has the details: a Modal account (B4), bucket credentials (B7),
 listeners and reference purchases for the listening test (B8), Azure quota (B9), and
-fourteen decisions made for you that you can overrule (D1 to D14).
+fifteen decisions made for you that you can overrule (D1 to D15).
 
 ## Where things are
 
