@@ -2,7 +2,7 @@
 
 Single source of truth for where the build is. Read this first, every iteration.
 
-**Current phase: 18 (a phone page that finds out whether it can be heard), started 2026-11-25.** Phases 14 (what the six stems lose), 15 (a dropout or a rest?), 16 (the listening test on a phone) and 17 (dropouts by model) are complete: see their summaries. Phase 13 (a listening test the owner can do alone) has one open task and it is the owner's: the kit is built and checked (P13.4): `make listen`, then http://127.0.0.1:8765; P13.5 is the listening itself, and its report follows when the marks are there; since 2026-11-25 the same test is also a private page for the owner's phone (see "Phase 13 so far"). Phase 12 (the edges) is complete: see its summary. The owner asked on 2026-11-24 for each phase to follow the last without waiting, and for new phases to be added when none is left; Phases 8 to 18 were added that way. Phases 0, 1, 3 and 4 to 12 are complete apart from checks that need the owner's accounts (S3 and Azure, B7; Modal, B4; the panel listening test, B8). Still open from earlier phases: Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done; the MoisesDB tuning stage is done and reported; the MUSDB18-HQ tuning stage started at 18:27Z on 2026-11-24 and was at 217 of 3,000 jobs at 02:35Z on the 25th, having shared the GPU with other runs for most of that time (19 jobs between 00:20Z and 01:35Z, an hour of which it shared with Phase 14's run); the MoisesDB stage took 8.8 hours for 30 tracks, so 100 tracks alone would take about 30; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task). **This Mac cannot hold three GPU jobs at once**: beside the benchmark, run one heavy job at a time.
+**Phase 18 (a phone page that finds out whether it can be heard) is complete: see its summary. A Phase 19 is added next under rule 6.** Phases 14 (what the six stems lose), 15 (a dropout or a rest?), 16 (the listening test on a phone) and 17 (dropouts by model) are complete too. Phase 13 (a listening test the owner can do alone) has one open task and it is the owner's: the kit is built and checked (P13.4): `make listen`, then http://127.0.0.1:8765; P13.5 is the listening itself, and its report follows when the marks are there; since 2026-11-25 the same test is also a private page for the owner's phone (see "Phase 13 so far"). Phase 12 (the edges) is complete: see its summary. The owner asked on 2026-11-24 for each phase to follow the last without waiting, and for new phases to be added when none is left; Phases 8 to 18 were added that way. Phases 0, 1, 3 and 4 to 12 are complete apart from checks that need the owner's accounts (S3 and Azure, B7; Modal, B4; the panel listening test, B8). Still open from earlier phases: Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done; the MoisesDB tuning stage is done and reported; the MUSDB18-HQ tuning stage started at 18:27Z on 2026-11-24 and was at 242 of 3,000 jobs at 03:32Z on the 25th, having shared the GPU with other runs for most of that time (19 jobs between 00:20Z and 01:35Z, an hour of which it shared with Phase 14's run); the MoisesDB stage took 8.8 hours for 30 tracks, so 100 tracks alone would take about 30; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task). **This Mac cannot hold three GPU jobs at once**: beside the benchmark, run one heavy job at a time.
 
 **Asked for by the owner on 2026-11-24, during Phase 12:** "after this next phase finishes, i'd like to do a listening test myself". So the phase after 12 is a listening test the owner can do alone: no panel, nothing bought (B8 asks for both; this is the part that needs neither).
 
@@ -308,7 +308,7 @@ heard, try a second way of making sound when it was not, use that way for the te
 works, say so plainly if neither does, and leave what it found where it can be read.
 
 - [x] P18.1 The sound check and the simple player. **Accept:** the phone page plays a tone with its own sound and asks whether it was heard; if not, plays a second tone through a media element and asks again; uses a player made of media elements alone when only the second was heard; says plainly when neither was; lets the listener change players during a step; and leaves what the check found (which tone, the state of the page's sound, the browser's name for itself) in the page's store. `listen pack` writes the tone file. Both players are driven in a desktop browser: load, play, switch versions keeping the place, seek, pause. The pack and the page's wording are tested. — Done: `bench/stems_bench/listen_phone_page.py` and `listen pack`. The page now has two players. The full one makes the sound itself, every version at once with only the levels changing, as before. The simple one is media elements and nothing else, one at a time: switching versions pauses one and starts the next at the same place, with a short gap. The sound check plays a tone with the page's own sound and asks "Did you hear it?"; on "I heard nothing" it plays `tone.wav` through a media element inside that same tap and asks again; it then uses the simple player, or says that the phone is not playing the page's sound either way and what to try. The answer is kept on the phone and written to the store as `checks/sound` with the state of the page's sound and the browser's name for itself. A button under the transport changes players during a step and keeps the version chosen. `pack` writes `tone.wav` (one second, 440 Hz) and puts the excerpt's length in the page for a phone that loads nothing before play is pressed. Driven in a desktop browser at phone width (Chromium): the check through both answers; the simple player loading four clips, playing, switching from A to B at 1.46 s with B carrying on from there, pausing, seeking to 20 s and resuming there; back to the full player with the version kept and the level bar moving; no console errors. Not driven on a phone or in an iPhone's browser engine: there is none here. 16 tests in the file; the two for the page and the pack are extended.
-- [ ] P18.2 Published. **Accept:** the owner's page is the one `pack` writes, compared with what the host serves; the clips are the ones already there; the owner's marks are still in the store.
+- [x] P18.2 Published. **Accept:** the owner's page is the one `pack` writes, compared with what the host serves; the clips are the ones already there; the owner's marks are still in the store. — Done: Version 5 of the owner's page, published at 03:26Z on 2026-11-25 from the folder `listen pack` wrote. Read back from the host: the page it serves holds the packed `page.html` whole (the host adds 546 characters around it), and `tone.wav` and `silence.wav` are byte for byte the packed ones. The 113 clips were not sent again: the packed ones have the same checksums as those sent before. The owner's two documents are still in the store. A dry run on a copy took those two documents, saved as files, through `listen take` and `listen report`; the owner's own run was not touched.
 
 ---
 
@@ -1325,6 +1325,45 @@ Not verified, and why:
 
 Still open from earlier phases: P2.12, P2.13 and P2.14b (the MUSDB18-HQ tuning stage is
 running; see the top of this file), and P13.5.
+
+## Phase 18 summary (2026-11-25)
+
+Done: P18.1 and P18.2.
+
+- **The sound check and the simple player** (P18.1): the phone page asks whether its tone
+  was heard, tries a media element when it was not, uses a player of media elements alone
+  if that is what the phone plays, and leaves what it found in its store.
+- **Published** (P18.2): the page the owner opens is the one `listen pack` writes.
+
+What the phase found:
+
+- **The way from the page's store to the report works on real documents.** The store's
+  two documents, saved as files, hold the marks themselves with no wrapper; `listen take`
+  read them and `listen report` wrote a report from them, with its line on how the clips
+  were heard. That was done on a copy: the owner's run has no `ratings.json` yet, because
+  those two steps are from before the sound worked.
+- **Both players work in a desktop browser** (Chromium, at phone width): see P18.1.
+
+Not verified, and why:
+
+- **Whether the owner's phone plays either player.** There is no phone here, no iPhone
+  simulator and no signed-in browser. The page's own check will say: its finding goes to
+  the store as `checks/sound`, which was empty when this was written.
+- **An iPhone's browser engine.** A media element there may load nothing until play is
+  pressed; the simple player waits four seconds for each clip and then goes on, which is
+  written from what is known of that engine and not tried on it.
+- **Nobody has listened** (P13.5).
+- As before: `other` in the count of dropouts by model; six 20-minute stems in the
+  browser player; Jev beyond the recorded requests; S3 and Azure (B7), Modal (B4), the
+  panel test (B8); why CI failed once on Python 3.12.
+
+Still open from earlier phases: P2.12, P2.13 and P2.14b (the MUSDB18-HQ tuning stage is
+running; see the top of this file), and P13.5.
+
+**Next:** Phase 19, added under rule 6: `other`, made the other way. Phase 17 could not
+count `other` because no six-stem `other` was kept. The four-stem `other` of three models
+was, and so were the default's guitar and piano, which is all the product's other way of
+making the stem needs.
 
 ## A correction about CI (2026-11-24)
 
