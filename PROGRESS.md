@@ -2,7 +2,7 @@
 
 Single source of truth for where the build is. Read this first, every iteration.
 
-**Current phase: 14 (what the six stems lose), started 2026-11-24.** Phase 13 (a listening test the owner can do alone) has one open task and it is the owner's: the kit is built and checked (P13.4): `make listen`, then http://127.0.0.1:8765; P13.5 is the listening itself, and its report follows when the marks are there. Phase 12 (the edges) is complete: see its summary. The owner asked on 2026-11-24 for each phase to follow the last without waiting, and for new phases to be added when none is left; Phases 8 to 14 were added that way. Phases 0, 1, 3 and 4 to 12 are complete apart from checks that need the owner's accounts (S3 and Azure, B7; Modal, B4; the panel listening test, B8). Still open from earlier phases: Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done; the MoisesDB tuning stage is done and reported; the MUSDB18-HQ tuning stage started at 18:27Z on 2026-11-24 and was at 173 of 3,000 jobs at 00:20Z on the 25th, having shared the GPU with other runs for most of that time; the MoisesDB stage took 8.8 hours for 30 tracks, so 100 tracks alone would take about 30; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task). **This Mac cannot hold three GPU jobs at once**: beside the benchmark, run one heavy job at a time.
+**Phase 14 (what the six stems lose) is complete: see its summary. A Phase 15 is added next under rule 6.** Phase 13 (a listening test the owner can do alone) has one open task and it is the owner's: the kit is built and checked (P13.4): `make listen`, then http://127.0.0.1:8765; P13.5 is the listening itself, and its report follows when the marks are there. Phase 12 (the edges) is complete: see its summary. The owner asked on 2026-11-24 for each phase to follow the last without waiting, and for new phases to be added when none is left; Phases 8 to 14 were added that way. Phases 0, 1, 3 and 4 to 12 are complete apart from checks that need the owner's accounts (S3 and Azure, B7; Modal, B4; the panel listening test, B8). Still open from earlier phases: Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done; the MoisesDB tuning stage is done and reported; the MUSDB18-HQ tuning stage started at 18:27Z on 2026-11-24 and was at 196 of 3,000 jobs at 01:46Z on the 25th, having shared the GPU with other runs for most of that time (19 jobs between 00:20Z and 01:35Z, an hour of which it shared with Phase 14's run); the MoisesDB stage took 8.8 hours for 30 tracks, so 100 tracks alone would take about 30; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task). **This Mac cannot hold three GPU jobs at once**: beside the benchmark, run one heavy job at a time.
 
 **Asked for by the owner on 2026-11-24, during Phase 12:** "after this next phase finishes, i'd like to do a listening test myself". So the phase after 12 is a listening test the owner can do alone: no panel, nothing bought (B8 asks for both; this is the part that needs neither).
 
@@ -251,7 +251,7 @@ Nothing in the product changes in this phase; it gives the owner what D15 needs.
 
 - [x] P14.1 The measures, fixed first. **Accept:** `bench/stems_bench/lost.py` says what is measured (the share of a dropped true stem found in each of the six delivered stems and in none of them, with a check of that share where the stem is not dropped; the level, and the share of time, of what is in no stem), `product_check run --lost` records it for each song, and it is tested on synthetic audio where the answer is known. Committed before any real song is measured. — Done: `bench/stems_bench/lost.py` and `python -m stems_bench.product_check run --lost`. For each stem of a song: its dropped time as in P12.5; over that time, the share of the true stem found in each of the six delivered stems and in what is left of the song after the six (`<true, place> / <true, true>`); and, as a check, the same share for its own stem where it is not dropped. For the song: the level of what is in no stem against the song, and the share of the sounding time in which it is louder than the level the product calls very quiet. Tested on six tones where the answer is known (a bass missing for ten seconds, half of that time put into `other` and half into nothing: 50% and 50%, summing to 100%; five of the song's twenty seconds in no stem), on pooling over songs, and through the product check with the stand-in models, whose bands add back to the song. No real song has been measured: this commit comes first. 6 tests.
 - [x] P14.2 Twenty songs. **Accept:** the 20 tracks of the frozen test subset through the worker's own path with `--lost`, on this Mac's GPU and alone beside the benchmark; `docs/what-is-lost.md` written from that run, naming the commit that fixed the measures. — Done: `docs/what-is-lost.md`, from the run `lost-v1`: the 20 songs through the worker's own path with the real default model on this Mac's GPU, 62 minutes beside the benchmark (00:33Z to 01:35Z on 2026-11-25), all 20 ready, made at the definitions commit `1790879` with nothing uncommitted. Dropped: 16.1 of the 292.9 minutes the true stems sound (5.5%); `other` 16.1%, piano 13.9%, vocals 4.0%, bass 3.5%, guitar 2.9%, drums 2.7%; 11 stems have a long dropout (6 `other`, 3 piano, 1 bass, 1 guitar). Over that dropped time 2% of the instrument is in none of the six stems; nearly all of it is in the six, mostly under another name (bass 79% in `other`, piano 65% in `other`, `other` 68% in drums). What is in no stem is a median 34.2 dB under the song (28.4 to 43.7), and louder than the level the product calls very quiet for 0.0% of a song's time (median; 1.8% at most). Of the 34 stems with 5 s or more dropped, 19 add up to within 10 points of 100% and hold 11.9 of the 16.1 minutes; the other 15 cannot be read share by share, and the report says so in a paragraph added after the run that changes no figure. A check against P12.5: the six songs of the listening test are among the twenty, and their 31 song-stems have the same sounding, dropped and longest seconds in both runs (CPU there, GPU here; `runs/listening/owner-v1/dropouts.json` beside this run's records). 8 tests.
-- [ ] P14.3 What it means for D15. **Accept:** D15 in BLOCKED.md says, from the report, what a leftover `other` would give back and what it would not; the README has the result; nothing in the product is changed.
+- [x] P14.3 What it means for D15. **Accept:** D15 in BLOCKED.md says, from the report, what a leftover `other` would give back and what it would not; the README has the result; nothing in the product is changed. — Done: D15 in BLOCKED.md is rewritten from the two reports. What a leftover `other` would give back: only what is in none of the six stems, which is 2% of what a stem drops and, over a whole song, 34.2 dB under it (median). What it would not: an instrument filed under another name, 93% of what a stem drops (the bass of `docs/dropouts.md` is 97% in the model's own `other` already; `other` itself, when dropped, is 68% in drums). What it would cost is unchanged. The default stays the model's own, and nothing measured argues for the change. The report gained the share found in a stem of another name (93%) and in the stem's own (4%), which are the table's own columns added up; no figure changed. README: one row. Nothing in the product is changed. 8 tests.
 
 ---
 
@@ -1057,6 +1057,58 @@ is summarised properly when its report exists.
   judge. All three are fixed in the builder and tested (see P13.4).
 - **Not verified:** how any of it sounds. I have no ears; the page was driven in a browser
   and its audio measured, nothing more.
+
+## Phase 14 summary (2026-11-25)
+
+Done: P14.1 to P14.3.
+
+- **The measures** (P14.1) were written into `bench/stems_bench/lost.py` and tested on
+  tones where the answer is known, and committed (`1790879`) before any real song was
+  measured.
+- **Twenty songs** (P14.2, `docs/what-is-lost.md`, run `lost-v1`): the product's stems are
+  silent for 16.1 of the 292.9 minutes the true stems sound (5.5%). Over that time 2% of
+  the instrument is in none of the six stems, 93% is in a stem of another name and 4% in
+  its own, which counts as silent and is not empty. What is in no stem at all is 34.2 dB
+  under the song (median).
+- **D15** (P14.3) now says what a leftover `other` would give back and what it would not,
+  and the README has the result. Nothing in the product was changed.
+
+What the phase found:
+
+- **What a stem drops is misfiled, not lost.** The bass is then in `other` (79%), the
+  piano in `other` (65%), `other` in drums (68%), the guitar in `other` and vocals (37%
+  and 31%). Vocals and drums spread over several stems. So a leftover `other` has almost
+  nothing to give back, and D15's default stands on a measurement now.
+- **A long dropout is not rare.** Of the 100 stems whose instrument is in its song, 11
+  have one: 6 of 16 `other`, 3 of 8 piano, 1 of 20 bass, 1 of 18 guitar, none of 19 vocals
+  and none of 19 drums.
+- **The share is a blunt measure.** Of the 34 stems with 5 s or more dropped, 15 do not
+  add up to within 10 points of 100%, because the true stem resembles the other true stems
+  over that time; those rows cannot be read share by share. The 19 that do add up hold
+  11.9 of the 16.1 minutes. As a check, a stem's own output holds 96% (vocals), 95%
+  (drums), 97% (bass), 90% (guitar), 80% (piano) and 61% (`other`) of its true stem where
+  it is not dropped (medians).
+- **Two runs agree.** The six songs of the listening test are among the twenty: their 31
+  song-stems have the same sounding, dropped and longest seconds from the CPU run of
+  Phase 13 and the GPU run here.
+
+Not verified, and why:
+
+- **Whether the product can tell a dropout from an instrument that rests.** Everything
+  above needs the true stems. A stem that is silent for a minute may be a guitar that
+  comes in at the chorus. This is the next phase.
+- **Whether it holds for other music.** Twenty songs, one dataset, one model.
+- **How a misfiled instrument sounds where it landed.** A share says it is there, not how
+  cleanly.
+- **Nobody has listened.** The owner's test waits for them (P13.5).
+- As before: six 20-minute stems in the browser player, Jev beyond the recorded requests,
+  S3 and Azure (B7), Modal (B4), the panel test (B8), and why CI failed once on Python
+  3.12.
+
+Still open from earlier phases: P2.12, P2.13 and P2.14b (the MUSDB18-HQ tuning stage is
+running; see the top of this file), and P13.5.
+
+**Next:** Phase 15, added under rule 6: can the product tell a dropout from a rest?
 
 ## A correction about CI (2026-11-24)
 

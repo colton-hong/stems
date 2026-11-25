@@ -135,6 +135,9 @@ def test_the_report_pools_by_dropped_time_and_lists_the_long_ones(song) -> None:
     assert "1 of the 1 stems listed are within 10 points of 100%" in text
     assert "they hold 0.2 of the 0.2 minutes dropped; 0 have a share below zero" in text
     assert "**In none of the six: 58% of what is dropped**" in text
+    # (10 s at one half in `other`) / 12 s; nothing of it is in the bass stem itself.
+    assert "; 42% is in a stem of another name and 0% in its own." in text
+    assert (analysis["own"], analysis["elsewhere"]) == pytest.approx((0.0, 5.0 / 12.0), abs=0.01)
     assert "is 50% (`aaaaaaaa` bass, a row that adds up to 100%)" in text
     assert "more than 21.68 dB under the song" in text
     assert "(median; the most in one song is 25.0%)" in text
@@ -159,7 +162,7 @@ def test_a_row_that_does_not_add_up_is_counted_as_one_that_cannot_be_read() -> N
             },
         }
         for name, found in (
-            ("adds", {"other": 0.94, lost.NONE: 0.02}),
+            ("adds", {"other": 0.9, "drums": 0.04, lost.NONE: 0.02}),
             ("over", {"guitar": 0.9, "piano": 0.5, lost.NONE: 0.04}),
             ("under", {"bass": -0.79, "vocals": 0.83, lost.NONE: 0.19}),
         )
@@ -169,6 +172,9 @@ def test_a_row_that_does_not_add_up_is_counted_as_one_that_cannot_be_read() -> N
     assert "1 of the 3 stems listed are within 10 points of 100%" in text
     assert "they hold 0.5 of the 1.5 minutes dropped; 1 have a share below zero" in text
     assert "is 19% (`under-00` drums, a row that adds up to 23%)" in text
+    # Own: 0.04 in one of three equal rows. Elsewhere: (0.9 + 1.4 + 0.04) / 3.
+    assert "**In none of the six: 8% of what is dropped**, over all stems; 78% is in a stem" in text
+    assert "of another name and 1% in its own." in text
     assert "it is 2% (`adds-000` drums)" in text
     assert "or lower in every song (median 95.0 dB)" in text
 

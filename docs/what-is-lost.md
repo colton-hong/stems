@@ -71,7 +71,7 @@ Every stem with 5 seconds or more of dropped time:
 
 How to read the sum (this paragraph was added after the run; it changes no figure). The six delivered stems and what is in none of them add up to the song, so a row's sum is `<true, song> / <true, true>`. It leaves 100% by as much as the true stem resembles the other true stems over its dropped time, by sound they share or by chance. A row far from 100%, or with a share below zero, cannot be read share by share. 19 of the 34 stems listed are within 10 points of 100%, and they hold 11.9 of the 16.1 minutes dropped; 7 have a share below zero. A stem's own column is not zero because a stem that counts as silent (under -60 dBFS) is not empty.
 
-**In none of the six: 2% of what is dropped**, over all stems. The most for one stem listed is 19% (`0f5fb60c` drums, a row that adds up to 23%); among the rows within 10 points of 100% it is 8% (`01c8ba69` vocals).
+**In none of the six: 2% of what is dropped**, over all stems; 93% is in a stem of another name and 4% in its own. The most in none for one stem listed is 19% (`0f5fb60c` drums, a row that adds up to 23%); among the rows within 10 points of 100% it is 8% (`01c8ba69` vocals).
 
 A check that the share means what it should: the same figure for each stem's own output over the time it is not dropped, median over songs. vocals 96%, drums 95%, bass 97%, guitar 90%, piano 80%, other 61%.
 

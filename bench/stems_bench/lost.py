@@ -63,8 +63,9 @@ from stems_common.stems import PRODUCT_STEMS
 NONE = "none"
 PLACES = (*PRODUCT_STEMS, NONE)
 # The commit that holds the measures above, made before any real song was measured. The
-# paragraph of the report on reading the sum, and its count of the rows near 100%, came
-# after the run: they say how far a row can be trusted and change no figure in it.
+# paragraph of the report on reading the sum, its count of the rows near 100%, and the
+# share found in a stem of another name (the six columns of the table, added up without
+# the stem's own) came after the run: they change no figure in it.
 RULES_COMMIT = "17908793fbe749c1bee41f2ff8d423469628a863"
 # A row's shares are read one by one only when they add up to within this of 100%.
 SUM_POINTS = 10
@@ -156,6 +157,25 @@ def pooled(entries: Sequence[Mapping[str, Any]]) -> dict[str, float] | None:
     }
 
 
+def own_and_elsewhere(entries: Mapping[str, Sequence[Mapping[str, Any]]]) -> dict[str, float]:
+    """Of what is dropped: the share in the stem's own output, and in the five others.
+
+    ``entries`` maps a stem to its entries over the songs. Weighted by dropped time.
+    """
+    own = elsewhere = weight = 0.0
+    for stem, mine in entries.items():
+        for entry in mine:
+            if not entry.get("found_in") or entry["dropped"] <= 0:
+                continue
+            found, seconds = entry["found_in"], entry["dropped"]
+            weight += seconds
+            own += found[stem] * seconds
+            elsewhere += sum(found[place] for place in PRODUCT_STEMS if place != stem) * seconds
+    if weight <= 0:
+        return {}
+    return {"own": own / weight, "elsewhere": elsewhere / weight}
+
+
 def analyse(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     """Everything the report shows, from a run's records."""
     songs = [r for r in records if r.get("lost")]
@@ -199,6 +219,9 @@ def analyse(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         "share": dropped / sounding if sounding else None,
         "by_stem": by_stem,
         "found_in": pooled(everything),
+        **own_and_elsewhere(
+            {stem: [r["lost"]["stems"][stem] for r in songs] for stem in PRODUCT_STEMS}
+        ),
         "listed": sorted(listed, key=lambda e: (-e["dropped"], e["track_id"], e["stem"])),
         "in_no_stem_db": levels,
         "in_no_stem_time": times,
@@ -252,7 +275,9 @@ def _reading(analysis: Mapping[str, Any]) -> list[str]:
         most = max(listed, key=lambda e: e["found_in"][NONE])
         text = (
             f"**In none of the six: {_percent(found[NONE])} of what is dropped**, over all "
-            f"stems. The most for one stem listed is {_percent(most['found_in'][NONE])} "
+            f"stems; {_percent(analysis['elsewhere'])} is in a stem of another name and "
+            f"{_percent(analysis['own'])} in its own. "
+            f"The most in none for one stem listed is {_percent(most['found_in'][NONE])} "
             f"(`{most['track_id'][:8]}` {most['stem']}, a row that adds up to "
             f"{_percent(sum(most['found_in'][place] for place in PLACES))})"
         )
