@@ -86,6 +86,8 @@ make listen             # serve the blind listening page on http://127.0.0.1:876
 .venv/bin/python -m stems_bench.dropouts --out docs/dropouts.md   # where the true stem plays and the product's is silent (needs the listening run's audio)
 .venv/bin/python -m stems_bench.product_check run --run-id lost-v1 --tracks 20 --device mps --lost   # the same, plus where a dropped instrument is and what is in no stem (long; resumable)
 .venv/bin/python -m stems_bench.lost --run-id lost-v1 --out docs/what-is-lost.md   # its report
+.venv/bin/python -m stems_bench.gaps collect   # a dropout or a rest? counted on the benchmark's kept outputs (no model runs; resumable)
+.venv/bin/python -m stems_bench.gaps report --out docs/dropout-or-rest.md   # its report
 make api                # serve the API on http://127.0.0.1:8000 (python -m stems_api)
 .venv/bin/python -m stems_api.db.migrate    # bring the database to the newest schema (the API does this at startup)
 .venv/bin/python -m stems_worker.jobs JOB_ID   # run one job from storage: what the local provider starts
