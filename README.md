@@ -76,8 +76,9 @@ They are not comparable with figures published elsewhere.
 
 - **How it sounds to people.** Nobody has listened yet. A blind test for one listener is
   ready: `make listen` serves 30 steps from six songs, what the product makes now and what
-  it made before against the true stems. It waits for the owner; the test with a panel and
-  two paid tools waits on B8.
+  it made before against the true stems, and `python -m stems_bench.listen pack` writes
+  the same test for a phone, with the clips as 320 kbps MP3. It waits for the owner; the
+  test with a panel and two paid tools waits on B8.
 - **When a stem is missing its instrument for part of a song.** On 20 songs, 11 of the
   100 stems whose instrument is in the song are silent for 5 seconds or more while it
   plays. The product does not say so, and nothing tried so far lets it tell such a stretch

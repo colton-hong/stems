@@ -2,6 +2,7 @@
 
     python -m stems_bench.listen make --tracks 6 --device mps   # the audio (long; resumable)
     python -m stems_bench.listen serve                          # the page, on 127.0.0.1
+    python -m stems_bench.listen pack --out DIR                 # the test for a phone
     python -m stems_bench.listen take MARKS --heard "on a phone, from ..."   # marks made elsewhere
     python -m stems_bench.listen report --out docs/listening-owner.md
 
@@ -32,6 +33,10 @@ The audio is real music. It lives only in the run's folder under ``runs/``, whic
 in the repository, and nothing here uploads anything: the server listens on this machine
 only.
 
+``pack`` writes the test into a folder for a host that serves files, so that it can be
+taken on a phone: another page (``listen_phone_page``) and the clips as 320 kbps MP3,
+which every phone plays and which is a seventh of the size. That copy is not lossless,
+and putting the folder anywhere is the owner's to do, since the clips are real music.
 ``take`` brings in marks the listener made somewhere else, on a copy of the page that
 keeps its own marks (a phone, say). They get the checks the server gives its own, and
 each is stored with where it came from, so that the report can say how the clips were
@@ -77,6 +82,13 @@ MAX_NOTE = 2000
 SAME_AUDIO_DB = 60.0
 RATINGS = kit_tools.RATINGS
 REQUIRED = "overall"
+# The phone's copy of a clip: MP3 at libsndfile's highest constant bitrate, 320 kbps.
+PHONE_SUFFIX = "mp3"
+PHONE_SHORT_HELP = {
+    "overall": "1 bad · 5 excellent",
+    "bleed": "1 heavy · 5 clean",
+    "artifacts": "1 heavy · 5 clean",
+}
 # Where a step was marked. Marks saved by this machine's own page carry no name: they are
 # "here", and were heard from the kit's own lossless clips.
 VIA_HERE = "here"
@@ -396,6 +408,75 @@ def _write_ratings(path: Path, data: Mapping[str, Any]) -> None:
     partial = path.with_suffix(".partial")
     partial.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
     partial.replace(path)
+
+
+# -- the test in a folder, for a phone --------------------------------------------------------
+
+
+def pack(run_dir: Path, out_dir: Path, *, run_id: str) -> dict[str, Any]:
+    """Write the test as a folder a file host can serve: the page and the clips as MP3.
+
+    ``page.html`` is the page as a host that wraps pages takes it; ``index.html`` is the
+    same inside a whole document. Nothing of the key goes into the folder. Clips already
+    there are not made again. Returns the number of clips and their size.
+    """
+    import soundfile as sf
+
+    from stems_bench.listen_phone_page import PAGE as PHONE_PAGE
+
+    if "MP3" not in sf.available_formats():
+        raise ListenError("the audio library here cannot write MP3 (libsndfile 1.1 or later)")
+    kit_dir = run_dir / "kit"
+    items = presentation_order(load_kit(kit_dir))
+    sizes: dict[str, int] = {}
+    for item in items:
+        for name in ("song", *item["samples"]):
+            source = kit_dir / "audio" / item["track"] / item["stem"] / f"{name}.wav"
+            if not source.is_file():
+                raise ListenError(f"{source} is missing: the kit is not whole")
+            place = Path("audio") / item["track"] / item["stem"] / f"{name}.{PHONE_SUFFIX}"
+            target = out_dir / place
+            if not target.is_file():
+                target.parent.mkdir(parents=True, exist_ok=True)
+                audio, rate = sf.read(str(source), dtype="float64", always_2d=True)
+                partial = target.with_name(target.name + ".partial")
+                sf.write(
+                    str(partial),
+                    audio,
+                    rate,
+                    format="MP3",
+                    compression_level=0.0,
+                    bitrate_mode="CONSTANT",
+                )
+                partial.replace(target)
+            sizes[place.as_posix()] = target.stat().st_size
+    # Two seconds of silence for the media element that keeps an iPhone's sound on.
+    sf.write(str(out_dir / "silence.wav"), np.zeros((16000, 1)), 8000, subtype="PCM_16")
+    total = sum(sizes.values())
+    data = {
+        "run": run_id,
+        "items": [{k: item[k] for k in ("id", "track", "stem", "samples")} for item in items],
+        "ratings": list(RATINGS),
+        "help": kit_tools.RATING_HELP,
+        "short": PHONE_SHORT_HELP,
+        "clip_format": PHONE_SUFFIX,
+        "song_format": PHONE_SUFFIX,
+        "size_note": (
+            f"Each step loads about {total / len(items) / 1e6:.0f} MB of audio, about "
+            f"{total / 1e6:.0f} MB over the {len(items)} steps, so Wi-Fi is kinder than "
+            "mobile data."
+        ),
+    }
+    # JSON inside a script element: a "<" must not be able to end the element.
+    page = PHONE_PAGE.replace("__KIT__", json.dumps(data).replace("<", "\\u003c"))
+    (out_dir / "page.html").write_text(page, encoding="utf-8")
+    (out_dir / "index.html").write_text(
+        '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" '
+        'content="width=device-width,initial-scale=1,viewport-fit=cover"><style>body{margin:0}'
+        "[hidden]{display:none!important}</style></head><body>\n" + page + "</body></html>\n",
+        encoding="utf-8",
+    )
+    return {"steps": len(items), "clips": len(sizes), "bytes": total, "files": sorted(sizes)}
 
 
 # -- marks made somewhere else --------------------------------------------------------------
@@ -913,6 +994,17 @@ def cmd_serve(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_pack(args: argparse.Namespace) -> int:
+    out_dir = Path(args.out)
+    made = pack(LISTEN_DIR / args.run_id, out_dir, run_id=args.run_id)
+    print(
+        f"{made['steps']} steps, {made['clips']} clips, {made['bytes'] / 1e6:.1f} MB as MP3, "
+        f"in {out_dir}: page.html for a host that wraps pages, index.html for any other."
+    )
+    print("The clips are real music: where the folder goes is yours to decide.")
+    return 0
+
+
 def cmd_take(args: argparse.Namespace) -> int:
     run_dir = LISTEN_DIR / args.run_id
     counts = take_marks(run_dir, read_taken(Path(args.source)), heard=args.heard, via=args.via)
@@ -960,6 +1052,10 @@ def main(argv: list[str] | None = None) -> int:
     serve_parser.add_argument("--run-id", default=DEFAULT_RUN)
     serve_parser.add_argument("--port", type=int, default=DEFAULT_PORT)
     serve_parser.set_defaults(run=cmd_serve)
+    pack_parser = sub.add_parser("pack", help="write the test as a folder for a phone")
+    pack_parser.add_argument("--run-id", default=DEFAULT_RUN)
+    pack_parser.add_argument("--out", required=True, help="the folder to write")
+    pack_parser.set_defaults(run=cmd_pack)
     take_parser = sub.add_parser("take", help="bring in marks made somewhere else")
     take_parser.add_argument(
         "source", help="the text the page copied out, in a file, or a folder of its documents"

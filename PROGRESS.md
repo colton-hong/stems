@@ -2,7 +2,7 @@
 
 Single source of truth for where the build is. Read this first, every iteration.
 
-**Current phase: 16 (the listening test on a phone), started 2026-11-25.** Phases 14 (what the six stems lose) and 15 (a dropout or a rest?) are complete: see their summaries. Phase 13 (a listening test the owner can do alone) has one open task and it is the owner's: the kit is built and checked (P13.4): `make listen`, then http://127.0.0.1:8765; P13.5 is the listening itself, and its report follows when the marks are there; since 2026-11-25 the same test is also a private page for the owner's phone (see "Phase 13 so far"). Phase 12 (the edges) is complete: see its summary. The owner asked on 2026-11-24 for each phase to follow the last without waiting, and for new phases to be added when none is left; Phases 8 to 16 were added that way. Phases 0, 1, 3 and 4 to 12 are complete apart from checks that need the owner's accounts (S3 and Azure, B7; Modal, B4; the panel listening test, B8). Still open from earlier phases: Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done; the MoisesDB tuning stage is done and reported; the MUSDB18-HQ tuning stage started at 18:27Z on 2026-11-24 and was at 196 of 3,000 jobs at 01:46Z on the 25th, having shared the GPU with other runs for most of that time (19 jobs between 00:20Z and 01:35Z, an hour of which it shared with Phase 14's run); the MoisesDB stage took 8.8 hours for 30 tracks, so 100 tracks alone would take about 30; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task). **This Mac cannot hold three GPU jobs at once**: beside the benchmark, run one heavy job at a time.
+**Phase 16 (the listening test on a phone) is complete: see its summary. A Phase 17 is added next under rule 6.** Phases 14 (what the six stems lose) and 15 (a dropout or a rest?) are complete too. Phase 13 (a listening test the owner can do alone) has one open task and it is the owner's: the kit is built and checked (P13.4): `make listen`, then http://127.0.0.1:8765; P13.5 is the listening itself, and its report follows when the marks are there; since 2026-11-25 the same test is also a private page for the owner's phone (see "Phase 13 so far"). Phase 12 (the edges) is complete: see its summary. The owner asked on 2026-11-24 for each phase to follow the last without waiting, and for new phases to be added when none is left; Phases 8 to 16 were added that way. Phases 0, 1, 3 and 4 to 12 are complete apart from checks that need the owner's accounts (S3 and Azure, B7; Modal, B4; the panel listening test, B8). Still open from earlier phases: Phase 2's real benchmarks, running in the background (`tools/run_real_benchmarks.sh`; P2.10 and P2.11 are done; the MoisesDB tuning stage is done and reported; the MUSDB18-HQ tuning stage started at 18:27Z on 2026-11-24 and was at 217 of 3,000 jobs at 02:35Z on the 25th, having shared the GPU with other runs for most of that time (19 jobs between 00:20Z and 01:35Z, an hour of which it shared with Phase 14's run); the MoisesDB stage took 8.8 hours for 30 tracks, so 100 tracks alone would take about 30; P2.12, P2.13, P2.14b: each later iteration checks `bench status`, commits a report when its stage has ended, and ticks the task). **This Mac cannot hold three GPU jobs at once**: beside the benchmark, run one heavy job at a time.
 
 **Asked for by the owner on 2026-11-24, during Phase 12:** "after this next phase finishes, i'd like to do a listening test myself". So the phase after 12 is a listening test the owner can do alone: no panel, nothing bought (B8 asks for both; this is the part that needs neither).
 
@@ -280,7 +280,7 @@ this Mac, or as 320 kbps MP3 on a phone. And the page should be something the re
 can make again, not a file that a reboot clears. The listening itself stays P13.5.
 
 - [x] P16.1 Marks made elsewhere, and a report that says how they were heard. **Accept:** `python -m stems_bench.listen take SOURCE --heard TEXT` reads marks as the phone page gives them out (the text it copies, or its store's documents as files), checks every step as the server does before writing any, refuses steps the kit does not have, keeps the later of two marks for a step, and writes them into `ratings.json` with where they were made; taking the same marks twice changes nothing. `listen report` says how many steps were marked on this machine from the lossless clips and how many elsewhere and how; a report from marks made only here reads as before. Tested. — Done: `python -m stems_bench.listen take SOURCE --heard TEXT [--via phone]`. It reads the text the page copies out (`{"items": {step: marks}}`) or a folder of its store's documents; checks every step with the server's own `check_marks`, and that each says when it was saved, before anything is written; refuses a step the kit does not have; keeps the later of two sets of marks for a step, whichever side they came from; and stores each step with where it was made, and once how the clips were heard there. The report gains a paragraph, "How the clips were heard", only when some step was marked away from this machine: so many on the listener's own machine from the kit's lossless clips, so many as `--heard` says; marks that name a place but not how are said to be unrecorded, not guessed. A report from marks made only here reads as it did. Seen on the way: the page's own saving works from a phone. Its store held two steps written from the owner's phone at 02:21Z on 2026-11-25, every mark a 3, from before the owner said they heard nothing; they are the owner's to redo, and nothing was taken in yet. 3 new tests, 14 in the file.
-- [ ] P16.2 The phone page from the repository. **Accept:** `python -m stems_bench.listen pack --out DIR` writes, from a kit, the page and the clips as 320 kbps MP3 for a host that serves files; nothing in the folder says which letter is which (tested against the key); tested on the synthetic kit; the page that is published is the one this makes.
+- [x] P16.2 The phone page from the repository. **Accept:** `python -m stems_bench.listen pack --out DIR` writes, from a kit, the page and the clips as 320 kbps MP3 for a host that serves files; nothing in the folder says which letter is which (tested against the key); tested on the synthetic kit; the page that is published is the one this makes. — Done: `python -m stems_bench.listen pack --out DIR`, with the page in `bench/stems_bench/listen_phone_page.py`. It writes `page.html` (the page as a host that wraps pages takes it), `index.html` (the same in a whole document), `silence.wav` and every clip as 320 kbps MP3; clips already there are not made again; a kit with a clip missing is refused. Tested on the synthetic kit: the folder holds those files and nothing else; the steps in the page carry their letters and nothing about them; no song's dataset id is in it; the versions of a step are the same size to the byte; a clip has the length and rate of the kit's and its sound (correlation above 0.99). For the owner's kit the folder is, byte for byte, what is published: the page, the silent file and all 113 clips were compared file by file, so nothing was published again. 2 new tests, 16 in the file.
 
 ---
 
@@ -1205,6 +1205,50 @@ running; see the top of this file), and P13.5.
 **Next:** Phase 16, added under rule 6: the owner is taking the listening test on a phone,
 so its marks need a tested way back into the report, and the report has to say how the
 clips were heard.
+
+## Phase 16 summary (2026-11-25)
+
+Done: P16.1 and P16.2.
+
+- **Marks made elsewhere** (P16.1): `listen take` brings them into `ratings.json` with the
+  server's own checks, and the report says how many steps were heard from the lossless
+  clips on this Mac and how many otherwise, and how.
+- **The phone page from the repository** (P16.2): `listen pack --out DIR` and
+  `bench/stems_bench/listen_phone_page.py`. For the owner's kit it writes, byte for byte,
+  the page, the silent file and the 113 clips that are published.
+
+What the phase found:
+
+- **The host chose the format.** It serves no FLAC, and the kit as WAV is 855 MB; as
+  320 kbps MP3 it is 135.9 MB. So the test on the phone is not lossless, and the report
+  will say which steps were heard that way.
+- **The page saves from a phone.** Two steps arrived in its store from the owner's phone
+  at 02:21Z, before they said they heard nothing; every mark in them is a 3.
+- **A page's own sound is fragile on a phone.** The first version relied on it alone.
+  The second also plays a silent media file while a clip plays, wakes the sound on every
+  tap, and has a test tone and a level bar, so that "the page is silent" can be told from
+  "the phone is not playing it".
+- **A slip of mine.** Backticks inside a quoted shell string ran `make setup` by accident.
+  Checked afterwards: it rewrote the project's own entry in the virtual environment and
+  nothing else; no package version changed, the benchmark kept running, no tracked file
+  changed.
+
+Not verified, and why:
+
+- **Whether the phone plays the clips now.** I cannot run a phone, no signed-in browser
+  was to hand here, and the owner had not yet answered when this was written.
+- **Nobody has listened** (P13.5): the two steps in the store are from before the sound
+  worked.
+- As before: vocals, drums and `other` in the dropout-or-rest count; six 20-minute stems
+  in the browser player; Jev beyond the recorded requests; S3 and Azure (B7), Modal (B4),
+  the panel test (B8); why CI failed once on Python 3.12.
+
+Still open from earlier phases: P2.12, P2.13 and P2.14b (the MUSDB18-HQ tuning stage is
+running; see the top of this file), and P13.5.
+
+**Next:** Phase 17, added under rule 6: dropouts by model. The benchmark chose the default
+by SDR, and SDR does not see a stem that goes silent while its instrument plays. The kept
+outputs can say, with no model run, which models drop out least on each stem.
 
 ## A correction about CI (2026-11-24)
 

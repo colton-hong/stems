@@ -555,6 +555,93 @@ def test_the_report_says_how_the_clips_were_heard(away, tmp_path, monkeypatch, c
     assert "is missing" in capsys.readouterr().err
 
 
+def test_the_phone_page_keeps_to_itself() -> None:
+    from stems_bench.listen_phone_page import PAGE
+
+    # The content alone, for a host that wraps pages; the kit goes in at one place.
+    assert PAGE.startswith("<title>")
+    assert "<!doctype" not in PAGE.lower()
+    assert PAGE.count("__KIT__") == 1
+    # It loads its fonts and nothing else from elsewhere, and its clips from beside it.
+    assert "http://" not in PAGE
+    assert PAGE.count("https://") == 1
+    assert "https://fonts.googleapis.com/" in PAGE
+    assert "`audio/${item.track}/${item.stem}/${name}." in PAGE
+    assert 'src="silence.wav"' in PAGE
+    assert "/api/" not in PAGE
+
+
+def test_the_test_is_packed_for_a_phone_and_stays_blind(
+    away, tmp_path, monkeypatch, capsys
+) -> None:
+    sf = pytest.importorskip("soundfile")
+    if "MP3" not in sf.available_formats():
+        pytest.skip("this libsndfile cannot write MP3")
+    run_dir, items = away
+    out = tmp_path / "phone"
+    made = listen.pack(run_dir, out, run_id="owner-test")
+    clips = sum(1 + len(item["samples"]) for item in items)
+    assert (made["steps"], made["clips"]) == (len(items), clips)
+    assert made["bytes"] == sum((out / name).stat().st_size for name in made["files"])
+    # The folder holds the two pages, the silent file and the clips, and nothing else.
+    found = sorted(p.relative_to(out).as_posix() for p in out.rglob("*") if p.is_file())
+    assert found == sorted(["index.html", "page.html", "silence.wav", *made["files"]])
+    first = items[0]
+    assert f"audio/{first['track']}/{first['stem']}/song.mp3" in made["files"]
+
+    page = (out / "page.html").read_text()
+    assert "__KIT__" not in page
+    inside = page.split('<script type="application/json" id="kit">')[1].split("</script>")[0]
+    kit = json.loads(inside)
+    assert kit["run"] == "owner-test"
+    assert kit["items"] == [
+        {name: item[name] for name in ("id", "track", "stem", "samples")} for item in items
+    ]
+    assert kit["ratings"] == list(listen.RATINGS)
+    assert (kit["clip_format"], kit["song_format"]) == ("mp3", "mp3")
+    assert f"over the {len(items)} steps" in kit["size_note"]
+    index = (out / "index.html").read_text()
+    assert index.startswith("<!doctype html>")
+    assert page in index
+
+    # Blind: the steps carry their letters and nothing about them, the songs are not
+    # named, and the versions of a step cannot be told apart by size.
+    key = json.loads((run_dir / "key.json").read_text())
+    assert all(set(item) == {"id", "track", "stem", "samples"} for item in kit["items"])
+    assert set(kit) == {
+        "run", "items", "ratings", "help", "short", "clip_format", "song_format", "size_note"
+    }  # fmt: skip
+    for track in key["tracks"].values():
+        assert track["id"] not in index
+    for item in items:
+        folder = out / "audio" / item["track"] / item["stem"]
+        assert len({(folder / f"{name}.mp3").stat().st_size for name in item["samples"]}) == 1
+
+    # A clip is the kit's own, as MP3: the same length, and the same sound closely.
+    source = run_dir / "kit" / "audio" / first["track"] / first["stem"] / "song.wav"
+    wav, rate = sf.read(str(source), dtype="float64", always_2d=True)
+    mp3, mp3_rate = sf.read(str(out / "audio" / first["track"] / first["stem"] / "song.mp3"),
+                            dtype="float64", always_2d=True)  # fmt: skip
+    assert (mp3_rate, mp3.shape) == (rate, wav.shape)
+    assert np.corrcoef(wav.ravel(), mp3.ravel())[0, 1] > 0.99
+    quiet, _ = sf.read(str(out / "silence.wav"))
+    assert quiet.size > 0
+    assert not quiet.any()
+
+    # Packing again makes no clip again; the command says what it wrote.
+    stamps = {name: (out / name).stat().st_mtime_ns for name in made["files"]}
+    monkeypatch.setattr(listen, "LISTEN_DIR", run_dir.parent)
+    assert listen.main(["pack", "--run-id", run_dir.name, "--out", str(out)]) == 0
+    said = capsys.readouterr().out
+    assert f"{len(items)} steps, {clips} clips" in said
+    assert "The clips are real music" in said
+    assert stamps == {name: (out / name).stat().st_mtime_ns for name in made["files"]}
+    # A kit with a clip missing is not packed.
+    source.unlink()
+    with pytest.raises(listen.ListenError, match="the kit is not whole"):
+        listen.pack(run_dir, tmp_path / "other", run_id="owner-test")
+
+
 def test_commands_say_what_is_missing(tmp_path, monkeypatch, capsys) -> None:
     monkeypatch.setattr(listen, "LISTEN_DIR", tmp_path)
     assert listen.main(["report", "--run-id", "nothing"]) == 2

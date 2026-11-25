@@ -112,6 +112,8 @@ select = ["E", "F", "W", "I", "B", "UP", "SIM", "C4", "PT", "RUF"]
 # Hand-built result tables and the report rows they must produce read best unwrapped.
 "tests/test_bench_report.py" = ["E501"]
 "tests/test_bench_compare.py" = ["E501"]
+# A page of HTML, CSS and JavaScript in one string: its lines are the page's, not Python's.
+"bench/stems_bench/listen_phone_page.py" = ["E501"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["stems_common", "stems_models", "stems_worker", "stems_bench", "stems_api"]
