@@ -86,8 +86,10 @@ RULES = ("silence", "second", "loud_second")
 BAR = CRITERIA["empty_precision_min"]
 MIN_FLAGGED = MIN_SUPPORT
 # The commit that holds everything above, made before any kept output was read for this.
-# Filled in by the commit after it.
-RULES_COMMIT: str | None = None
+# Three things in the report came after the run, decide nothing and change no figure: the
+# nearest any level of the third rule comes to the bar, how many songs the dropouts are
+# in (with what that leaves of the bar), and the noted stems that hold a dropout.
+RULES_COMMIT: str | None = "131fbfa561cc73950c84e1d93c25eb27b6ef8f44"
 
 
 class GapsError(ValueError):
@@ -189,6 +191,21 @@ def choose_threshold(gaps: Sequence[Mapping[str, Any]]) -> float | None:
     return None
 
 
+def nearest_level(gaps: Sequence[Mapping[str, Any]]) -> dict[str, Any] | None:
+    """Of the levels that flag ``MIN_FLAGGED`` gaps or more, the one whose flagged gaps are
+    most often dropouts (the lowest such level, if several). None if no level flags enough.
+    """
+    best: dict[str, Any] | None = None
+    for level in sorted({gap["second_below_song_db"] for gap in gaps}):
+        said = [is_dropout(gap) for gap in gaps if gap["second_below_song_db"] >= level]
+        if len(said) < MIN_FLAGGED:
+            break
+        share = sum(said) / len(said)
+        if best is None or share > best["share"]:
+            best = {"level": level, "flagged": len(said), "right": sum(said), "share": share}
+    return best
+
+
 def outcome(
     gaps: Sequence[Mapping[str, Any]], rule: str, threshold: float | None = None
 ) -> dict[str, Any]:
@@ -271,6 +288,20 @@ def analyse(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         },
         "stems": stems,
         "threshold": threshold,
+        "nearest_level": nearest_level(gaps["tuning"]),
+        "songs_with_a_dropout": {
+            name: len({gap["track_id"] for gap in gaps[name] if is_dropout(gap)}) for name in SETS
+        },
+        "noted_with_a_dropout": {
+            name: sum(
+                1
+                for row in rows
+                if row["set"] == name
+                and row["noted"]
+                and any(is_dropout(gap) for gap in row["gaps"])
+            )
+            for name in SETS
+        },
         "outcomes": outcomes,
         "reliable_on_tuning": reliable,
         "tried": tried,
@@ -315,6 +346,41 @@ def _percent(value: float | None, digits: int = 0) -> str:
 
 def _db(value: float | None) -> str:
     return "-" if value is None else f"{value:.1f} dB"
+
+
+def _few(analysis: Mapping[str, Any]) -> list[str]:
+    """How few dropouts there are to go by, and what the gate's note already covers."""
+    songs = analysis.get("songs_with_a_dropout")
+    if songs is None:
+        return []
+    found = {name: analysis["outcomes"][name]["silence"]["dropouts"] for name in SETS}
+    lines = [
+        f"- There are few dropouts to go by, and they come in clusters: {found['tuning']} on "
+        f"the tuning tracks, in {songs['tuning']} songs, and {found['test']} on the test "
+        f"tracks, in {songs['test']}. Gaps in one song are not independent of one another."
+    ]
+    # The most gaps a rule can flag and still have BAR of them be dropouts.
+    most = int(found["tuning"] / BAR + 1e-9)
+    if most < MIN_FLAGGED:
+        lines.append(
+            f"- With {found['tuning']} dropouts on the tuning tracks the bar could not be "
+            f"met there by any rule: {MIN_FLAGGED} flagged gaps cannot be {_percent(BAR)} "
+            "dropouts. That is a fault of the bar, which was set before the count."
+        )
+    else:
+        span = f"exactly {most}" if most == MIN_FLAGGED else f"from {MIN_FLAGGED} to {most}"
+        lines.append(
+            f"- With {found['tuning']} dropouts on the tuning tracks, a rule clears the bar "
+            f"there only by flagging {span} gaps and missing almost no dropout. The bar was "
+            "set before the count; the rules above are nowhere near it."
+        )
+    noted = analysis["noted_with_a_dropout"]
+    lines.append(
+        "- A stem that carries the gate's note is not counted. Of the stems left out that "
+        f"way, {noted['tuning']} on the tuning tracks and {noted['test']} on the test tracks "
+        "hold a stretch that would have been a dropout."
+    )
+    return lines
 
 
 def render(analysis: Mapping[str, Any], run: Mapping[str, Any]) -> str:
@@ -374,6 +440,7 @@ def render(analysis: Mapping[str, Any], run: Mapping[str, Any]) -> str:
                 f"{entry['dropouts']} | {entry['gaps'] - entry['dropouts']} |"
             )
     threshold = analysis["threshold"]
+    nearest = analysis.get("nearest_level")
     lines += [
         "",
         "## The three rules",
@@ -385,6 +452,13 @@ def render(analysis: Mapping[str, Any], run: Mapping[str, Any]) -> str:
             f"{threshold:.2f} dB against the song."
             if threshold is not None
             else "no level is reliable there, so the rule flags nothing."
+        )
+        + (
+            f" The nearest any level comes: at {nearest['level']:.2f} dB it flags "
+            f"{nearest['flagged']} gaps, of which {nearest['right']} are dropouts "
+            f"({_percent(nearest['share'])})."
+            if threshold is None and nearest is not None
+            else ""
         ),
         "",
         "| Rule | Flags | List | Flagged | Dropouts among them | Share | "
@@ -394,11 +468,12 @@ def render(analysis: Mapping[str, Any], run: Mapping[str, Any]) -> str:
     for rule in RULES:
         for name in SETS:
             result = analysis["outcomes"][name][rule]
+            no_level = rule == "loud_second" and threshold is None
             lines.append(
                 f"| `{rule}` | {_RULE_TEXT[rule]} | {name} | {result['flagged']} | "
                 f"{result['right']} | {_percent(result['precision'])} | "
                 f"{result['right']} of {result['dropouts']} | "
-                f"{why(result)} |"
+                f"{'no: no level found' if no_level else why(result)} |"
             )
     tried = analysis["tried"]
     lines += [
@@ -438,6 +513,7 @@ def render(analysis: Mapping[str, Any], run: Mapping[str, Any]) -> str:
         "- The benchmark's outputs, not a job's. `docs/product-vs-benchmark.md` compares the two.",
         "- A rest may still hold some of the instrument: up to "
         f"{LONG_SECONDS:g} seconds of it, by the definition.",
+        *_few(analysis),
         "- Nothing in the product was changed.",
         "",
     ]

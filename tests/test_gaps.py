@@ -232,6 +232,26 @@ def test_a_rule_that_does_not_hold_on_the_test_tracks_fails() -> None:
     assert few["verdict"] == "fails"
 
 
+def test_what_is_said_beside_the_verdict() -> None:
+    rows = world([DROPOUT, REST], [DROPOUT, REST], tracks=8)
+    rows.append(row("test", "t99", "bass", [DROPOUT, REST], noted=True))
+    analysis = gaps.analyse(rows)
+    # Eight dropouts on eight songs: ten flagged gaps cannot be nine tenths dropouts.
+    assert analysis["songs_with_a_dropout"] == {"tuning": 8, "test": 8}
+    assert analysis["noted_with_a_dropout"] == {"tuning": 0, "test": 1}
+    assert analysis["nearest_level"] == {"level": -70.0, "flagged": 16, "right": 8, "share": 0.5}
+    assert analysis["verdict"] == "none"
+    text = gaps.render(analysis, RUN)
+    assert "the bar could not be met there by any rule: 10 flagged gaps cannot be 90%" in text
+    assert "way, 0 on the tuning tracks and 1 on the test tracks hold a stretch" in text
+    # Nine dropouts leave room for exactly ten flagged gaps.
+    nine = gaps.render(gaps.analyse(world([DROPOUT, REST], [DROPOUT, REST], tracks=9)), RUN)
+    assert "only by flagging exactly 10 gaps and missing almost no dropout" in nine
+    assert gaps.nearest_level([DROPOUT] * 9) is None
+    # Several levels as good as each other: the lowest is the one named.
+    assert gaps.nearest_level([gap(20.0, level=-10.0 - i) for i in range(12)])["level"] == -21.0
+
+
 def test_when_nothing_tells_them_apart_no_rule_is_tried() -> None:
     analysis = gaps.analyse(world([DROPOUT, LOUD_REST], [DROPOUT, REST]))
     assert analysis["threshold"] is None
@@ -253,6 +273,8 @@ RUN = {
 def test_the_report_says_what_was_counted_and_what_follows() -> None:
     stands = gaps.render(gaps.analyse(world([DROPOUT, REST], [DROPOUT, REST])), RUN)
     assert "from the run `r`, made at commit `abcdef0`. No model was run" in stands
+    assert gaps.RULES_COMMIT.startswith("131fbfa561cc")
+    assert "`bench/stems_bench/gaps.py` and committed (`131fbfa`) before any kept output" in stands
     assert "the 12 tuning tracks and the 12 test tracks" in stands
     assert "Counted: bass (`main`, then `backup`), piano (`main`, then `keys`)" in stands
     assert "for every track: vocals, drums, guitar, other." in stands
@@ -274,7 +296,12 @@ def test_the_report_says_what_was_counted_and_what_follows() -> None:
     none = gaps.render(gaps.analyse(world([DROPOUT, LOUD_REST], [DROPOUT, REST])), RUN)
     assert "**No rule is reliable on the tuning tracks" in none
     assert "nothing here shows that the product can tell a dropout from a rest.**" in none
-    assert "| tuning | 0 | 0 | - | 0 of 12 | no: too few flagged |" in none
+    assert "| tuning | 0 | 0 | - | 0 of 12 | no: no level found |" in none
+    # Half of the loudest gaps are dropouts, at the only level there is.
+    assert "The nearest any level comes: at -10.00 dB it flags 24 gaps, of which 12 are" in none
+    assert "dropouts (50%)." in none
+    assert "12 on the tuning tracks, in 12 songs, and 12 on the test tracks, in 12." in none
+    assert "only by flagging from 10 to 13 gaps" in none
     assert "no level is reliable there, so the rule flags nothing." in none
     assert "No rule was tried on the test tracks" in none
     dirty = gaps.render(gaps.analyse([]), {**RUN, "git": {"commit": "abcdef0123", "dirty": True}})

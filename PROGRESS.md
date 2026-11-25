@@ -266,7 +266,7 @@ before anyone builds one. The benchmark kept the outputs this needs for some ste
 model is run. Nothing in the product changes in this phase.
 
 - [x] P15.1 The definitions, the rules and what follows, fixed first. **Accept:** `bench/stems_bench/gaps.py` says what a gap, a dropout and a rest are, the three rules that flag gaps, the bar a rule must clear on the tuning tracks and then once on the test tracks, and what is done with each outcome; tested on tones and made-up rows where the answer is known. Committed before any kept output is read for this. — Done: `bench/stems_bench/gaps.py`. A gap is an unbroken stretch in which the default model's stem is silent while the song sounds for 5 s or more, in a stem the gate does not already note; it is a dropout when the true stem sounds for 5 s or more inside it, and a rest otherwise. Three rules flag gaps: every gap; gaps in which the fallback model's stem sounds for 5 s or more; gaps over which the fallback's stem is at least T dB against the song, T being the lowest level that is reliable on the tuning tracks. Reliable means 10 gaps or more flagged and at least 90% of them dropouts, the bar the empty-stem note was held to. A rule reliable on the tuning tracks is tried once on the test tracks (the one that finds the most dropouts, if several); it stands only if it is reliable there too, and otherwise the answer is that nothing here shows the product can tell, with the report saying for each rule whether it was wrong too often or flagged too few. Tested on tones (a ten-second dropout, a rest that runs into the song's end, silence while the song is silent, a stem the gate notes) and on made-up rows for each of the three outcomes, and its collecting step on a made-up benchmark folder. No kept output has been read for this: this commit comes first. 16 tests.
-- [ ] P15.2 The count. **Accept:** `python -m stems_bench.gaps collect` over the kept outputs of the 30 tuning and 50 test tracks, for every stem whose default and fallback outputs are both kept; `docs/dropout-or-rest.md` written from it, naming the commit that fixed the rules and the stems it could not count.
+- [x] P15.2 The count. **Accept:** `python -m stems_bench.gaps collect` over the kept outputs of the 30 tuning and 50 test tracks, for every stem whose default and fallback outputs are both kept; `docs/dropout-or-rest.md` written from it, naming the commit that fixed the rules and the stems it could not count. — Done: `docs/dropout-or-rest.md`, from the run `gaps-v1`, made at the rules commit `131fbfa` with nothing uncommitted: under four minutes on the CPU, no model run. Counted: bass, guitar and piano on the 30 tuning and 50 test tracks; vocals, drums and `other` could not be, because the default model's outputs for them were not kept. **No rule is reliable on the tuning tracks, so none was tried on the test tracks.** Silence alone: 81 gaps on the tuning tracks, 9 of them dropouts (11%); 110 and 11 on the test tracks (10%). The second model sounding in the gap: 18 flagged, 4 dropouts (22%), and it finds 4 of the 9; on the test tracks 27, 5 (19%) and 5 of 11. The second model being loud there: no level is reliable; the nearest flags 12 gaps of which 3 are dropouts (25%). In a dropout the second model holds little of the true stem (4% at the median on the tuning tracks, 11% on the test tracks). The dropouts are few and come in clusters (9 in 2 songs, 11 in 6), and with 9 on the tuning tracks the bar could only just have been met; the report says both. Checked by a second count from the raw rows, and against P14.2: on the 60 stems the two runs share, the benchmark's outputs and the product's agree on every long dropout. Three information-only lines were added to the report after the run; no figure changed. 17 tests.
 - [ ] P15.3 What follows. **Accept:** the README has the result. If a rule stands, what a note built on it would say and cost is written down for a later phase and nothing is built yet; if none stands, the report and this file say so plainly. Nothing in the product is changed.
 
 ---
@@ -1073,6 +1073,18 @@ is summarised properly when its report exists.
   judge. All three are fixed in the builder and tested (see P13.4).
 - **Not verified:** how any of it sounds. I have no ears; the page was driven in a browser
   and its audio measured, nothing more.
+- **On the owner's phone** (2026-11-25, asked for by the owner: "Can you send me the stems
+  so I can do the listening test on my phone"): the same 30 steps, in the same order and
+  with the same blind letters, as a private page the owner opens signed in; `make listen`
+  is for this Mac only. The clips there are 320 kbps MP3 copies of the kit's 24-bit WAV:
+  the host serves no FLAC, and the WAV would not fit. That is 136 MB for the 113 clips.
+  The marks are kept in the page's own store and are to be written into `ratings.json`
+  for the report, which must say how the clips were heard. Checked: the page served
+  locally on this Mac (it loads, plays, switches versions in time, refuses a step without
+  its overall marks, saves and resumes), that all 114 files are published, and that the
+  store takes a write, a read and a delete. Not checked: the page on a phone, and its own
+  write to the store, because no signed-in browser was to hand. Its source and the script
+  that made the MP3s are in `runs/listening/owner-v1/phone/`, outside the repository.
 
 ## Phase 14 summary (2026-11-25)
 
