@@ -171,7 +171,21 @@ def test_the_report_puts_the_least_beside_the_default(counted) -> None:
     assert beside["tracks"] == 3
     assert (beside["default"]["stems"], beside["default"]["share"]) == (3, 0.25)
     assert beside["others"]["main"]["stems"] == 3
+    # The default beside the best of the rest: where it was kept, and where it was not.
+    against = analysis["against"]
+    assert (against["bass"]["where"], against["bass"]["other"]) == ("MoisesDB test", BLEND)
+    assert against["bass"]["default"]["share"] == pytest.approx(7.0 / 12.0)
+    assert (against["piano"]["where"], against["piano"]["other"]) == (
+        "the product's 3 tracks",
+        "main",
+    )
     text = dbm.render(analysis, RUN)
+    assert dbm.RULES_COMMIT.startswith("af0a95049e6e")
+    assert "and committed (`af0a950`) before any kept output was read for this." in text
+    assert f"| bass | {len(tracks)} on MoisesDB test | 58.3% | {len(tracks)} | 0.0% | 0 | " in text
+    assert (
+        "| piano | 3 on the product's 3 tracks | 25.0% | 0 | 0.0% | 0 | `main` | 9.00 | - |" in text
+    )
     assert "from the run `r`, made at commit `abcdef0`. No model was run" in text
     n = len(tracks)
     assert f"| bass | `{BLEND}` | MoisesDB tuning | 0.0% | - | 58.3% | 5.00 |" in text
@@ -187,7 +201,9 @@ def test_the_report_puts_the_least_beside_the_default(counted) -> None:
     assert "| piano | `main` | 3 | 0.6 | 0.0 | 0.0% | 0 | 9.00 |" in text
     assert "No output was kept for: vocals, drums, guitar, other." in text
     # Without the product's run nothing stands in, and the report says so.
-    bare = dbm.render(dbm.analyse(rows, defaults), RUN)
+    bare_analysis = dbm.analyse(rows, defaults)
+    assert list(bare_analysis["against"]) == ["bass"]
+    bare = dbm.render(bare_analysis, RUN)
     assert "The product's run was not found, so nothing stands for piano." in bare
     # A default that was kept needs no stand-in.
     kept = dbm.analyse(rows, {"bass": "main", "piano": "main"}, product_records(tracks))

@@ -69,8 +69,9 @@ TESTS = ("MoisesDB test", "MUSDB18-HQ test")
 # The list the product's own run was made on, for a default that was not kept.
 PRODUCT_LIST = "MoisesDB test"
 # The commit that holds everything above, made before any kept output was read for this.
-# Filled in by the commit after it.
-RULES_COMMIT: str | None = None
+# The report's table "The default against the rest" came after the run: it sets figures
+# from the other tables side by side and adds none.
+RULES_COMMIT: str | None = "af0a95049e6e3f89fc9a228ad181915a86e61eb3"
 
 
 class ByModelError(ValueError):
@@ -274,7 +275,29 @@ def analyse(
             continue
         others = by_choice(rows, PRODUCT_LIST, only=tracks).get(stem, {})
         beside[stem] = {"default": tally(entries), "others": others, "tracks": len(tracks)}
+    # The default beside the choice, other than itself, that drops least: on the product's
+    # list where its output was kept, on the product's own tracks where it was not.
+    against: dict[str, Any] = {}
+    for stem in stems:
+        default = defaults.get(stem)
+        kept = lists[PRODUCT_LIST].get(stem, {})
+        if default in kept:
+            where, mine = PRODUCT_LIST, kept[default]
+            others = {name: entry for name, entry in kept.items() if name != default}
+        elif beside.get(stem):
+            where = f"the product's {beside[stem]['tracks']} tracks"
+            mine, others = beside[stem]["default"], beside[stem]["others"]
+        else:
+            continue
+        other = least(others)
+        against[stem] = {
+            "where": where,
+            "default": mine,
+            "other": other,
+            "other_entry": others.get(other) if other else None,
+        }
     return {
+        "against": against,
         "tracks": {name: len({r["track_id"] for r in rows if r["list"] == name}) for name in LISTS},
         "lists": lists,
         "stems": stems,
@@ -361,6 +384,28 @@ def render(analysis: Mapping[str, Any], run: Mapping[str, Any]) -> str:
                 f"{_sdr(mine['sdr']) if mine else '-'} | "
                 f"{_percent(default['share']) if default else 'not kept'} | "
                 f"{_sdr(default['sdr']) if default else '-'} |"
+            )
+    against = analysis.get("against") or {}
+    if against:
+        lines += [
+            "",
+            "## The default against the rest",
+            "",
+            "The default beside whichever other choice drops least on the same songs. This "
+            "table was added after the run; every figure in it is in a table below.",
+            "",
+            "| Stem | Songs | The default drops | With a long dropout | The least another drops "
+            "| With a long dropout | That choice | Its SDR | The default's SDR |",
+            "|---|---|---:|---:|---:|---:|---|---:|---:|",
+        ]
+        for stem, entry in against.items():
+            mine, other = entry["default"], entry["other_entry"]
+            lines.append(
+                f"| {stem} | {mine['stems']} on {entry['where']} | {_percent(mine['share'])} | "
+                f"{mine['long']} | {_percent(other['share']) if other else '-'} | "
+                f"{other['long'] if other else '-'} | "
+                f"{named(stem, entry['other']) if other else 'none was kept'} | "
+                f"{_sdr(other['sdr']) if other else '-'} | {_sdr(mine['sdr'])} |"
             )
     for name in LISTS:
         there = analysis["lists"][name]
