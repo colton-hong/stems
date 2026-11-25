@@ -271,6 +271,10 @@ def test_the_report_unblinds_the_marks(made, tmp_path) -> None:
     assert f"In {one_clip} of the marked steps (guitar, piano) the product makes the stem" in text
     assert f"- `{flipped}`: hiss" in text
     assert "One listener" in text
+    # Every step was marked on this machine: the report says so and has nothing to add.
+    assert analysis["heard"] == [{"via": "here", "steps": marked, "how": None}]
+    assert "listened blind on their own machine: for each stem" in text
+    assert "How the clips were heard" not in text
     empty = listen.render(listen.analyse(kit, key, {"items": {}}), {"run_id": "r"})
     assert "Nothing has been marked yet." in empty
     assert "the product makes the stem with the same model" not in empty
@@ -367,6 +371,188 @@ def test_the_page_is_one_document_that_talks_only_to_this_server() -> None:
     assert "https://" not in PAGE
     for route in ("/api/kit", "/api/ratings", "/audio/"):
         assert route in PAGE
+
+
+@pytest.fixture
+def away(made, tmp_path):
+    """A run folder with the kit and its key, and no marks yet."""
+    import shutil
+
+    run_dir = tmp_path / "owner"
+    shutil.copytree(made[0] / "kit", run_dir / "kit")
+    shutil.copy(made[0] / "key.json", run_dir / "key.json")
+    kit = listen.load_kit(run_dir / "kit")
+    return run_dir, listen.presentation_order(kit)
+
+
+PHONE = "on a phone, from 320 kbps MP3 copies of the clips"
+
+
+def test_marks_made_elsewhere_are_checked_and_taken_in(away, tmp_path) -> None:
+    run_dir, items = away
+    first, second, third = items[0], items[1], items[2]
+
+    def given(step, mark: int, at: str, **more) -> dict:
+        return marks(step, dict.fromkeys(step["samples"], mark), saved_at=at, **more)
+
+    # As the page copies them out.
+    copied = tmp_path / "copied.json"
+    copied.write_text(
+        json.dumps(
+            {
+                "run": "owner-v1",
+                "items": {
+                    first["id"]: given(first, 4, "2026-11-25T02:21:16.495Z", note="thin"),
+                    second["id"]: given(second, 2, "2026-11-25T02:21:33.583Z"),
+                },
+            }
+        )
+    )
+    taken = listen.read_taken(copied)
+    assert listen.take_marks(run_dir, taken, heard=f"  {PHONE} ", via="phone") == {
+        "new": 2,
+        "replaced": 0,
+        "unchanged": 0,
+        "older": 0,
+    }
+    saved = json.loads((run_dir / "ratings.json").read_text())
+    assert saved["heard"] == {"phone": PHONE}
+    assert saved["items"][first["id"]] == {
+        "ratings": given(first, 4, "")["ratings"],
+        "note": "thin",
+        "saved_at": "2026-11-25T02:21:16+00:00",
+        "via": "phone",
+    }
+    # The same marks again change nothing.
+    before = (run_dir / "ratings.json").read_text()
+    assert listen.take_marks(run_dir, taken, heard=PHONE, via="phone")["unchanged"] == 2
+    assert (run_dir / "ratings.json").read_text() == before
+
+    # As the page's store keeps them: a folder with a document for each step.
+    store = tmp_path / "store" / "marks"
+    store.mkdir(parents=True)
+    later = {**given(first, 5, "2026-11-25T03:00:00Z"), "item": first["id"]}
+    earlier = {**given(second, 1, "2026-11-25T01:00:00Z"), "item": second["id"]}
+    (store / "one.json").write_text(json.dumps({"id": "one", "data": later, "version": 3}))
+    (store / "two.json").write_text(json.dumps(earlier))
+    counts = listen.take_marks(
+        run_dir, listen.read_taken(tmp_path / "store"), heard=PHONE, via="phone"
+    )
+    # The later marks replace what was there; the earlier ones do not.
+    assert counts == {"new": 0, "replaced": 1, "unchanged": 0, "older": 1}
+    saved = json.loads((run_dir / "ratings.json").read_text())["items"]
+    assert saved[first["id"]]["ratings"][first["samples"][0]]["overall"] == 5
+    assert saved[second["id"]]["ratings"][second["samples"][0]]["overall"] == 2
+
+    # A step marked on this machine afterwards stays; one marked here before is replaced.
+    listen.save_marks(
+        run_dir / "ratings.json", second["id"], marks(second, dict.fromkeys(second["samples"], 3))
+    )
+    listen.save_marks(
+        run_dir / "ratings.json", third["id"], marks(third, dict.fromkeys(third["samples"], 3))
+    )
+    again = {
+        second["id"]: given(second, 5, "2020-01-01T00:00:00Z"),  # before it was marked here
+        third["id"]: given(third, 5, "2999-01-01T00:00:00Z"),  # after
+    }
+    assert listen.take_marks(run_dir, again, heard=PHONE, via="phone") == {
+        "new": 0,
+        "replaced": 1,
+        "unchanged": 0,
+        "older": 1,
+    }
+    saved = json.loads((run_dir / "ratings.json").read_text())["items"]
+    assert "via" not in saved[second["id"]]
+    assert saved[third["id"]]["via"] == "phone"
+
+
+def test_what_is_refused_when_taking_marks(away, tmp_path) -> None:
+    run_dir, items = away
+    first = items[0]
+    good = marks(first, dict.fromkeys(first["samples"], 3), saved_at="2026-11-25T02:21:16Z")
+    for taken, reason in [
+        ({"T99/vocals": good}, "the kit has no step T99/vocals"),
+        ({first["id"]: {**good, "ratings": {}}}, f"{first['id']}: marks are needed for exactly"),
+        ({first["id"]: marks(first, dict.fromkeys(first["samples"], 9), saved_at="2026-11-25")},
+         "from 1 to 5"),
+        ({first["id"]: marks(first, dict.fromkeys(first["samples"], 3))}, "when they were saved"),
+        ({first["id"]: {**good, "saved_at": "yesterday"}}, "when they were saved"),
+    ]:  # fmt: skip
+        with pytest.raises(listen.ListenError, match=reason):
+            listen.take_marks(run_dir, taken, heard=PHONE, via="phone")
+    for via in ("here", "a phone", ""):
+        with pytest.raises(listen.ListenError, match="--via must be one word"):
+            listen.take_marks(run_dir, {first["id"]: good}, heard=PHONE, via=via)
+    with pytest.raises(listen.ListenError, match="--heard must say how"):
+        listen.take_marks(run_dir, {first["id"]: good}, heard="  ", via="phone")
+    # Nothing was written by any of these, not even the good step beside a bad one.
+    with pytest.raises(listen.ListenError):
+        listen.take_marks(run_dir, {first["id"]: good, "T99/x": good}, heard=PHONE, via="phone")
+    assert not (run_dir / "ratings.json").exists()
+
+    (tmp_path / "empty").mkdir()
+    (tmp_path / "broken.json").write_text("{not json")
+    (tmp_path / "list.json").write_text("[1, 2]")
+    nameless = tmp_path / "nameless"
+    nameless.mkdir()
+    (nameless / "a.json").write_text(json.dumps(good))
+    for source, reason in [
+        (tmp_path / "nowhere.json", "is missing"),
+        (tmp_path / "empty", "holds no marks"),
+        (tmp_path / "broken.json", "is not a JSON file"),
+        (tmp_path / "list.json", "needs an 'items' object"),
+        (nameless, "does not say which step"),
+    ]:
+        with pytest.raises(listen.ListenError, match=reason):
+            listen.read_taken(source)
+
+
+def test_the_report_says_how_the_clips_were_heard(away, tmp_path, monkeypatch, capsys) -> None:
+    run_dir, items = away
+    key = json.loads((run_dir / "key.json").read_text())
+    kit = listen.load_kit(run_dir / "kit")
+    here, there = items[0], items[1:3]
+    listen.save_marks(
+        run_dir / "ratings.json", here["id"], marks(here, dict.fromkeys(here["samples"], 3))
+    )
+    copied = tmp_path / "copied.json"
+    copied.write_text(
+        json.dumps(
+            {
+                "items": {
+                    item["id"]: marks(
+                        item, dict.fromkeys(item["samples"], 4), saved_at="2026-11-25T02:21:16Z"
+                    )
+                    for item in there
+                }
+            }
+        )
+    )
+    monkeypatch.setattr(listen, "LISTEN_DIR", run_dir.parent)
+    assert listen.main(["take", str(copied), "--run-id", "owner", "--heard", PHONE]) == 0
+    assert "2 new, 0 replaced, 0 unchanged, 0 left as they were" in capsys.readouterr().out
+    ratings = listen.read_ratings(run_dir / "ratings.json")
+    analysis = listen.analyse(kit, key, ratings)
+    assert analysis["heard"] == [
+        {"via": "here", "steps": 1, "how": None},
+        {"via": "phone", "steps": 2, "how": PHONE},
+    ]
+    text = listen.render(analysis, {"run_id": "owner", "tracks": 2})
+    assert "the owner of this project, listened blind: for each stem" in text
+    assert (
+        "**How the clips were heard.** 1 step was marked on the listener's own machine, from "
+        f"the kit's lossless clips. 2 steps were marked {PHONE}."
+    ) in text
+    # Marks that say where they were made but not how: the report does not guess.
+    ratings["heard"] = {}
+    unknown = listen.render(listen.analyse(kit, key, ratings), {"run_id": "owner"})
+    assert "2 steps were marked somewhere else, and how the clips were heard is not" in unknown
+    # A file that cannot be taken is an error the command reports.
+    assert (
+        listen.main(["take", str(tmp_path / "none.json"), "--run-id", "owner", "--heard", PHONE])
+        == 2
+    )
+    assert "is missing" in capsys.readouterr().err
 
 
 def test_commands_say_what_is_missing(tmp_path, monkeypatch, capsys) -> None:

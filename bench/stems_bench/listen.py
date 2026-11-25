@@ -2,6 +2,7 @@
 
     python -m stems_bench.listen make --tracks 6 --device mps   # the audio (long; resumable)
     python -m stems_bench.listen serve                          # the page, on 127.0.0.1
+    python -m stems_bench.listen take MARKS --heard "on a phone, from ..."   # marks made elsewhere
     python -m stems_bench.listen report --out docs/listening-owner.md
 
 The benchmark says which model scores best. It cannot say which one sounds best, and the
@@ -30,6 +31,11 @@ after every step. ``report`` unblinds them.
 The audio is real music. It lives only in the run's folder under ``runs/``, which is not
 in the repository, and nothing here uploads anything: the server listens on this machine
 only.
+
+``take`` brings in marks the listener made somewhere else, on a copy of the page that
+keeps its own marks (a phone, say). They get the checks the server gives its own, and
+each is stored with where it came from, so that the report can say how the clips were
+heard: lossless on this machine, or however ``--heard`` says.
 """
 
 from __future__ import annotations
@@ -71,6 +77,9 @@ MAX_NOTE = 2000
 SAME_AUDIO_DB = 60.0
 RATINGS = kit_tools.RATINGS
 REQUIRED = "overall"
+# Where a step was marked. Marks saved by this machine's own page carry no name: they are
+# "here", and were heard from the kit's own lossless clips.
+VIA_HERE = "here"
 
 
 class ListenError(ValueError):
@@ -380,9 +389,112 @@ def save_marks(path: Path, item_id: str, marks: Mapping[str, Any]) -> None:
     """Add one step's marks to the file, replacing any earlier ones for it. Atomic."""
     data = read_ratings(path)
     data["items"][item_id] = {**marks, "saved_at": datetime.now(UTC).isoformat(timespec="seconds")}
+    _write_ratings(path, data)
+
+
+def _write_ratings(path: Path, data: Mapping[str, Any]) -> None:
     partial = path.with_suffix(".partial")
     partial.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
     partial.replace(path)
+
+
+# -- marks made somewhere else --------------------------------------------------------------
+
+
+def read_taken(source: Path) -> dict[str, Any]:
+    """Marks as a page elsewhere gives them out: step id -> what was saved for the step.
+
+    ``source`` is either the text such a page copies out, saved as a file
+    (``{"items": {step: marks}}``), or a folder holding the documents of its store, one
+    JSON file a step (the marks themselves or ``{"data": marks}``, naming their step as
+    ``item``). Nothing is checked here beyond the shape; ``take_marks`` checks the marks.
+    """
+
+    def load(path: Path) -> Any:
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+            raise ListenError(f"{path} is not a JSON file that can be read") from error
+
+    if source.is_dir():
+        taken: dict[str, Any] = {}
+        for path in sorted(source.rglob("*.json")):
+            document = load(path)
+            if isinstance(document, dict) and isinstance(document.get("data"), dict):
+                document = document["data"]
+            if not isinstance(document, dict) or not isinstance(document.get("item"), str):
+                raise ListenError(f"{path} does not say which step its marks are for")
+            taken[document["item"]] = document
+        if not taken:
+            raise ListenError(f"{source} holds no marks")
+        return taken
+    if not source.is_file():
+        raise ListenError(f"{source} is missing")
+    data = load(source)
+    if not isinstance(data, dict) or not isinstance(data.get("items"), dict) or not data["items"]:
+        raise ListenError(f"{source} holds no marks: it needs an 'items' object")
+    return dict(data["items"])
+
+
+def _when(value: Any) -> datetime | None:
+    """A saved time as a moment, or None if it is not one. A time with no zone is UTC."""
+    if not isinstance(value, str) or len(value) > 40:
+        return None
+    try:
+        moment = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    return moment if moment.tzinfo else moment.replace(tzinfo=UTC)
+
+
+def take_marks(run_dir: Path, taken: Mapping[str, Any], *, heard: str, via: str) -> dict[str, int]:
+    """Write marks made elsewhere into the run's ``ratings.json``.
+
+    Every step gets the checks the server gives its own page, and all of them are checked
+    before anything is written. Of two sets of marks for a step the later one stays.
+    ``via`` names where these were made and ``heard`` says, for the report, how the clips
+    were heard there. Returns how many steps were new, replaced, unchanged or older.
+    """
+    if not via.isidentifier() or via == VIA_HERE:
+        raise ListenError(f"--via must be one word other than '{VIA_HERE}', not {via!r}")
+    heard = " ".join(heard.split())
+    if not heard or len(heard) > 300:
+        raise ListenError("--heard must say how the clips were heard, in at most 300 characters")
+    kit = load_kit(run_dir / "kit")
+    items = {item["id"]: item for item in presentation_order(kit)}
+    unknown = sorted(set(taken) - set(items))
+    if unknown:
+        raise ListenError(f"the kit has no step {', '.join(unknown)}")
+    checked: dict[str, dict[str, Any]] = {}
+    for item_id, body in taken.items():
+        try:
+            marks = check_marks(items[item_id], body)
+        except ListenError as error:
+            raise ListenError(f"{item_id}: {error}") from None
+        moment = _when(body.get("saved_at"))
+        if moment is None:
+            raise ListenError(f"{item_id}: the marks do not say when they were saved")
+        saved_at = moment.astimezone(UTC).isoformat(timespec="seconds")
+        checked[item_id] = {**marks, "saved_at": saved_at, "via": via}
+    path = run_dir / "ratings.json"
+    data = read_ratings(path)
+    counts = {"new": 0, "replaced": 0, "unchanged": 0, "older": 0}
+    for item_id, entry in checked.items():
+        before = data["items"].get(item_id)
+        if before is None:
+            counts["new"] += 1
+        elif before == entry:
+            counts["unchanged"] += 1
+            continue
+        elif (there := _when(before.get("saved_at"))) and there >= _when(entry["saved_at"]):
+            counts["older"] += 1  # what is there was saved later: it stays
+            continue
+        else:
+            counts["replaced"] += 1
+        data["items"][item_id] = entry
+    data.setdefault("heard", {})[via] = heard
+    _write_ratings(path, data)
+    return counts
 
 
 # -- the server ----------------------------------------------------------------------------
@@ -502,6 +614,7 @@ def analyse(
             "stem": item["stem"],
             "note": marks.get("note") or "",
             "twins": twins,
+            "via": marks.get("via") or VIA_HERE,
         }
         for label, system in labels.items():
             entry[system] = marks["ratings"][label]
@@ -548,9 +661,19 @@ def analyse(
         if "reference" in row
         and row["reference"][REQUIRED] == max(row[s][REQUIRED] for s in systems)
     )
+    # Where the steps were marked: here first, then the others as they come.
+    places = sorted(dict.fromkeys(row["via"] for row in rows), key=lambda via: via != VIA_HERE)
     return {
         "steps": len(kit["items"]),
         "marked": len(rows),
+        "heard": [
+            {
+                "via": via,
+                "steps": sum(1 for row in rows if row["via"] == via),
+                "how": (ratings.get("heard") or {}).get(via),
+            }
+            for via in places
+        ],
         "systems": systems,
         "by_system": by_system,
         "by_stem": by_stem,
@@ -576,22 +699,41 @@ def _mark(value: float | None) -> str:
     return "-" if value is None else f"{value:.2f}"
 
 
+def _heard(analysis: Mapping[str, Any]) -> list[str]:
+    """How the clips were heard, when any step was marked away from this machine."""
+    heard = analysis.get("heard") or []
+    if all(entry["via"] == VIA_HERE for entry in heard):
+        return []
+    parts = []
+    for entry in heard:
+        steps = f"{entry['steps']} {'step was' if entry['steps'] == 1 else 'steps were'} marked"
+        if entry["via"] == VIA_HERE:
+            parts.append(f"{steps} on the listener's own machine, from the kit's lossless clips.")
+        elif entry["how"]:
+            parts.append(f"{steps} {entry['how']}.")
+        else:
+            parts.append(f"{steps} somewhere else, and how the clips were heard is not recorded.")
+    return ["**How the clips were heard.** " + " ".join(parts), ""]
+
+
 def render(analysis: Mapping[str, Any], run: Mapping[str, Any]) -> str:
     systems = analysis["systems"]
     marked = analysis["marked"]
+    heard = _heard(analysis)
     lines = [
         "# A listening test by one listener",
         "",
         f"Written by `python -m stems_bench.listen report` from "
         f"`runs/listening/{run['run_id']}/ratings.json`. One person, the owner of this "
-        "project, listened blind on their own machine: for each stem of each song, 30 seconds "
-        "of every version, matched in level, under letters whose meaning changed from stem "
-        "to stem. Marks are from 1 (bad) to 5 (excellent).",
+        f"project, listened blind{'' if heard else ' on their own machine'}: for each stem of "
+        "each song, 30 seconds of every version, matched in level, under letters whose "
+        "meaning changed from stem to stem. Marks are from 1 (bad) to 5 (excellent).",
         "",
         f"Songs: {run.get('tracks', '?')}, the first of the frozen `{DATASET}` list. "
         f"Steps marked: {marked} of {analysis['steps']}."
         + ("" if marked == analysis["steps"] else " **The test was not finished.**"),
         "",
+        *heard,
         "| Version | Overall | Bleed | Artifacts |",
         "|---|---:|---:|---:|",
     ]
@@ -771,6 +913,16 @@ def cmd_serve(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_take(args: argparse.Namespace) -> int:
+    run_dir = LISTEN_DIR / args.run_id
+    counts = take_marks(run_dir, read_taken(Path(args.source)), heard=args.heard, via=args.via)
+    print(
+        f"{counts['new']} new, {counts['replaced']} replaced, {counts['unchanged']} unchanged, "
+        f"{counts['older']} left as they were (saved later here): {run_dir / 'ratings.json'}"
+    )
+    return 0
+
+
 def cmd_report(args: argparse.Namespace) -> int:
     run_dir = LISTEN_DIR / args.run_id
     key_path = run_dir / "key.json"
@@ -808,6 +960,18 @@ def main(argv: list[str] | None = None) -> int:
     serve_parser.add_argument("--run-id", default=DEFAULT_RUN)
     serve_parser.add_argument("--port", type=int, default=DEFAULT_PORT)
     serve_parser.set_defaults(run=cmd_serve)
+    take_parser = sub.add_parser("take", help="bring in marks made somewhere else")
+    take_parser.add_argument(
+        "source", help="the text the page copied out, in a file, or a folder of its documents"
+    )
+    take_parser.add_argument("--run-id", default=DEFAULT_RUN)
+    take_parser.add_argument("--via", default="phone", help="one word for where they were made")
+    take_parser.add_argument(
+        "--heard",
+        required=True,
+        help="how the clips were heard there; it finishes the sentence 'N steps were marked ...'",
+    )
+    take_parser.set_defaults(run=cmd_take)
     report_parser = sub.add_parser("report", help="unblind the marks and write the report")
     report_parser.add_argument("--run-id", default=DEFAULT_RUN)
     report_parser.add_argument("--out")
